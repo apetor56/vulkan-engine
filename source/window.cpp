@@ -1,4 +1,5 @@
 #include "window.hpp"
+#include <stdexcept>
 
 namespace VE {
 
@@ -6,7 +7,10 @@ Window::Window(const int width, const int height, std::string_view name) : m_wid
     init();
 }
 
-Window::~Window() {}
+Window::~Window() {
+    glfwDestroyWindow(m_windowHandler);
+    glfwTerminate();
+}
 
 void Window::init() {
     glfwInit();
@@ -18,6 +22,10 @@ void Window::init() {
 
 bool Window::shouldClose() const {
     return glfwWindowShouldClose(m_windowHandler);
+}
+
+GLFWwindow *Window::getWindowHandler() const noexcept {
+    return m_windowHandler;
 }
 
 } // namespace VE
