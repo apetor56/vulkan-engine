@@ -1,14 +1,17 @@
 #include "application.hpp"
 #include "config.hpp"
+#include <chrono>
+#include <thread>
 
 namespace VE {
 
-Application::Application() : m_window{cfg::window::width, cfg::window::height, "example"},
-                             m_pipeline{cfg::shader::vertShaderBinary, cfg::shader::fragShaderBinary} {}
+Application::Application() : m_window{ std::make_shared<Window>(cfg::window::width, cfg::window::height, "example") },
+                             m_device{ m_window } {}
 
 void Application::run() {
-    while(m_window.shouldClose() == false) {
+    while(m_window->shouldClose() == false) {
         glfwPollEvents();
+        std::this_thread::sleep_for(std::chrono::milliseconds(33));
     }
 }
 
