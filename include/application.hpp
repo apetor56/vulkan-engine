@@ -1,7 +1,9 @@
 #pragma once
 
 #include "window.hpp"
-#include "pipeline.hpp"
+// #include "pipeline.hpp"
+#include "device.hpp"
+#include <memory>
 
 namespace VE {
 
@@ -12,8 +14,9 @@ public:
     void run();
 
 private:
-    Window m_window;
-    Pipeline m_pipeline;
+    std::shared_ptr<Window> m_window;
+    Device m_device;
+    // Pipeline m_pipeline;
 };
 
 }
