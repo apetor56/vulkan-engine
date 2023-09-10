@@ -5,8 +5,6 @@
 #include <string_view>
 #include <string>
 
-class GLFWwindow;
-
 namespace VE {
 
 class Window {
@@ -21,7 +19,10 @@ public:
     Window& operator=(Window&& other) = delete;
 
     void init();
+
     bool shouldClose() const;
+
+    GLFWwindow *getWindowHandler() const noexcept;
 
 private:
     const int m_width;
