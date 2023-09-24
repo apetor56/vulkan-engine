@@ -20,6 +20,7 @@ Device::Device(std::shared_ptr<Window> window) : m_physicalDevice(VK_NULL_HANDLE
     pickPhysicalDevice();
     createLogicalDevice();
     createSwapchain();
+    createImageViews();
 }
 
 Device::~Device() {
@@ -31,6 +32,10 @@ Device::~Device() {
     vkDestroyDevice(m_device, nullptr);
     vkDestroySurfaceKHR(m_instance, m_surface, nullptr);
     vkDestroyInstance(m_instance, nullptr);
+
+    for (auto imageView : m_swapchainImageViews) {
+        vkDestroyImageView(m_device, imageView, nullptr);
+    }
 }
 
 VkDevice Device::getDevice() const {
@@ -454,6 +459,33 @@ void Device::createSwapchain() {
     vkGetSwapchainImagesKHR(m_device, m_swapchain, &imageCount, m_swapchainImages.data());
     m_format = surfaceFormat.format;
     m_extent = extent;
+}
+
+void Device::createImageViews() {
+    m_swapchainImageViews.resize(std::size(m_swapchainImageViews));
+
+    for(size_t viewIndex{}; viewIndex < std::size(m_swapchainImageViews); viewIndex++) {
+        VkImageViewCreateInfo viewCreateInfo{};
+        viewCreateInfo.sType    = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO;
+        viewCreateInfo.image    = m_swapchainImages.at(viewIndex);
+        viewCreateInfo.viewType = VK_IMAGE_VIEW_TYPE_2D;
+        viewCreateInfo.format   = m_format;
+
+        viewCreateInfo.components.r = VK_COMPONENT_SWIZZLE_IDENTITY;
+        viewCreateInfo.components.g = VK_COMPONENT_SWIZZLE_IDENTITY;
+        viewCreateInfo.components.b = VK_COMPONENT_SWIZZLE_IDENTITY;
+        viewCreateInfo.components.a = VK_COMPONENT_SWIZZLE_IDENTITY;
+
+        viewCreateInfo.subresourceRange.aspectMask     = VK_IMAGE_ASPECT_COLOR_BIT;
+        viewCreateInfo.subresourceRange.baseMipLevel   = 0u;
+        viewCreateInfo.subresourceRange.levelCount     = 1u;
+        viewCreateInfo.subresourceRange.baseArrayLayer = 0u;
+        viewCreateInfo.subresourceRange.layerCount     = 1u;
+
+        if(vkCreateImageView(m_device, &viewCreateInfo, nullptr, &m_swapchainImageViews.at(viewIndex)) != VK_SUCCESS) {
+            throw std::runtime_error("failed to create image view");
+        }
+    }
 }
 
 }
