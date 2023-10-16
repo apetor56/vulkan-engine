@@ -32,8 +32,8 @@ std::vector<char> Pipeline::readFile(std::string_view filePath) {
 void Pipeline::createGraphicsPipeline(std::string_view vertFilePath,
                                       std::string_view fragFilePath,
                                       const PipelineConfigInfo& configInfo) {
-    const auto vertCode { std::move(readFile(vertFilePath)) };
-    const auto fragCode { std::move(readFile(fragFilePath)) };
+    const auto vertCode { readFile(vertFilePath) };
+    const auto fragCode { readFile(fragFilePath) };
 
     std::cout << "vertex shader binary code size: " << std::size(vertCode) << '\n'
               << "fragment shader binary code size: " << std::size(fragCode) << '\n';

@@ -56,7 +56,7 @@ void Device::createVulkanInstance() {
     appInfo.applicationVersion = VK_MAKE_VERSION(1, 0, 0);
     appInfo.engineVersion      = VK_MAKE_VERSION(1, 0, 0);
 
-    const auto extensions { std::move(getRequiredInstanceExtensions()) };
+    const auto extensions { getRequiredInstanceExtensions() };
 
     VkInstanceCreateInfo instanceInfo{};
     instanceInfo.sType                   = VK_STRUCTURE_TYPE_INSTANCE_CREATE_INFO;
