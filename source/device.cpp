@@ -29,13 +29,15 @@ Device::~Device() {
     }
 
     vkDestroySwapchainKHR(m_device, m_swapchain, nullptr);
+    
+    std::ranges::for_each(m_swapChainImageViews, [this](const auto& view) {
+        vkDestroyImageView(m_device, view, nullptr);
+    });
+
     vkDestroyDevice(m_device, nullptr);
     vkDestroySurfaceKHR(m_instance, m_surface, nullptr);
     vkDestroyInstance(m_instance, nullptr);
 
-    std::ranges::for_each(m_swapChainImageViews, [this](const auto view) {
-        vkDestroyImageView(m_device, view, nullptr);
-    });
 }
 
 VkDevice Device::getDevice() const {
