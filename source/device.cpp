@@ -20,6 +20,7 @@ Device::Device(std::shared_ptr<Window> window) : m_physicalDevice(VK_NULL_HANDLE
     pickPhysicalDevice();
     createLogicalDevice();
     createSwapchain();
+    createImageViews();
 }
 
 Device::~Device() {
@@ -31,6 +32,10 @@ Device::~Device() {
     vkDestroyDevice(m_device, nullptr);
     vkDestroySurfaceKHR(m_instance, m_surface, nullptr);
     vkDestroyInstance(m_instance, nullptr);
+
+    std::ranges::for_each(m_swapChainImageViews, [this](const auto view) {
+        vkDestroyImageView(m_device, view, nullptr);
+    });
 }
 
 VkDevice Device::getDevice() const {
@@ -454,6 +459,37 @@ void Device::createSwapchain() {
     vkGetSwapchainImagesKHR(m_device, m_swapchain, &imageCount, m_swapchainImages.data());
     m_format = surfaceFormat.format;
     m_extent = extent;
+}
+
+void Device::createImageViews() {
+    m_swapChainImageViews.resize(std::size(m_swapchainImages));
+    int imageViewIndex{};
+
+    const auto createImageView { [this, &imageViewIndex](const VkImage image) {
+        VkImageViewCreateInfo createInfo{};
+        createInfo.sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO;
+        createInfo.image = image;
+        createInfo.viewType = VK_IMAGE_VIEW_TYPE_2D;
+        createInfo.format = m_format;
+
+        createInfo.components.r = VK_COMPONENT_SWIZZLE_IDENTITY;
+        createInfo.components.g = VK_COMPONENT_SWIZZLE_IDENTITY;
+        createInfo.components.b = VK_COMPONENT_SWIZZLE_IDENTITY;
+        createInfo.components.a = VK_COMPONENT_SWIZZLE_IDENTITY;
+
+        createInfo.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+        createInfo.subresourceRange.baseMipLevel = 0u;
+        createInfo.subresourceRange.levelCount = 1u;
+        createInfo.subresourceRange.baseArrayLayer = 0u;
+        createInfo.subresourceRange.layerCount = 1u;
+
+        if (vkCreateImageView(m_device, &createInfo, nullptr, &m_swapChainImageViews.at(imageViewIndex)) != VK_SUCCESS) {
+            throw std::runtime_error("failed to create image views!");
+        }
+        imageViewIndex++;
+    } };
+
+    std::ranges::for_each(m_swapchainImages, createImageView);
 }
 
 }

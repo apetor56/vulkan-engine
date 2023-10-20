@@ -45,6 +45,7 @@ private:
     VkSwapchainKHR m_swapchain;
     std::shared_ptr<Window> m_window;
     std::vector<VkImage> m_swapchainImages;
+    std::vector<VkImageView> m_swapChainImageViews;
     VkFormat m_format;
     VkExtent2D m_extent;
 
@@ -60,6 +61,7 @@ private:
     void pickPhysicalDevice();
     void createLogicalDevice();
     void createSwapchain();
+    void createImageViews();
 
     std::vector<const char*> getRequiredInstanceExtensions() const;
 
