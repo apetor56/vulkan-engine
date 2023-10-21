@@ -5,6 +5,7 @@
 namespace VE {
 
 VulkanInstance::VulkanInstance() {
+    glfwInit();
     createVulkanInstance();
 
     #ifndef NDEBUG
@@ -18,6 +19,7 @@ VulkanInstance::~VulkanInstance() {
     #endif
     
     vkDestroyInstance(m_instance, nullptr);
+    glfwTerminate();
 }
 
 void VulkanInstance::createVulkanInstance() {
