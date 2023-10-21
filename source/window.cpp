@@ -3,21 +3,33 @@
 
 namespace VE {
 
-Window::Window(const int width, const int height, std::string_view name) : m_width{width}, m_height{height}, m_name{name} {
+Window::Window(const int width, 
+              const int height, 
+              std::string_view name,
+              std::shared_ptr<VulkanInstance> instance) : m_width { width }, 
+                                                          m_height { height }, 
+                                                          m_name { name },
+                                                          m_vulkanInstance { instance } {
     init();
+    createSurface();
 }
 
 Window::~Window() {
     glfwDestroyWindow(m_windowHandler);
-    glfwTerminate();
+    vkDestroySurfaceKHR(m_vulkanInstance->get(), m_surface, nullptr);
 }
 
 void Window::init() {
-    glfwInit();
     glfwWindowHint(GLFW_CLIENT_API, GLFW_NO_API);
     glfwWindowHint(GLFW_RESIZABLE, GLFW_FALSE);
 
     m_windowHandler = glfwCreateWindow(m_width, m_height, m_name.c_str(), nullptr, nullptr);
+}
+
+void Window::createSurface() {
+    if(glfwCreateWindowSurface(m_vulkanInstance->get(), m_windowHandler, nullptr, &m_surface) != VK_SUCCESS) {
+        throw std::runtime_error("failed to create window surface");
+    }
 }
 
 bool Window::shouldClose() const {
@@ -26,6 +38,10 @@ bool Window::shouldClose() const {
 
 GLFWwindow *Window::getWindowHandler() const noexcept {
     return m_windowHandler;
+}
+
+VkSurfaceKHR Window::getSurface() const noexcept {
+    return m_surface;
 }
 
 } // namespace VE
