@@ -36,11 +36,6 @@ void Swapchain::createSwapchain() {
     const VkPresentModeKHR presentMode { chooseSwapPresentMode(swapchainSupport.presentModes) };
     const VkExtent2D extent { chooseSwapExtent(swapchainSupport.capabilities) };
 
-    /* uint32_t imageCount { swapchainSupport.capabilities.minImageCount + 1u };
-    // if capabilities.maxImageCount == 0 then there is no maximum limit
-    if(swapchainSupport.capabilities.maxImageCount > 0u && imageCount > swapchainSupport.capabilities.maxImageCount) {
-        imageCount = swapchainSupport.capabilities.maxImageCount;
-    } */
     const uint32_t& minImageCount { swapchainSupport.capabilities.minImageCount };
     const uint32_t maxImageCount { swapchainSupport.capabilities.maxImageCount };
     uint32_t imageCount { minImageCount != maxImageCount ?  minImageCount + 1u : maxImageCount };

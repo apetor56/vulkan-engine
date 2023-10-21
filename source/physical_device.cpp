@@ -6,6 +6,7 @@
 #include <map>
 #include <algorithm>
 #include <cstring>
+#include <ranges>
 
 #ifndef NDEBUG
     #include <iostream>
@@ -31,11 +32,10 @@ void PhysicalDevice::pickPhysicalDevice() {
     vkEnumeratePhysicalDevices(m_vulkanInstance->get(), &deviceCount, devices.data());
 
     std::multimap<uint32_t, VkPhysicalDevice> candidates{};
-    
-    const auto makeDeviceRatePair { [this, &candidates](const auto& device) {
+    const auto makeRateDevicePair { [this, &candidates](const auto& device) {
         candidates.insert(std::make_pair(rate(device), device));
     } };
-    std::ranges::for_each(devices, makeDeviceRatePair);
+    std::ranges::for_each(devices, makeRateDevicePair);
 
     if(std::rbegin(candidates)->first > 0u) {
         m_physicalDevice = std::rbegin(candidates)->second;
