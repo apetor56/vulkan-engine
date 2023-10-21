@@ -20,12 +20,14 @@ set(SOURCE ${CMAKE_SOURCE_DIR}/source)
 
 add_executable(${PROJECT_NAME}
     ${SOURCE}/main.cpp
-    ${SOURCE}/window.cpp
     ${SOURCE}/application.cpp
-    ${SOURCE}/pipeline.cpp
     ${SOURCE}/vulkan_instance.cpp
     ${SOURCE}/debug_messenger.cpp
-    ${SOURCE}/device.cpp
+    ${SOURCE}/window.cpp
+    ${SOURCE}/physical_device.cpp
+    ${SOURCE}/queue_family_indices.cpp
+    ${SOURCE}/logical_device.cpp
+    ${SOURCE}/swapchain.cpp
 )
 
 target_include_directories(${PROJECT_NAME} PRIVATE
