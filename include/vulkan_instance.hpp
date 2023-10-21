@@ -14,11 +14,17 @@ public:
 
     ~VulkanInstance();
 
+    VulkanInstance(const VulkanInstance& other) = delete;
+    VulkanInstance(VulkanInstance&& other) = delete;
+
+    VulkanInstance& operator=(const VulkanInstance& other) = delete;
+    VulkanInstance& operator=(VulkanInstance&& other) = delete;
+
     void createVulkanInstance();
 
     std::vector<const char*> getRequiredInstanceExtensions() const;
 
-    VkInstance get() const;
+    VkInstance get() const noexcept;
 
     void showAllSupportedExtensions() const;
 

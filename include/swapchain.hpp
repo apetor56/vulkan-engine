@@ -21,6 +21,12 @@ public:
 
     ~Swapchain();
 
+    Swapchain(const Swapchain& other) = delete;
+    Swapchain(Swapchain&& other) = delete;
+
+    Swapchain& operator=(const Swapchain& other) = delete;
+    Swapchain& operator=(Swapchain&& other) = delete;
+
     static SwapchainSupportDetails querySwapChainSupport(const VkPhysicalDevice physicalDevice,
                                                          const VkSurfaceKHR surface);
 

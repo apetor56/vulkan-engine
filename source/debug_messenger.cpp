@@ -37,7 +37,7 @@ bool DebugMessenger::areValidationLayersSupported() const {
     return coveredLayers == std::size(m_validationLayers);
 }
 
-const std::vector<const char*>& DebugMessenger::getLayers() const {
+const std::vector<const char*>& DebugMessenger::getLayers() const noexcept {
     return m_validationLayers;
 }
 

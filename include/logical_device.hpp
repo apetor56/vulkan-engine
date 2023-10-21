@@ -9,9 +9,15 @@ public:
     LogicalDevice(std::shared_ptr<PhysicalDevice> physicalDevice,
                   std::shared_ptr<Window> window);
 
+    LogicalDevice(const LogicalDevice& other) = delete;
+    LogicalDevice(LogicalDevice&& other) = delete;
+
+    LogicalDevice& operator=(const LogicalDevice& other) = delete;
+    LogicalDevice& operator=(LogicalDevice&& other) = delete;
+
     ~LogicalDevice();
 
-    VkDevice getHandle() const;
+    VkDevice getHandle() const noexcept;
 
 private:
     std::shared_ptr<PhysicalDevice> m_physicalDevice;

@@ -10,11 +10,17 @@ public:
     PhysicalDevice(std::shared_ptr<VulkanInstance> instance,
                    std::shared_ptr<Window> window);
 
+    PhysicalDevice(const PhysicalDevice& other) = delete;
+    PhysicalDevice(PhysicalDevice&& other) = delete;
+
+    PhysicalDevice& operator=(const PhysicalDevice& other) = delete;
+    PhysicalDevice& operator=(PhysicalDevice&& other) = delete;
+
     VkPhysicalDevice getHandle() const;
 
-    const std::vector<const char*> getExtensions() const;
+    const std::vector<const char*> getExtensions() const noexcept;
 
-    std::shared_ptr<Window> getWindow() const;
+    std::shared_ptr<Window> getWindow() const noexcept;
 
 private:
     std::shared_ptr<VulkanInstance> m_vulkanInstance;

@@ -80,7 +80,7 @@ std::vector<const char*> VulkanInstance::getRequiredInstanceExtensions() const {
     return extensions;
 }
 
-VkInstance VulkanInstance::get() const {
+VkInstance VulkanInstance::get() const noexcept {
     return m_instance;
 }
 

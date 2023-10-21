@@ -102,11 +102,11 @@ VkPhysicalDevice PhysicalDevice::getHandle() const {
     return m_physicalDevice;
 }
 
-const std::vector<const char*> PhysicalDevice::getExtensions() const {
+const std::vector<const char*> PhysicalDevice::getExtensions() const noexcept {
     return m_deviceExtensions;
 }
 
-std::shared_ptr<Window> PhysicalDevice::getWindow() const {
+std::shared_ptr<Window> PhysicalDevice::getWindow() const noexcept {
     return m_window;
 }
 

@@ -14,7 +14,7 @@ public:
 
     bool areValidationLayersSupported() const;
 
-    const std::vector<const char*>& getLayers() const;
+    const std::vector<const char*>& getLayers() const noexcept;
 
     void populateCreateInfo(VkDebugUtilsMessengerCreateInfoEXT& createInfo) const;
 

@@ -59,7 +59,7 @@ void LogicalDevice::createLogicalDevice() {
     vkGetDeviceQueue(m_logicalDevice, queueFamilyIndices.presentFamily.value(), queueIndex, &m_presentQueue);
 }
 
-VkDevice LogicalDevice::getHandle() const {
+VkDevice LogicalDevice::getHandle() const noexcept {
     return m_logicalDevice;
 }
 
