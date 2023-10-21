@@ -23,6 +23,8 @@ add_executable(${PROJECT_NAME}
     ${SOURCE}/window.cpp
     ${SOURCE}/application.cpp
     ${SOURCE}/pipeline.cpp
+    ${SOURCE}/vulkan_instance.cpp
+    ${SOURCE}/debug_messenger.cpp
     ${SOURCE}/device.cpp
 )
 
