@@ -2,7 +2,10 @@
 
 #include "window.hpp"
 #include "vulkan_instance.hpp"
-#include "device.hpp"
+#include "physical_device.hpp"
+#include "logical_device.hpp"
+#include "swapchain.hpp"
+
 #include <memory>
 
 namespace VE {
@@ -14,9 +17,11 @@ public:
     void run();
 
 private:
-    std::shared_ptr<Window> m_window;
     std::shared_ptr<VulkanInstance> m_vulkanInstance;
-    Device m_device;
+    std::shared_ptr<Window> m_window;
+    std::shared_ptr<PhysicalDevice> m_physicalDevice;
+    std::shared_ptr<LogicalDevice> m_logicalDevice;
+    std::shared_ptr<Swapchain> m_swapchain;
 };
 
 }
