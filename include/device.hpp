@@ -1,5 +1,6 @@
 #pragma once
 
+#include "vulkan_instance.hpp"
 #include "window.hpp"
 #include <vector>
 #include <optional>
@@ -24,7 +25,9 @@ struct QueueFamilyIndices {
 
 class Device {
 public:
-    explicit Device(std::shared_ptr<Window> window);
+    explicit Device(std::shared_ptr<VulkanInstance> vulkanInstance,
+                    std::shared_ptr<Window> window);
+
     ~Device();
 
     Device(const Device& other) = delete;
@@ -33,9 +36,7 @@ public:
     VkDevice getDevice() const;
 
 private:
-    VkInstance m_instance;
-    VkDebugUtilsMessengerEXT m_debugMessenger;
-    const std::vector<const char*> m_validationLayers { "VK_LAYER_KHRONOS_validation" };
+    std::shared_ptr<VulkanInstance> m_vulkanInstance;
     const std::vector<const char*> m_deviceExtensions { VK_KHR_SWAPCHAIN_EXTENSION_NAME };
     VkPhysicalDevice m_physicalDevice;
     VkDevice m_device;
@@ -49,42 +50,11 @@ private:
     VkFormat m_format;
     VkExtent2D m_extent;
 
-    #ifdef NDEBUG
-        const bool m_isValidationEnabled { false };
-    #else
-        const bool m_isValidationEnabled { true };
-    #endif
-
-    void createVulkanInstance();
-    void setupDebugMessenger();
     void createSurface();
     void pickPhysicalDevice();
     void createLogicalDevice();
     void createSwapchain();
     void createImageViews();
-
-    std::vector<const char*> getRequiredInstanceExtensions() const;
-
-    void showAllSupportedExtensions() const;
-
-    bool checkValidationLayersSupport() const;
-
-    static VKAPI_ATTR VkBool32 VKAPI_CALL debugCallback(VkDebugUtilsMessageSeverityFlagBitsEXT messageSeverity,
-                                                        VkDebugUtilsMessageTypeFlagsEXT messageType,
-                                                        const VkDebugUtilsMessengerCallbackDataEXT* pCallbackData,
-                                                        void* pUserData);
-
-    VkResult getDebugUtilsMessengerEXT(VkInstance instance, 
-                                       const VkDebugUtilsMessengerCreateInfoEXT* pCreateInfo,
-                                       const VkAllocationCallbacks* pAllocator,
-                                       VkDebugUtilsMessengerEXT* pDebugMessenger) const;
-
-    void destroyDebugUtilsMessengerEXT(VkInstance instance,
-                                       VkDebugUtilsMessengerEXT debugMessenger,
-                                       const VkAllocationCallbacks* pAllocator) const;
-
-    void populateDebugMessengerCreateInfo(VkDebugUtilsMessengerCreateInfoEXT& createInfo) const;
-
 
     uint32_t deviceRate(const VkPhysicalDevice device) const;
 
