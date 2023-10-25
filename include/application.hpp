@@ -1,7 +1,11 @@
 #pragma once
 
 #include "window.hpp"
-#include "device.hpp"
+#include "vulkan_instance.hpp"
+#include "physical_device.hpp"
+#include "logical_device.hpp"
+#include "swapchain.hpp"
+
 #include <memory>
 
 namespace VE {
@@ -13,8 +17,11 @@ public:
     void run();
 
 private:
+    std::shared_ptr<VulkanInstance> m_vulkanInstance;
     std::shared_ptr<Window> m_window;
-    Device m_device;
+    std::shared_ptr<PhysicalDevice> m_physicalDevice;
+    std::shared_ptr<LogicalDevice> m_logicalDevice;
+    std::shared_ptr<Swapchain> m_swapchain;
 };
 
 }

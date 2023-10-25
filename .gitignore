@@ -34,4 +34,4 @@
 bin
 build
 shaders/*.spv
-.vscode
+.vscode/settings.json
