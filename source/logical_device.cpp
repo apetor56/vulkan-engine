@@ -6,19 +6,19 @@
 namespace VE {
 
 LogicalDevice::LogicalDevice(std::shared_ptr<PhysicalDevice> physicalDevice,
-                             std::shared_ptr<Window> window) : m_physicalDevice { physicalDevice },
-                                                               m_window { window } {
-    createLogicalDevice();
+                             std::shared_ptr<Window> window) {
+    createLogicalDevice(physicalDevice, window);
 }
 
 LogicalDevice::~LogicalDevice() {
     vkDestroyDevice(m_logicalDevice, nullptr);
 }
 
-void LogicalDevice::createLogicalDevice() {
-    const auto physicalDeviceHandle { m_physicalDevice->getHandle() };
-    const auto surface { m_window->getSurface() };
-    const auto& extensions { m_physicalDevice->getExtensions() };
+void LogicalDevice::createLogicalDevice(std::shared_ptr<PhysicalDevice> physicalDevice,
+                                        std::shared_ptr<Window> window) {
+    const auto physicalDeviceHandle { physicalDevice->getHandle() };
+    const auto surface { window->getSurface() };
+    const auto& extensions { physicalDevice->getExtensions() };
 
     QueueFamilyIndices queueFamilyIndices { QueueFamilyIndices::findQueueFamilies(physicalDeviceHandle, surface) };
     constexpr uint32_t queueCount{ 1u };
