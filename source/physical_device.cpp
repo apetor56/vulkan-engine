@@ -37,7 +37,8 @@ void PhysicalDevice::pickPhysicalDevice() {
     } };
     std::ranges::for_each(devices, makeRateDevicePair);
 
-    if(std::rbegin(candidates)->first > 0u) {
+    const auto& bestDeviceRate { std::rbegin(candidates)->first };
+    if(bestDeviceRate > 0u) {
         m_physicalDevice = std::rbegin(candidates)->second;
 
         #ifndef NDEBUG
@@ -104,10 +105,6 @@ VkPhysicalDevice PhysicalDevice::getHandle() const {
 
 const std::vector<const char*> PhysicalDevice::getExtensions() const noexcept {
     return m_deviceExtensions;
-}
-
-std::shared_ptr<Window> PhysicalDevice::getWindow() const noexcept {
-    return m_window;
 }
 
 }
