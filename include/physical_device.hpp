@@ -20,8 +20,6 @@ public:
 
     const std::vector<const char*> getExtensions() const noexcept;
 
-    std::shared_ptr<Window> getWindow() const noexcept;
-
 private:
     std::shared_ptr<VulkanInstance> m_vulkanInstance;
     std::shared_ptr<Window> m_window;
