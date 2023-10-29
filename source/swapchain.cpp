@@ -170,4 +170,12 @@ void Swapchain::createImageViews() {
     std::ranges::for_each(m_swapchainImages, createImageView);
 }
 
+VkExtent2D Swapchain::getExtent() const noexcept {
+    return m_extent;
+}
+
+VkFormat Swapchain::getImageFormat() const noexcept {
+    return m_format;
+}
+
 }

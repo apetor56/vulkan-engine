@@ -30,6 +30,10 @@ public:
     static SwapchainSupportDetails querySwapChainSupport(const VkPhysicalDevice physicalDevice,
                                                          const VkSurfaceKHR surface);
 
+    VkExtent2D getExtent() const noexcept;
+
+    VkFormat getImageFormat() const noexcept;
+
 private:
     std::shared_ptr<PhysicalDevice> m_physicalDevice;
     std::shared_ptr<LogicalDevice> m_logicalDevice;
