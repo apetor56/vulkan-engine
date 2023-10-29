@@ -14,18 +14,19 @@ Pipeline::Pipeline(std::shared_ptr<LogicalDevice> logicalDevice) :
 }
 
 void Pipeline::createPipeline() {
+    const auto vertStageInfo { pupulateShaderStageInfo(VK_SHADER_STAGE_VERTEX_BIT, m_vertexShader) };
+    const auto fragStageInfo { pupulateShaderStageInfo(VK_SHADER_STAGE_FRAGMENT_BIT, m_fragmentShader) };
+
+    stage_infos shaderStages { vertStageInfo, fragStageInfo };
+}
+
+VkPipelineShaderStageCreateInfo Pipeline::pupulateShaderStageInfo(enum VkShaderStageFlagBits shaderType, const Shader& shader) const {
     VkPipelineShaderStageCreateInfo vertexStageCreateInfo{};
     vertexStageCreateInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
-    vertexStageCreateInfo.stage = VK_SHADER_STAGE_VERTEX_BIT;
-    vertexStageCreateInfo.module = m_vertexShader.getModule();
+    vertexStageCreateInfo.stage = shaderType;
+    vertexStageCreateInfo.module = shader.getModule();
     vertexStageCreateInfo.pName = "main";
 
-    VkPipelineShaderStageCreateInfo fragmentStageCreateInfo{};
-    fragmentStageCreateInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
-    fragmentStageCreateInfo.stage = VK_SHADER_STAGE_FRAGMENT_BIT;
-    fragmentStageCreateInfo.module = m_fragmentShader.getModule();
-    fragmentStageCreateInfo.pName = "main";
-
-    stage_infos shaderStages { vertexStageCreateInfo, fragmentStageCreateInfo };
+    return vertexStageCreateInfo;
 }
 }

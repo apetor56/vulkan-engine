@@ -19,6 +19,8 @@ private:
     std::shared_ptr<LogicalDevice> m_logicalDevice;
 
     void createPipeline();
+
+    VkPipelineShaderStageCreateInfo pupulateShaderStageInfo(enum VkShaderStageFlagBits shaderType, const Shader& shader) const;
 };
 
 };
