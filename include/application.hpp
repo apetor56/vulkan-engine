@@ -5,6 +5,7 @@
 #include "physical_device.hpp"
 #include "logical_device.hpp"
 #include "swapchain.hpp"
+#include "pipeline.hpp"
 
 #include <memory>
 
@@ -22,6 +23,7 @@ private:
     std::shared_ptr<PhysicalDevice> m_physicalDevice;
     std::shared_ptr<LogicalDevice> m_logicalDevice;
     std::shared_ptr<Swapchain> m_swapchain;
+    std::shared_ptr<Pipeline> m_pipeline;
 };
 
 }
