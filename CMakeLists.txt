@@ -28,6 +28,8 @@ add_executable(${PROJECT_NAME}
     ${SOURCE}/queue_family_indices.cpp
     ${SOURCE}/logical_device.cpp
     ${SOURCE}/swapchain.cpp
+    ${SOURCE}/pipeline.cpp
+    ${SOURCE}/shader.cpp
 )
 
 target_include_directories(${PROJECT_NAME} PRIVATE
