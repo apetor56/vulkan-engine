@@ -107,4 +107,8 @@ const std::vector<const char*> PhysicalDevice::getExtensions() const noexcept {
     return m_deviceExtensions;
 }
 
+VkSurfaceKHR PhysicalDevice::getSurface() const noexcept {
+    return m_window->getSurface();
+}
+
 }
