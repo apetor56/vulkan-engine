@@ -32,11 +32,9 @@ private:
     Shader m_fragmentShader;
     std::shared_ptr<LogicalDevice> m_logicalDevice;
     std::shared_ptr<Swapchain> m_swapchain;
-    VkRenderPass m_renderPass;
     VkPipelineLayout m_pipelineLayout;
     VkPipeline m_graphicsPipeline;
 
-    void createRenderPass();
     void createPipelineLayout();
     void createPipeline();
 
