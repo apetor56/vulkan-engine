@@ -30,6 +30,7 @@ add_executable(${PROJECT_NAME}
     ${SOURCE}/swapchain.cpp
     ${SOURCE}/pipeline.cpp
     ${SOURCE}/shader.cpp
+    ${SOURCE}/command_buffer.cpp
 )
 
 target_include_directories(${PROJECT_NAME} PRIVATE
