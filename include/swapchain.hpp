@@ -34,6 +34,10 @@ public:
 
     VkRenderPass getRenderpass() const noexcept;
 
+    VkFramebuffer getFrambuffer(const uint32_t index) const;
+
+    uint32_t getImagesCount() const;
+
 private:
     std::shared_ptr<PhysicalDevice> m_physicalDevice;
     std::shared_ptr<LogicalDevice> m_logicalDevice;

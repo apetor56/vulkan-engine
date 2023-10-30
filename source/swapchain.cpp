@@ -245,4 +245,12 @@ VkRenderPass Swapchain::getRenderpass() const noexcept {
     return m_renderPass;
 }
 
+VkFramebuffer Swapchain::getFrambuffer(const uint32_t index) const {
+    return m_framebuffers.at(index);
+}
+
+uint32_t Swapchain::getImagesCount() const {
+    return static_cast<uint32_t>(std::size(m_swapchainImages));
+}
+
 }
