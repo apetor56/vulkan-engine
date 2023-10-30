@@ -10,7 +10,8 @@ Application::Application() : m_vulkanInstance { std::make_shared<VulkanInstance>
                              m_physicalDevice { std::make_shared<PhysicalDevice>(m_vulkanInstance, m_window) },
                              m_logicalDevice { std::make_shared<LogicalDevice>(m_physicalDevice, m_window) },
                              m_swapchain { std::make_shared<Swapchain>(m_physicalDevice, m_logicalDevice, m_window) },
-                             m_pipeline { std::make_shared<Pipeline>(m_logicalDevice, m_swapchain) }
+                             m_pipeline { std::make_shared<Pipeline>(m_logicalDevice, m_swapchain) },
+                             m_commandBuffer { std::make_shared<CommandBuffer>(m_physicalDevice, m_logicalDevice, m_swapchain, m_pipeline) }
                             {}
 
 void Application::run() {

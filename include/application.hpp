@@ -6,6 +6,7 @@
 #include "logical_device.hpp"
 #include "swapchain.hpp"
 #include "pipeline.hpp"
+#include "command_buffer.hpp"
 
 #include <memory>
 
@@ -24,6 +25,7 @@ private:
     std::shared_ptr<LogicalDevice> m_logicalDevice;
     std::shared_ptr<Swapchain> m_swapchain;
     std::shared_ptr<Pipeline> m_pipeline;
+    std::shared_ptr<CommandBuffer> m_commandBuffer;
 };
 
 }
