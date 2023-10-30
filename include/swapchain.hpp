@@ -32,7 +32,7 @@ public:
 
     VkExtent2D getExtent() const noexcept;
 
-    VkFormat getImageFormat() const noexcept;
+    VkRenderPass getRenderpass() const noexcept;
 
 private:
     std::shared_ptr<PhysicalDevice> m_physicalDevice;
@@ -42,11 +42,15 @@ private:
     VkSwapchainKHR m_swapchain;
     VkFormat m_format;
     VkExtent2D m_extent;
+    VkRenderPass m_renderPass;
     std::vector<VkImage> m_swapchainImages;
     std::vector<VkImageView> m_swapChainImageViews;
+    std::vector<VkFramebuffer> m_framebuffers;
 
     void createSwapchain();
     void createImageViews();
+    void createRenderPass();
+    void createFramebuffers();
 
     VkSurfaceFormatKHR chooseSwapSurfaceFormat(const std::vector<VkSurfaceFormatKHR>& availableFormats) const;
     VkPresentModeKHR chooseSwapPresentMode(const std::vector<VkPresentModeKHR>& availablePresentModes) const;
