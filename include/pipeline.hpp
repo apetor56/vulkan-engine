@@ -27,6 +27,12 @@ public:
 
     ~Pipeline();
 
+    VkPipeline getHandle() const;
+
+    VkViewport getViewport() const;
+
+    VkRect2D getScissor() const;
+
 private:
     Shader m_vertexShader;
     Shader m_fragmentShader;
@@ -34,6 +40,8 @@ private:
     std::shared_ptr<Swapchain> m_swapchain;
     VkPipelineLayout m_pipelineLayout;
     VkPipeline m_graphicsPipeline;
+    VkViewport m_viewport;
+    VkRect2D m_scissor;
 
     void createPipelineLayout();
     void createPipeline();
@@ -41,11 +49,11 @@ private:
     VkPipelineShaderStageCreateInfo pupulateShaderStageInfo(enum VkShaderStageFlagBits shaderType, const Shader& shader) const;
     ShaderStageInfos createShaderStagesInfo() const;
     VkPipelineDynamicStateCreateInfo createDynamicStatesInfo() const;
+    void createViewport();
+    void createScissor();
     VkPipelineViewportStateCreateInfo createViewportInfo() const;
     VkPipelineVertexInputStateCreateInfo createVertexInputInfo() const;
     VkPipelineInputAssemblyStateCreateInfo createInputAsemblyInfo() const;
-    VkViewport createViewport() const;
-    VkRect2D createScissor() const;
     VkPipelineRasterizationStateCreateInfo createRasterizerInfo() const;
     VkPipelineMultisampleStateCreateInfo createMultisamplingInfo() const;
     VkPipelineColorBlendAttachmentState createColorBlendAttachmentState() const;

@@ -8,6 +8,8 @@ Pipeline::Pipeline(std::shared_ptr<LogicalDevice> logicalDevice, std::shared_ptr
             m_logicalDevice { logicalDevice },
             m_swapchain { swapchain } {
     createPipelineLayout();
+    createViewport();
+    createScissor();
     createPipeline();
 }
 
@@ -87,15 +89,12 @@ VkPipelineDynamicStateCreateInfo Pipeline::createDynamicStatesInfo() const {
 }
 
 VkPipelineViewportStateCreateInfo Pipeline::createViewportInfo() const {
-    VkViewport viewport { createViewport() };
-    VkRect2D scissor { createScissor() };
-    
     VkPipelineViewportStateCreateInfo viewportState{};
     viewportState.sType         = VK_STRUCTURE_TYPE_PIPELINE_VIEWPORT_STATE_CREATE_INFO;
     viewportState.viewportCount = 1u;
-    viewportState.pViewports    = &viewport;
+    viewportState.pViewports    = &m_viewport;
     viewportState.scissorCount  = 1u;
-    viewportState.pScissors     = &scissor;
+    viewportState.pScissors     = &m_scissor;
 
     return viewportState;
 }
@@ -120,25 +119,19 @@ VkPipelineInputAssemblyStateCreateInfo Pipeline::createInputAsemblyInfo() const 
     return createInfo;
 }
 
-VkViewport Pipeline::createViewport() const {
+void Pipeline::createViewport() {
     const auto& extent { m_swapchain->getExtent() };
-    VkViewport viewport{};
-    viewport.x        = 0.0f;
-    viewport.y        = 0.0f;
-    viewport.width    = static_cast<float>(extent.width);
-    viewport.height   = static_cast<float>(extent.height);
-    viewport.minDepth = 0.0f;
-    viewport.maxDepth = 1.0f;
-
-    return viewport;
+    m_viewport.x        = 0.0f;
+    m_viewport.y        = 0.0f;
+    m_viewport.width    = static_cast<float>(extent.width);
+    m_viewport.height   = static_cast<float>(extent.height);
+    m_viewport.minDepth = 0.0f;
+    m_viewport.maxDepth = 1.0f;
 }
 
-VkRect2D Pipeline::createScissor() const {
-    VkRect2D scissor{};
-    scissor.offset = {0, 0};
-    scissor.extent = m_swapchain->getExtent();
-
-    return scissor;
+void Pipeline::createScissor() {
+    m_scissor.offset = {0, 0};
+    m_scissor.extent = m_swapchain->getExtent();
 }
 
 VkPipelineRasterizationStateCreateInfo Pipeline::createRasterizerInfo() const {
@@ -211,6 +204,18 @@ void Pipeline::createPipelineLayout() {
     if (vkCreatePipelineLayout(m_logicalDevice->getHandle(), &pipelineLayoutInfo, nullptr, &m_pipelineLayout) != VK_SUCCESS) {
         throw std::runtime_error("failed to create pipeline layout!");
     }
+}
+
+VkPipeline Pipeline::getHandle() const {
+    return m_graphicsPipeline;
+}
+
+VkViewport Pipeline::getViewport() const {
+    return m_viewport;
+}
+
+VkRect2D Pipeline::getScissor() const {
+    return m_scissor;
 }
 
 }
