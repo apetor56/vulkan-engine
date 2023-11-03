@@ -36,7 +36,9 @@ public:
 
     VkFramebuffer getFrambuffer(const uint32_t index) const;
 
-    uint32_t getImagesCount() const;
+    uint32_t getImagesCount() const noexcept;
+
+    VkSwapchainKHR getHandle() const noexcept;
 
 private:
     std::shared_ptr<PhysicalDevice> m_physicalDevice;
