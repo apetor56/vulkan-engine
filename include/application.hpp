@@ -15,8 +15,12 @@ namespace VE {
 class Application {
 public:
     Application();
+    
+    ~Application();
 
     void run();
+
+    void render();
 
 private:
     std::shared_ptr<VulkanInstance> m_vulkanInstance;
@@ -26,6 +30,12 @@ private:
     std::shared_ptr<Swapchain> m_swapchain;
     std::shared_ptr<Pipeline> m_pipeline;
     std::shared_ptr<CommandBuffer> m_commandBuffer;
+
+    VkSemaphore m_imageAvailableSemapore;
+    VkSemaphore m_renderFinishedSemaphore;
+    VkFence m_inFlightFence;
+
+    void createSyncObjects();
 };
 
 }
