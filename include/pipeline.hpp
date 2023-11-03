@@ -51,7 +51,7 @@ private:
     VkPipelineDynamicStateCreateInfo createDynamicStatesInfo() const;
     void createViewport();
     void createScissor();
-    VkPipelineViewportStateCreateInfo createViewportInfo() const;
+    VkPipelineViewportStateCreateInfo createViewportStateInfo() const;
     VkPipelineVertexInputStateCreateInfo createVertexInputInfo() const;
     VkPipelineInputAssemblyStateCreateInfo createInputAsemblyInfo() const;
     VkPipelineRasterizationStateCreateInfo createRasterizerInfo() const;
