@@ -63,4 +63,12 @@ VkDevice LogicalDevice::getHandle() const noexcept {
     return m_logicalDevice;
 }
 
+VkQueue LogicalDevice::getGraphicsQueue() const noexcept {
+    return m_graphicsQueue;
+}
+
+VkQueue LogicalDevice::getPresentationQueue() const noexcept {
+    return m_presentQueue;
+}
+
 }

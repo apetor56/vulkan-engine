@@ -19,6 +19,10 @@ public:
 
     VkDevice getHandle() const noexcept;
 
+    VkQueue getGraphicsQueue() const noexcept;
+
+    VkQueue getPresentationQueue() const noexcept;
+
 private:
     VkDevice m_logicalDevice;
     VkQueue m_graphicsQueue;
