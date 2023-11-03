@@ -208,6 +208,19 @@ void Swapchain::createRenderPass() {
     renderPassInfo.subpassCount    = 1u;
     renderPassInfo.pSubpasses      = &subpass;
 
+    VkSubpassDependency dependency{};
+    dependency.srcSubpass = VK_SUBPASS_EXTERNAL;
+    dependency.dstSubpass = 0u;
+
+    dependency.srcStageMask = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
+    dependency.srcAccessMask = 0u;
+
+    dependency.dstStageMask = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
+    dependency.dstAccessMask = VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT;
+
+    renderPassInfo.dependencyCount = 1;
+    renderPassInfo.pDependencies = &dependency;
+
     if(vkCreateRenderPass(m_logicalDevice->getHandle(), &renderPassInfo, nullptr, &m_renderPass) != VK_SUCCESS) {
         throw std::runtime_error("failed to create render pass");
     }
@@ -249,8 +262,12 @@ VkFramebuffer Swapchain::getFrambuffer(const uint32_t index) const {
     return m_framebuffers.at(index);
 }
 
-uint32_t Swapchain::getImagesCount() const {
+uint32_t Swapchain::getImagesCount() const noexcept {
     return static_cast<uint32_t>(std::size(m_swapchainImages));
+}
+
+VkSwapchainKHR Swapchain::getHandle() const noexcept {
+    return m_swapchain;
 }
 
 }
