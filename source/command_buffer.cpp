@@ -12,10 +12,6 @@ CommandBuffer::CommandBuffer(std::shared_ptr<PhysicalDevice> physicalDevice,
                                                                     m_pipeline { pipeline } {
     createCommandPool();
     createCommandBuffer();
-
-    for(uint32_t imageIndex{}; imageIndex < m_swapchain->getImagesCount(); imageIndex++) {
-        record(imageIndex);
-    }
 }
 
 CommandBuffer::~CommandBuffer() {
@@ -65,7 +61,10 @@ void CommandBuffer::record(const uint32_t imageIndex) const {
     renderPassInfo.renderArea.offset = {0, 0};
     renderPassInfo.renderArea.extent = m_swapchain->getExtent();
 
-    VkClearValue clearColor = { { { 0.0f, 0.0f, 0.0f, 1.0f } } };
+    constexpr VkClearValue clearColor { 
+        .color { 0.1f, 0.1f, 0.1f, 1.0f }
+    };
+    
     renderPassInfo.clearValueCount = 1;
     renderPassInfo.pClearValues = &clearColor;
 
@@ -76,11 +75,21 @@ void CommandBuffer::record(const uint32_t imageIndex) const {
         vkCmdSetViewport(m_commandBuffer, 0, 1, &viewport);
         const auto& scissor { m_pipeline->getScissor() };
         vkCmdSetScissor(m_commandBuffer, 0, 1, &scissor);
+
+        vkCmdDraw(m_commandBuffer, 3, 1, 0, 0);
     vkCmdEndRenderPass(m_commandBuffer);
 
     if (vkEndCommandBuffer(m_commandBuffer) != VK_SUCCESS) {
         throw std::runtime_error("failed to record command buffer");
     }
+}
+
+void CommandBuffer::reset() {
+    vkResetCommandBuffer(m_commandBuffer, 0);
+}
+
+VkCommandBuffer CommandBuffer::getHandle() const noexcept {
+    return m_commandBuffer;
 }
 
 }

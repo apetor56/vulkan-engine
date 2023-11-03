@@ -18,6 +18,10 @@ public:
 
     void record(const uint32_t imageIndex) const;
 
+    void reset();
+
+    VkCommandBuffer getHandle() const noexcept;
+
 private:
     VkCommandPool m_commandPool;
     VkCommandBuffer m_commandBuffer;
