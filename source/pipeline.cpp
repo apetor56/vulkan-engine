@@ -21,7 +21,7 @@ Pipeline::~Pipeline() {
 void Pipeline::createPipeline() {
     const PipelineConfigInfo pipelineConfig {
         .dynamicState { createDynamicStatesInfo() },
-        .viewport { createViewportInfo() },
+        .viewport { createViewportStateInfo() },
         .vertexInput { createVertexInputInfo() },
         .inputAsembly { createInputAsemblyInfo() },
         .rasterizer { createRasterizerInfo() },
@@ -75,7 +75,7 @@ ShaderStageInfos Pipeline::createShaderStagesInfo() const {
 }
 
 VkPipelineDynamicStateCreateInfo Pipeline::createDynamicStatesInfo() const {
-    const std::vector<VkDynamicState> dynamicStates {
+    static constexpr std::array<VkDynamicState, 2u> dynamicStates {
         VK_DYNAMIC_STATE_VIEWPORT,
         VK_DYNAMIC_STATE_SCISSOR
     };
@@ -88,13 +88,11 @@ VkPipelineDynamicStateCreateInfo Pipeline::createDynamicStatesInfo() const {
     return dynamicState;
 }
 
-VkPipelineViewportStateCreateInfo Pipeline::createViewportInfo() const {
+VkPipelineViewportStateCreateInfo Pipeline::createViewportStateInfo() const {
     VkPipelineViewportStateCreateInfo viewportState{};
     viewportState.sType         = VK_STRUCTURE_TYPE_PIPELINE_VIEWPORT_STATE_CREATE_INFO;
     viewportState.viewportCount = 1u;
-    viewportState.pViewports    = &m_viewport;
     viewportState.scissorCount  = 1u;
-    viewportState.pScissors     = &m_scissor;
 
     return viewportState;
 }
