@@ -2,11 +2,11 @@
 #include "config.hpp"
 
 namespace VE {
-Pipeline::Pipeline(std::shared_ptr<LogicalDevice> logicalDevice, std::shared_ptr<Swapchain> swapchain) :
-            m_vertexShader { cfg::shader::vertShaderBinaryPath, logicalDevice },
-            m_fragmentShader { cfg::shader::fragShaderBinaryPath, logicalDevice },
-            m_logicalDevice { logicalDevice },
-            m_swapchain { swapchain } {
+Pipeline::Pipeline(std::shared_ptr<LogicalDevice> logicalDevice, std::shared_ptr<Swapchain> swapchain)
+    : m_vertexShader{ cfg::shader::vertShaderBinaryPath, logicalDevice },
+      m_fragmentShader{ cfg::shader::fragShaderBinaryPath, logicalDevice },
+      m_logicalDevice{ logicalDevice },
+      m_swapchain{ swapchain } {
     createPipelineLayout();
     createViewport();
     createScissor();
@@ -19,15 +19,13 @@ Pipeline::~Pipeline() {
 }
 
 void Pipeline::createPipeline() {
-    const PipelineConfigInfo pipelineConfig {
-        .dynamicState { createDynamicStatesInfo() },
-        .viewport { createViewportStateInfo() },
-        .vertexInput { createVertexInputInfo() },
-        .inputAsembly { createInputAsemblyInfo() },
-        .rasterizer { createRasterizerInfo() },
-        .multisampling { createMultisamplingInfo() },
-        .colorBlends { createColorBlendAttachmentInfo(createColorBlendAttachmentState()) }
-    };
+    const PipelineConfigInfo pipelineConfig{ .dynamicState{ createDynamicStatesInfo() },
+                                             .viewport{ createViewportStateInfo() },
+                                             .vertexInput{ createVertexInputInfo() },
+                                             .inputAsembly{ createInputAsemblyInfo() },
+                                             .rasterizer{ createRasterizerInfo() },
+                                             .multisampling{ createMultisamplingInfo() },
+                                             .colorBlends{ createColorBlendAttachmentInfo(createColorBlendAttachmentState()) } };
 
     VkGraphicsPipelineCreateInfo pipelineInfo{};
     pipelineInfo.sType      = VK_STRUCTURE_TYPE_GRAPHICS_PIPELINE_CREATE_INFO;
@@ -50,35 +48,32 @@ void Pipeline::createPipeline() {
     pipelineInfo.basePipelineHandle = VK_NULL_HANDLE;
     pipelineInfo.basePipelineIndex  = -1;
 
-    constexpr uint32_t graphicsPipelineInfosCount { 1u };
-    if(vkCreateGraphicsPipelines(m_logicalDevice->getHandle(), VK_NULL_HANDLE, graphicsPipelineInfosCount,
-                                 &pipelineInfo, nullptr, &m_graphicsPipeline) != VK_SUCCESS) {
-        throw std::runtime_error("failed to create graphics pipeline");        
+    constexpr uint32_t graphicsPipelineInfosCount{ 1u };
+    if (vkCreateGraphicsPipelines(m_logicalDevice->getHandle(), VK_NULL_HANDLE, graphicsPipelineInfosCount, &pipelineInfo, nullptr,
+                                  &m_graphicsPipeline) != VK_SUCCESS) {
+        throw std::runtime_error("failed to create graphics pipeline");
     }
 }
 
 VkPipelineShaderStageCreateInfo Pipeline::pupulateShaderStageInfo(enum VkShaderStageFlagBits shaderType, const Shader& shader) const {
     VkPipelineShaderStageCreateInfo vertexStageCreateInfo{};
-    vertexStageCreateInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
-    vertexStageCreateInfo.stage = shaderType;
+    vertexStageCreateInfo.sType  = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
+    vertexStageCreateInfo.stage  = shaderType;
     vertexStageCreateInfo.module = shader.getModule();
-    vertexStageCreateInfo.pName = "main";
+    vertexStageCreateInfo.pName  = "main";
 
     return vertexStageCreateInfo;
 }
 
 ShaderStageInfos Pipeline::createShaderStagesInfo() const {
-    const auto vertStageInfo { pupulateShaderStageInfo(VK_SHADER_STAGE_VERTEX_BIT, m_vertexShader) };
-    const auto fragStageInfo { pupulateShaderStageInfo(VK_SHADER_STAGE_FRAGMENT_BIT, m_fragmentShader) };
+    const auto vertStageInfo{ pupulateShaderStageInfo(VK_SHADER_STAGE_VERTEX_BIT, m_vertexShader) };
+    const auto fragStageInfo{ pupulateShaderStageInfo(VK_SHADER_STAGE_FRAGMENT_BIT, m_fragmentShader) };
 
     return { vertStageInfo, fragStageInfo };
 }
 
 VkPipelineDynamicStateCreateInfo Pipeline::createDynamicStatesInfo() const {
-    static constexpr std::array<VkDynamicState, 2u> dynamicStates {
-        VK_DYNAMIC_STATE_VIEWPORT,
-        VK_DYNAMIC_STATE_SCISSOR
-    };
+    static constexpr std::array<VkDynamicState, 2u> dynamicStates{ VK_DYNAMIC_STATE_VIEWPORT, VK_DYNAMIC_STATE_SCISSOR };
 
     VkPipelineDynamicStateCreateInfo dynamicState{};
     dynamicState.sType             = VK_STRUCTURE_TYPE_PIPELINE_DYNAMIC_STATE_CREATE_INFO;
@@ -118,7 +113,7 @@ VkPipelineInputAssemblyStateCreateInfo Pipeline::createInputAsemblyInfo() const 
 }
 
 void Pipeline::createViewport() {
-    const auto& extent { m_swapchain->getExtent() };
+    const auto& extent{ m_swapchain->getExtent() };
     m_viewport.x        = 0.0f;
     m_viewport.y        = 0.0f;
     m_viewport.width    = static_cast<float>(extent.width);
@@ -128,7 +123,7 @@ void Pipeline::createViewport() {
 }
 
 void Pipeline::createScissor() {
-    m_scissor.offset = {0, 0};
+    m_scissor.offset = { 0, 0 };
     m_scissor.extent = m_swapchain->getExtent();
 }
 
@@ -154,25 +149,23 @@ VkPipelineMultisampleStateCreateInfo Pipeline::createMultisamplingInfo() const {
     multisampling.sType                 = VK_STRUCTURE_TYPE_PIPELINE_MULTISAMPLE_STATE_CREATE_INFO;
     multisampling.sampleShadingEnable   = VK_FALSE;
     multisampling.rasterizationSamples  = VK_SAMPLE_COUNT_1_BIT;
-    multisampling.minSampleShading      = 1.0f; 
-    multisampling.pSampleMask           = nullptr; 
-    multisampling.alphaToCoverageEnable = VK_FALSE; 
+    multisampling.minSampleShading      = 1.0f;
+    multisampling.pSampleMask           = nullptr;
+    multisampling.alphaToCoverageEnable = VK_FALSE;
     multisampling.alphaToOneEnable      = VK_FALSE;
 
-    return multisampling; 
+    return multisampling;
 }
 
 VkPipelineColorBlendAttachmentState Pipeline::createColorBlendAttachmentState() const {
-    return {
-        .blendEnable         = VK_TRUE,
-        .srcColorBlendFactor = VK_BLEND_FACTOR_SRC_ALPHA,
-        .dstColorBlendFactor = VK_BLEND_FACTOR_ONE_MINUS_SRC_ALPHA,
-        .colorBlendOp        = VK_BLEND_OP_ADD,
-        .srcAlphaBlendFactor = VK_BLEND_FACTOR_ONE,
-        .dstAlphaBlendFactor = VK_BLEND_FACTOR_ZERO,
-        .alphaBlendOp        = VK_BLEND_OP_ADD,
-        .colorWriteMask      = VK_COLOR_COMPONENT_R_BIT | VK_COLOR_COMPONENT_G_BIT | VK_COLOR_COMPONENT_B_BIT | VK_COLOR_COMPONENT_A_BIT
-    };
+    return { .blendEnable         = VK_TRUE,
+             .srcColorBlendFactor = VK_BLEND_FACTOR_SRC_ALPHA,
+             .dstColorBlendFactor = VK_BLEND_FACTOR_ONE_MINUS_SRC_ALPHA,
+             .colorBlendOp        = VK_BLEND_OP_ADD,
+             .srcAlphaBlendFactor = VK_BLEND_FACTOR_ONE,
+             .dstAlphaBlendFactor = VK_BLEND_FACTOR_ZERO,
+             .alphaBlendOp        = VK_BLEND_OP_ADD,
+             .colorWriteMask      = VK_COLOR_COMPONENT_R_BIT | VK_COLOR_COMPONENT_G_BIT | VK_COLOR_COMPONENT_B_BIT | VK_COLOR_COMPONENT_A_BIT };
 }
 
 VkPipelineColorBlendStateCreateInfo Pipeline::createColorBlendAttachmentInfo(VkPipelineColorBlendAttachmentState state) const {
@@ -216,4 +209,4 @@ VkRect2D Pipeline::getScissor() const {
     return m_scissor;
 }
 
-}
+} // namespace VE

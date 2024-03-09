@@ -20,18 +20,18 @@ QueueFamilyIndices QueueFamilyIndices::findQueueFamilies(const VkPhysicalDevice 
     uint32_t queueFamilyIndex{};
     VkBool32 isPresentSupportAvailable{ false };
 
-    for(const auto& queueFamily : queueFamilies) {
-        if(queueFamily.queueFlags & VK_QUEUE_GRAPHICS_BIT) {
+    for (const auto& queueFamily : queueFamilies) {
+        if (queueFamily.queueFlags & VK_QUEUE_GRAPHICS_BIT) {
             queueFamilyIndices.graphicsFamily = queueFamilyIndex;
         }
 
         vkGetPhysicalDeviceSurfaceSupportKHR(device, queueFamilyIndex, surface, &isPresentSupportAvailable);
 
-        if(isPresentSupportAvailable) {
+        if (isPresentSupportAvailable) {
             queueFamilyIndices.presentFamily = queueFamilyIndex;
         }
 
-        if(queueFamilyIndices.isComplete()) {
+        if (queueFamilyIndices.isComplete()) {
             break;
         }
 
@@ -41,4 +41,4 @@ QueueFamilyIndices QueueFamilyIndices::findQueueFamilies(const VkPhysicalDevice 
     return queueFamilyIndices;
 }
 
-}
+} // namespace VE

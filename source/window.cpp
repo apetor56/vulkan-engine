@@ -3,13 +3,8 @@
 
 namespace VE {
 
-Window::Window(const int width, 
-              const int height, 
-              std::string_view name,
-              std::shared_ptr<VulkanInstance> instance) : m_width { width }, 
-                                                          m_height { height }, 
-                                                          m_name { name },
-                                                          m_vulkanInstance { instance } {
+Window::Window(const int width, const int height, std::string_view name, std::shared_ptr<VulkanInstance> instance)
+    : m_width{ width }, m_height{ height }, m_name{ name }, m_vulkanInstance{ instance } {
     init();
     createSurface();
 }
@@ -27,7 +22,7 @@ void Window::init() {
 }
 
 void Window::createSurface() {
-    if(glfwCreateWindowSurface(m_vulkanInstance->get(), m_windowHandler, nullptr, &m_surface) != VK_SUCCESS) {
+    if (glfwCreateWindowSurface(m_vulkanInstance->get(), m_windowHandler, nullptr, &m_surface) != VK_SUCCESS) {
         throw std::runtime_error("failed to create window surface");
     }
 }
@@ -36,7 +31,7 @@ bool Window::shouldClose() const {
     return glfwWindowShouldClose(m_windowHandler);
 }
 
-GLFWwindow *Window::getWindowHandler() const noexcept {
+GLFWwindow* Window::getWindowHandler() const noexcept {
     return m_windowHandler;
 }
 
@@ -45,4 +40,3 @@ VkSurfaceKHR Window::getSurface() const noexcept {
 }
 
 } // namespace VE
-

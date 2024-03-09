@@ -3,8 +3,8 @@
 
 namespace VE {
 
-Shader::Shader(std::string_view shaderPath, std::shared_ptr<LogicalDevice> logicalDevice) : m_logicalDevice { logicalDevice } {
-    const auto& shaderCode { readShaderBinary(shaderPath) };
+Shader::Shader(std::string_view shaderPath, std::shared_ptr<LogicalDevice> logicalDevice) : m_logicalDevice{ logicalDevice } {
+    const auto& shaderCode{ readShaderBinary(shaderPath) };
     createShaderModule(shaderCode);
 }
 
@@ -13,13 +13,13 @@ Shader::~Shader() {
 }
 
 std::vector<char> Shader::readShaderBinary(std::string_view shaderPath) const {
-    std::ifstream shaderFile { shaderPath.data(), std::ios::ate | std::ios::binary };
+    std::ifstream shaderFile{ shaderPath.data(), std::ios::ate | std::ios::binary };
 
     if (!shaderFile.is_open()) {
         throw std::runtime_error("failed to open file");
     }
 
-    const size_t shaderSize { static_cast<size_t>(shaderFile.tellg()) };
+    const size_t shaderSize{ static_cast<size_t>(shaderFile.tellg()) };
     std::vector<char> shaderByteCode(shaderSize);
 
     shaderFile.seekg(0);
@@ -35,7 +35,7 @@ void Shader::createShaderModule(const std::vector<char>& shaderByteCode) {
     createInfo.codeSize = std::size(shaderByteCode);
     createInfo.pCode    = reinterpret_cast<const uint32_t*>(shaderByteCode.data());
 
-    if(vkCreateShaderModule(m_logicalDevice->getHandle(), &createInfo, nullptr, &m_shaderModule) != VK_SUCCESS) {
+    if (vkCreateShaderModule(m_logicalDevice->getHandle(), &createInfo, nullptr, &m_shaderModule) != VK_SUCCESS) {
         throw std::runtime_error("failed to create shader module");
     }
 }
@@ -44,4 +44,4 @@ VkShaderModule Shader::getModule() const {
     return m_shaderModule;
 }
 
-}
+} // namespace VE
