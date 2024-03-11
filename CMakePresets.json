@@ -20,21 +20,30 @@
     },
 
     {
-        "name": "gcc-base",
-        "generator": "MinGW Makefiles"
+        "name": "mingw-base",
+        "generator": "MinGW Makefiles",
+        "toolchainFile": "${sourceDir}/cmake/toolchains/mingw.cmake"
     },
 
     {
-        "name": "makefile-gcc-debug",
+        "name": "mingw-g++-debug",
          "inherits": [
-            "gcc-base",
+            "mingw-base",
             "debug-x64"
+        ] 
+    },
+
+    {
+        "name": "mingw-clang++-debug",
+         "inherits": [
+            "mingw-g++-debug"
         ] 
     },
     
     {
         "name": "mvsc-base",
-        "generator": "Visual Studio 17 2022"
+        "generator": "Visual Studio 17 2022",
+        "toolchainFile": "${sourceDir}/cmake/toolchains/mvsc.cmake"
     },
 
     {
