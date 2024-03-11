@@ -1,4 +1,5 @@
 #include "window.hpp"
+
 #include <stdexcept>
 
 namespace VE {

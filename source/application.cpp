@@ -1,5 +1,6 @@
 #include "application.hpp"
 #include "config.hpp"
+
 #include <chrono>
 #include <thread>
 
