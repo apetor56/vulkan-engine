@@ -59,7 +59,7 @@ void Swapchain::createSwapchain() {
 
     if (indices.graphicsFamily != indices.presentFamily) {
         createInfo.imageSharingMode      = VK_SHARING_MODE_CONCURRENT;
-        createInfo.queueFamilyIndexCount = std::size(queueFamilyIndices);
+        createInfo.queueFamilyIndexCount = static_cast<uint32_t>(std::size(queueFamilyIndices));
         createInfo.pQueueFamilyIndices   = queueFamilyIndices.data();
     } else {
         createInfo.imageSharingMode = VK_SHARING_MODE_EXCLUSIVE;
