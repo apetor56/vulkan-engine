@@ -84,7 +84,7 @@ bool PhysicalDevice::areRequiredExtensionsSupported(const VkPhysicalDevice physi
     vkEnumerateDeviceExtensionProperties(physicalDevice, nullptr, &extensionCount, allExtensions.data());
 
     size_t coveredExtensions{};
-    for (const char* requiredExtensionName : m_deviceExtensions) {
+    for (const char *requiredExtensionName : m_deviceExtensions) {
         for (const VkExtensionProperties& extension : allExtensions) {
             if (strcmp(extension.extensionName, requiredExtensionName) == 0) {
                 coveredExtensions++;
@@ -99,7 +99,7 @@ VkPhysicalDevice PhysicalDevice::getHandle() const {
     return m_physicalDevice;
 }
 
-const std::vector<const char*> PhysicalDevice::getExtensions() const noexcept {
+const std::vector<const char *> PhysicalDevice::getExtensions() const noexcept {
     return m_deviceExtensions;
 }
 

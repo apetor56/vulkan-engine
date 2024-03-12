@@ -37,7 +37,7 @@ bool DebugMessenger::areValidationLayersSupported() const {
     return coveredLayers == std::size(m_validationLayers);
 }
 
-const std::vector<const char*>& DebugMessenger::getLayers() const noexcept {
+const std::vector<const char *>& DebugMessenger::getLayers() const noexcept {
     return m_validationLayers;
 }
 
@@ -52,13 +52,13 @@ void DebugMessenger::populateCreateInfo(VkDebugUtilsMessengerCreateInfoEXT& crea
 
 VKAPI_ATTR VkBool32 VKAPI_CALL DebugMessenger::debugCallback(VkDebugUtilsMessageSeverityFlagBitsEXT messageSeverity,
                                                              VkDebugUtilsMessageTypeFlagsEXT messageType,
-                                                             const VkDebugUtilsMessengerCallbackDataEXT* pCallbackData, void* pUserData) {
+                                                             const VkDebugUtilsMessengerCallbackDataEXT *pCallbackData, void *pUserData) {
     std::cerr << "validation layer: " << pCallbackData->pMessage << '\n';
     return VK_FALSE;
 }
 
-VkResult DebugMessenger::getDebugUtilsMessengerEXT(const VkInstance instance, const VkDebugUtilsMessengerCreateInfoEXT* pCreateInfo,
-                                                   const VkAllocationCallbacks* pAllocator, VkDebugUtilsMessengerEXT* pDebugMessenger) const {
+VkResult DebugMessenger::getDebugUtilsMessengerEXT(const VkInstance instance, const VkDebugUtilsMessengerCreateInfoEXT *pCreateInfo,
+                                                   const VkAllocationCallbacks *pAllocator, VkDebugUtilsMessengerEXT *pDebugMessenger) const {
     auto func{ (PFN_vkCreateDebugUtilsMessengerEXT)vkGetInstanceProcAddr(instance, "vkCreateDebugUtilsMessengerEXT") };
 
     if (func != nullptr) {
@@ -68,7 +68,7 @@ VkResult DebugMessenger::getDebugUtilsMessengerEXT(const VkInstance instance, co
 }
 
 void DebugMessenger::destroyDebugUtilsMessengerEXT(const VkInstance instance, VkDebugUtilsMessengerEXT debugMessenger,
-                                                   const VkAllocationCallbacks* pAllocator) const {
+                                                   const VkAllocationCallbacks *pAllocator) const {
     auto func{ (PFN_vkDestroyDebugUtilsMessengerEXT)vkGetInstanceProcAddr(instance, "vkDestroyDebugUtilsMessengerEXT") };
 
     if (func != nullptr) {

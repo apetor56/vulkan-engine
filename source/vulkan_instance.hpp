@@ -23,7 +23,7 @@ public:
 
     void createVulkanInstance();
 
-    std::vector<const char*> getRequiredInstanceExtensions() const;
+    std::vector<const char *> getRequiredInstanceExtensions() const;
 
     VkInstance get() const noexcept;
 

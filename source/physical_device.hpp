@@ -17,7 +17,7 @@ public:
 
     VkPhysicalDevice getHandle() const;
 
-    const std::vector<const char*> getExtensions() const noexcept;
+    const std::vector<const char *> getExtensions() const noexcept;
 
     VkSurfaceKHR getSurface() const noexcept;
 
@@ -25,7 +25,7 @@ private:
     std::shared_ptr<VulkanInstance> m_vulkanInstance;
     std::shared_ptr<Window> m_window;
     VkPhysicalDevice m_physicalDevice;
-    const std::vector<const char*> m_deviceExtensions{ VK_KHR_SWAPCHAIN_EXTENSION_NAME };
+    const std::vector<const char *> m_deviceExtensions{ VK_KHR_SWAPCHAIN_EXTENSION_NAME };
 
     void pickPhysicalDevice();
 

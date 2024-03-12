@@ -83,6 +83,8 @@ SpacesInAngles:  false
 SpacesInCStyleCastParentheses: false
 SpacesInParentheses: false
 SpacesInSquareBrackets: false
+PointerAlignment: Right
+ReferenceAlignment: Left
 Standard: Cpp11
 TabWidth: 8
 UseTab: Never

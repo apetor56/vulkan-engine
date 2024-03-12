@@ -32,7 +32,7 @@ bool Window::shouldClose() const {
     return glfwWindowShouldClose(m_windowHandler);
 }
 
-GLFWwindow* Window::getWindowHandler() const noexcept {
+GLFWwindow *Window::getWindowHandler() const noexcept {
     return m_windowHandler;
 }
 

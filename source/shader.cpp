@@ -33,7 +33,7 @@ void Shader::createShaderModule(const std::vector<char>& shaderByteCode) {
     VkShaderModuleCreateInfo createInfo{};
     createInfo.sType    = VK_STRUCTURE_TYPE_SHADER_MODULE_CREATE_INFO;
     createInfo.codeSize = std::size(shaderByteCode);
-    createInfo.pCode    = reinterpret_cast<const uint32_t*>(shaderByteCode.data());
+    createInfo.pCode    = reinterpret_cast<const uint32_t *>(shaderByteCode.data());
 
     if (vkCreateShaderModule(m_logicalDevice->getHandle(), &createInfo, nullptr, &m_shaderModule) != VK_SUCCESS) {
         throw std::runtime_error("failed to create shader module");

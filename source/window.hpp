@@ -25,7 +25,7 @@ public:
 
     bool shouldClose() const;
 
-    GLFWwindow* getWindowHandler() const noexcept;
+    GLFWwindow *getWindowHandler() const noexcept;
 
     VkSurfaceKHR getSurface() const noexcept;
 
@@ -34,7 +34,7 @@ private:
     const int m_height;
     const std::string m_name;
     std::shared_ptr<VulkanInstance> m_vulkanInstance;
-    GLFWwindow* m_windowHandler;
+    GLFWwindow *m_windowHandler;
     VkSurfaceKHR m_surface;
 
     void init();

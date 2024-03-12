@@ -8,8 +8,8 @@ inline constexpr int height{ 600 };
 } // namespace window
 
 namespace shader {
-inline const char* vertShaderBinaryPath{ "../shaders/simple.vert.spv" };
-inline const char* fragShaderBinaryPath{ "../shaders/simple.frag.spv" };
+inline const char *vertShaderBinaryPath{ "../shaders/simple.vert.spv" };
+inline const char *fragShaderBinaryPath{ "../shaders/simple.frag.spv" };
 } // namespace shader
 
 namespace gpu {
