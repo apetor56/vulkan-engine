@@ -7,10 +7,10 @@ echo 2) MinGW:                 g++,
 set /p userInput=
 
 if %userInput% == 1 (
-    cmake -S . -B build --preset vs2022-mvsc-debug
+    cmake -S . --preset vs2022-mvsc-debug
     exit
 )
 if %userInput% == 2 (
-    cmake -S . -B build -DCMAKE_CXX_COMPILER=g++ --preset mingw-g++-debug
+    cmake -S . -DCMAKE_CXX_COMPILER=g++ --preset mingw-g++-debug
     exit
 )

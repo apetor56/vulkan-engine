@@ -21,6 +21,7 @@
 
     {
         "name": "mingw-base",
+        "binaryDir": "${sourceDir}/build",
         "generator": "MinGW Makefiles",
         "toolchainFile": "${sourceDir}/cmake/toolchains/mingw.cmake"
     },
@@ -35,6 +36,7 @@
     
     {
         "name": "mvsc-base",
+        "binaryDir": "${sourceDir}/build",
         "generator": "Visual Studio 17 2022",
         "toolchainFile": "${sourceDir}/cmake/toolchains/mvsc.cmake"
     },
