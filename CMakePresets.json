@@ -32,13 +32,6 @@
             "debug-x64"
         ] 
     },
-
-    {
-        "name": "mingw-clang++-debug",
-         "inherits": [
-            "mingw-g++-debug"
-        ] 
-    },
     
     {
         "name": "mvsc-base",
