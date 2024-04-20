@@ -5,14 +5,13 @@
 #include <optional>
 #include <cstdint>
 
-namespace VE {
+namespace ve {
 
 struct QueueFamilyIndices {
-    std::optional<uint32_t> graphicsFamily;
-    std::optional<uint32_t> presentFamily;
+    std::optional< uint32_t > graphicsFamily;
+    std::optional< uint32_t > presentFamily;
 
     bool isComplete() const;
-
-    static QueueFamilyIndices findQueueFamilies(const VkPhysicalDevice device, const VkSurfaceKHR surface);
+    static QueueFamilyIndices findQueueFamilies( const VkPhysicalDevice device, const VkSurfaceKHR surface );
 };
-} // namespace VE
+} // namespace ve

@@ -1,32 +1,29 @@
 #pragma once
 
-#include "debug_messenger.hpp"
+#include "DebugMessenger.hpp"
 
 #define GLFW_INCLUDE_VULKAN
 #include <GLFW/glfw3.h>
 
 #include <memory>
 
-namespace VE {
+namespace ve {
 
 class VulkanInstance {
 public:
     VulkanInstance();
-
     ~VulkanInstance();
 
-    VulkanInstance(const VulkanInstance& other) = delete;
-    VulkanInstance(VulkanInstance&& other)      = delete;
+    VulkanInstance( const VulkanInstance& other ) = delete;
+    VulkanInstance( VulkanInstance&& other )      = delete;
 
-    VulkanInstance& operator=(const VulkanInstance& other) = delete;
-    VulkanInstance& operator=(VulkanInstance&& other)      = delete;
+    VulkanInstance& operator=( const VulkanInstance& other ) = delete;
+    VulkanInstance& operator=( VulkanInstance&& other )      = delete;
 
     void createVulkanInstance();
-
-    std::vector<const char *> getRequiredInstanceExtensions() const;
+    std::vector< const char * > getRequiredInstanceExtensions() const;
 
     VkInstance get() const noexcept;
-
     void showAllSupportedExtensions() const;
 
 private:
@@ -37,4 +34,4 @@ private:
 #endif
 };
 
-} // namespace VE
+} // namespace ve

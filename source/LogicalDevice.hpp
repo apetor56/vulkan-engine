@@ -1,25 +1,23 @@
 #pragma once
 
-#include "physical_device.hpp"
+#include "PhysicalDevice.hpp"
 
-namespace VE {
+namespace ve {
 
 class LogicalDevice {
 public:
-    LogicalDevice(std::shared_ptr<PhysicalDevice> physicalDevice, std::shared_ptr<Window> window);
+    LogicalDevice( std::shared_ptr< PhysicalDevice > physicalDevice, std::shared_ptr< Window > window );
 
-    LogicalDevice(const LogicalDevice& other) = delete;
-    LogicalDevice(LogicalDevice&& other)      = delete;
+    LogicalDevice( const LogicalDevice& other ) = delete;
+    LogicalDevice( LogicalDevice&& other )      = delete;
 
-    LogicalDevice& operator=(const LogicalDevice& other) = delete;
-    LogicalDevice& operator=(LogicalDevice&& other)      = delete;
+    LogicalDevice& operator=( const LogicalDevice& other ) = delete;
+    LogicalDevice& operator=( LogicalDevice&& other )      = delete;
 
     ~LogicalDevice();
 
-    VkDevice getHandle() const noexcept;
-
+    VkDevice getHandler() const noexcept;
     VkQueue getGraphicsQueue() const noexcept;
-
     VkQueue getPresentationQueue() const noexcept;
 
 private:
@@ -27,7 +25,7 @@ private:
     VkQueue m_graphicsQueue;
     VkQueue m_presentQueue;
 
-    void createLogicalDevice(std::shared_ptr<PhysicalDevice> physicalDevice, std::shared_ptr<Window> window);
+    void createLogicalDevice( std::shared_ptr< PhysicalDevice > physicalDevice, std::shared_ptr< Window > window );
 };
 
-} // namespace VE
+} // namespace ve

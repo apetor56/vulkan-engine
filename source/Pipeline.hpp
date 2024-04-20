@@ -1,15 +1,15 @@
 #pragma once
 
-#include "logical_device.hpp"
-#include "shader.hpp"
-#include "swapchain.hpp"
+#include "LogicalDevice.hpp"
+#include "Shader.hpp"
+#include "Swapchain.hpp"
 
 #include <memory>
 #include <array>
 
-using ShaderStageInfos = std::array<VkPipelineShaderStageCreateInfo, 2u>;
+using ShaderStageInfos = std::array< VkPipelineShaderStageCreateInfo, 2u >;
 
-namespace VE {
+namespace ve {
 
 struct PipelineConfigInfo {
     const VkPipelineDynamicStateCreateInfo dynamicState{};
@@ -23,21 +23,19 @@ struct PipelineConfigInfo {
 
 class Pipeline {
 public:
-    Pipeline(std::shared_ptr<LogicalDevice> logicalDevice, std::shared_ptr<Swapchain> swapchain);
+    Pipeline( std::shared_ptr< LogicalDevice > logicalDevice, std::shared_ptr< Swapchain > swapchain );
 
     ~Pipeline();
 
-    VkPipeline getHandle() const;
-
+    VkPipeline getHandler() const;
     VkViewport getViewport() const;
-
     VkRect2D getScissor() const;
 
 private:
     Shader m_vertexShader;
     Shader m_fragmentShader;
-    std::shared_ptr<LogicalDevice> m_logicalDevice;
-    std::shared_ptr<Swapchain> m_swapchain;
+    std::shared_ptr< LogicalDevice > m_logicalDevice;
+    std::shared_ptr< Swapchain > m_swapchain;
     VkPipelineLayout m_pipelineLayout;
     VkPipeline m_graphicsPipeline;
     VkViewport m_viewport;
@@ -46,7 +44,8 @@ private:
     void createPipelineLayout();
     void createPipeline();
 
-    VkPipelineShaderStageCreateInfo pupulateShaderStageInfo(enum VkShaderStageFlagBits shaderType, const Shader& shader) const;
+    VkPipelineShaderStageCreateInfo pupulateShaderStageInfo( enum VkShaderStageFlagBits shaderType,
+                                                             const Shader& shader ) const;
     ShaderStageInfos createShaderStagesInfo() const;
     VkPipelineDynamicStateCreateInfo createDynamicStatesInfo() const;
     void createViewport();
@@ -57,7 +56,8 @@ private:
     VkPipelineRasterizationStateCreateInfo createRasterizerInfo() const;
     VkPipelineMultisampleStateCreateInfo createMultisamplingInfo() const;
     VkPipelineColorBlendAttachmentState createColorBlendAttachmentState() const;
-    VkPipelineColorBlendStateCreateInfo createColorBlendAttachmentInfo(VkPipelineColorBlendAttachmentState state) const;
+    VkPipelineColorBlendStateCreateInfo
+        createColorBlendAttachmentInfo( VkPipelineColorBlendAttachmentState state ) const;
 };
 
-}; // namespace VE
+}; // namespace ve

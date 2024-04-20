@@ -1,8 +1,8 @@
-#include "pipeline.hpp"
-#include "config.hpp"
+#include "Pipeline.hpp"
+#include "Config.hpp"
 
-namespace VE {
-Pipeline::Pipeline(std::shared_ptr<LogicalDevice> logicalDevice, std::shared_ptr<Swapchain> swapchain)
+namespace ve {
+Pipeline::Pipeline( std::shared_ptr< LogicalDevice > logicalDevice, std::shared_ptr< Swapchain > swapchain )
     : m_vertexShader{ cfg::shader::vertShaderBinaryPath, logicalDevice },
       m_fragmentShader{ cfg::shader::fragShaderBinaryPath, logicalDevice },
       m_logicalDevice{ logicalDevice },
@@ -14,8 +14,8 @@ Pipeline::Pipeline(std::shared_ptr<LogicalDevice> logicalDevice, std::shared_ptr
 }
 
 Pipeline::~Pipeline() {
-    vkDestroyPipeline(m_logicalDevice->getHandle(), m_graphicsPipeline, nullptr);
-    vkDestroyPipelineLayout(m_logicalDevice->getHandle(), m_pipelineLayout, nullptr);
+    vkDestroyPipeline( m_logicalDevice->getHandler(), m_graphicsPipeline, nullptr );
+    vkDestroyPipelineLayout( m_logicalDevice->getHandler(), m_pipelineLayout, nullptr );
 }
 
 void Pipeline::createPipeline() {
@@ -25,7 +25,8 @@ void Pipeline::createPipeline() {
                                              .inputAsembly{ createInputAsemblyInfo() },
                                              .rasterizer{ createRasterizerInfo() },
                                              .multisampling{ createMultisamplingInfo() },
-                                             .colorBlends{ createColorBlendAttachmentInfo(createColorBlendAttachmentState()) } };
+                                             .colorBlends{ createColorBlendAttachmentInfo(
+                                                 createColorBlendAttachmentState() ) } };
 
     VkGraphicsPipelineCreateInfo pipelineInfo{};
     pipelineInfo.sType      = VK_STRUCTURE_TYPE_GRAPHICS_PIPELINE_CREATE_INFO;
@@ -49,13 +50,14 @@ void Pipeline::createPipeline() {
     pipelineInfo.basePipelineIndex  = -1;
 
     constexpr uint32_t graphicsPipelineInfosCount{ 1u };
-    if (vkCreateGraphicsPipelines(m_logicalDevice->getHandle(), VK_NULL_HANDLE, graphicsPipelineInfosCount, &pipelineInfo, nullptr,
-                                  &m_graphicsPipeline) != VK_SUCCESS) {
-        throw std::runtime_error("failed to create graphics pipeline");
+    if ( vkCreateGraphicsPipelines( m_logicalDevice->getHandler(), VK_NULL_HANDLE, graphicsPipelineInfosCount,
+                                    &pipelineInfo, nullptr, &m_graphicsPipeline ) != VK_SUCCESS ) {
+        throw std::runtime_error( "failed to create graphics pipeline" );
     }
 }
 
-VkPipelineShaderStageCreateInfo Pipeline::pupulateShaderStageInfo(enum VkShaderStageFlagBits shaderType, const Shader& shader) const {
+VkPipelineShaderStageCreateInfo Pipeline::pupulateShaderStageInfo( enum VkShaderStageFlagBits shaderType,
+                                                                   const Shader& shader ) const {
     VkPipelineShaderStageCreateInfo vertexStageCreateInfo{};
     vertexStageCreateInfo.sType  = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
     vertexStageCreateInfo.stage  = shaderType;
@@ -66,18 +68,19 @@ VkPipelineShaderStageCreateInfo Pipeline::pupulateShaderStageInfo(enum VkShaderS
 }
 
 ShaderStageInfos Pipeline::createShaderStagesInfo() const {
-    const auto vertStageInfo{ pupulateShaderStageInfo(VK_SHADER_STAGE_VERTEX_BIT, m_vertexShader) };
-    const auto fragStageInfo{ pupulateShaderStageInfo(VK_SHADER_STAGE_FRAGMENT_BIT, m_fragmentShader) };
+    const auto vertStageInfo{ pupulateShaderStageInfo( VK_SHADER_STAGE_VERTEX_BIT, m_vertexShader ) };
+    const auto fragStageInfo{ pupulateShaderStageInfo( VK_SHADER_STAGE_FRAGMENT_BIT, m_fragmentShader ) };
 
     return { vertStageInfo, fragStageInfo };
 }
 
 VkPipelineDynamicStateCreateInfo Pipeline::createDynamicStatesInfo() const {
-    static constexpr std::array<VkDynamicState, 2u> dynamicStates{ VK_DYNAMIC_STATE_VIEWPORT, VK_DYNAMIC_STATE_SCISSOR };
+    static constexpr std::array< VkDynamicState, 2u > dynamicStates{ VK_DYNAMIC_STATE_VIEWPORT,
+                                                                     VK_DYNAMIC_STATE_SCISSOR };
 
     VkPipelineDynamicStateCreateInfo dynamicState{};
     dynamicState.sType             = VK_STRUCTURE_TYPE_PIPELINE_DYNAMIC_STATE_CREATE_INFO;
-    dynamicState.dynamicStateCount = static_cast<uint32_t>(std::size(dynamicStates));
+    dynamicState.dynamicStateCount = static_cast< uint32_t >( std::size( dynamicStates ) );
     dynamicState.pDynamicStates    = dynamicStates.data();
 
     return dynamicState;
@@ -116,8 +119,8 @@ void Pipeline::createViewport() {
     const auto& extent{ m_swapchain->getExtent() };
     m_viewport.x        = 0.0f;
     m_viewport.y        = 0.0f;
-    m_viewport.width    = static_cast<float>(extent.width);
-    m_viewport.height   = static_cast<float>(extent.height);
+    m_viewport.width    = static_cast< float >( extent.width );
+    m_viewport.height   = static_cast< float >( extent.height );
     m_viewport.minDepth = 0.0f;
     m_viewport.maxDepth = 1.0f;
 }
@@ -165,21 +168,23 @@ VkPipelineColorBlendAttachmentState Pipeline::createColorBlendAttachmentState() 
              .srcAlphaBlendFactor = VK_BLEND_FACTOR_ONE,
              .dstAlphaBlendFactor = VK_BLEND_FACTOR_ZERO,
              .alphaBlendOp        = VK_BLEND_OP_ADD,
-             .colorWriteMask      = VK_COLOR_COMPONENT_R_BIT | VK_COLOR_COMPONENT_G_BIT | VK_COLOR_COMPONENT_B_BIT | VK_COLOR_COMPONENT_A_BIT };
+             .colorWriteMask      = VK_COLOR_COMPONENT_R_BIT | VK_COLOR_COMPONENT_G_BIT | VK_COLOR_COMPONENT_B_BIT |
+                               VK_COLOR_COMPONENT_A_BIT };
 }
 
-VkPipelineColorBlendStateCreateInfo Pipeline::createColorBlendAttachmentInfo(VkPipelineColorBlendAttachmentState state) const {
+VkPipelineColorBlendStateCreateInfo
+    Pipeline::createColorBlendAttachmentInfo( VkPipelineColorBlendAttachmentState state ) const {
 
     VkPipelineColorBlendStateCreateInfo colorBlending{};
-    colorBlending.sType             = VK_STRUCTURE_TYPE_PIPELINE_COLOR_BLEND_STATE_CREATE_INFO;
-    colorBlending.logicOpEnable     = VK_FALSE;
-    colorBlending.logicOp           = VK_LOGIC_OP_COPY;
-    colorBlending.attachmentCount   = 1u;
-    colorBlending.pAttachments      = &state;
-    colorBlending.blendConstants[0] = 0.0f;
-    colorBlending.blendConstants[1] = 0.0f;
-    colorBlending.blendConstants[2] = 0.0f;
-    colorBlending.blendConstants[3] = 0.0f;
+    colorBlending.sType               = VK_STRUCTURE_TYPE_PIPELINE_COLOR_BLEND_STATE_CREATE_INFO;
+    colorBlending.logicOpEnable       = VK_FALSE;
+    colorBlending.logicOp             = VK_LOGIC_OP_COPY;
+    colorBlending.attachmentCount     = 1u;
+    colorBlending.pAttachments        = &state;
+    colorBlending.blendConstants[ 0 ] = 0.0f;
+    colorBlending.blendConstants[ 1 ] = 0.0f;
+    colorBlending.blendConstants[ 2 ] = 0.0f;
+    colorBlending.blendConstants[ 3 ] = 0.0f;
 
     return colorBlending;
 }
@@ -192,12 +197,13 @@ void Pipeline::createPipelineLayout() {
     pipelineLayoutInfo.pushConstantRangeCount = 0;
     pipelineLayoutInfo.pPushConstantRanges    = nullptr;
 
-    if (vkCreatePipelineLayout(m_logicalDevice->getHandle(), &pipelineLayoutInfo, nullptr, &m_pipelineLayout) != VK_SUCCESS) {
-        throw std::runtime_error("failed to create pipeline layout!");
+    if ( vkCreatePipelineLayout( m_logicalDevice->getHandler(), &pipelineLayoutInfo, nullptr, &m_pipelineLayout ) !=
+         VK_SUCCESS ) {
+        throw std::runtime_error( "failed to create pipeline layout!" );
     }
 }
 
-VkPipeline Pipeline::getHandle() const {
+VkPipeline Pipeline::getHandler() const {
     return m_graphicsPipeline;
 }
 
@@ -209,4 +215,4 @@ VkRect2D Pipeline::getScissor() const {
     return m_scissor;
 }
 
-} // namespace VE
+} // namespace ve
