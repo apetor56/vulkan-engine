@@ -41,7 +41,7 @@ BreakBeforeTernaryOperators: true
 BreakConstructorInitializersBeforeComma: false
 BreakStringLiterals: true
 ConstructorInitializerAllOnOneLineOrOnePerLine: true
-ColumnLimit: 150
+ColumnLimit: 120
 CommentPragmas: '^ IWYU pragma:'
 ConstructorInitializerIndentWidth: 4
 ContinuationIndentWidth: 4
@@ -79,10 +79,10 @@ SpaceBeforeParens: ControlStatements
 Cpp11BracedListStyle : false
 SpaceInEmptyParentheses: false
 SpacesBeforeTrailingComments: 1
-SpacesInAngles:  false
+SpacesInAngles:  true
 SpacesInCStyleCastParentheses: false
-SpacesInParentheses: false
-SpacesInSquareBrackets: false
+SpacesInParentheses: true
+SpacesInSquareBrackets: true
 PointerAlignment: Right
 ReferenceAlignment: Left
 Standard: Cpp11
