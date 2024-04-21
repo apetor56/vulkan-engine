@@ -9,8 +9,8 @@
 
 namespace ve {
 
-Swapchain::Swapchain( std::shared_ptr< PhysicalDevice > physicalDevice, std::shared_ptr< LogicalDevice > logicalDevice,
-                      std::shared_ptr< Window > window )
+Swapchain::Swapchain( const ve::PhysicalDevice& physicalDevice, const ve::LogicalDevice& logicalDevice,
+                      const ve::Window& window )
     : m_physicalDevice{ physicalDevice }, m_logicalDevice{ logicalDevice }, m_window{ window } {
     createSwapchain();
     createImageViews();
@@ -19,7 +19,7 @@ Swapchain::Swapchain( std::shared_ptr< PhysicalDevice > physicalDevice, std::sha
 }
 
 Swapchain::~Swapchain() {
-    const auto logicalDeviceHandle{ m_logicalDevice->getHandler() };
+    const auto logicalDeviceHandle{ m_logicalDevice.getHandler() };
     vkDestroySwapchainKHR( logicalDeviceHandle, m_swapchain, nullptr );
 
     std::ranges::for_each( m_swapChainImageViews, [ &logicalDeviceHandle ]( const auto& view ) {
@@ -34,9 +34,9 @@ Swapchain::~Swapchain() {
 }
 
 void Swapchain::createSwapchain() {
-    const auto physicalDeviceHandle{ m_physicalDevice->getHandler() };
-    const auto logicalDeviceHandle{ m_logicalDevice->getHandler() };
-    const auto surface{ m_window->getSurface() };
+    const auto physicalDeviceHandle{ m_physicalDevice.getHandler() };
+    const auto logicalDeviceHandle{ m_logicalDevice.getHandler() };
+    const auto surface{ m_window.getSurface() };
 
     SwapchainSupportDetails swapchainSupport{ querySwapChainSupport( physicalDeviceHandle, surface ) };
     const VkSurfaceFormatKHR surfaceFormat{ chooseSwapSurfaceFormat( swapchainSupport.formats ) };
@@ -137,7 +137,7 @@ VkExtent2D Swapchain::chooseSwapExtent( const VkSurfaceCapabilitiesKHR& capabili
 
     int width{};
     int height{};
-    glfwGetFramebufferSize( m_window->getWindowHandler(), &width, &height );
+    glfwGetFramebufferSize( m_window.getWindowHandler(), &width, &height );
 
     return VkExtent2D{ .width{ std::clamp( static_cast< uint32_t >( width ), capabilities.minImageExtent.width,
                                            capabilities.maxImageExtent.width ) },
@@ -167,7 +167,7 @@ void Swapchain::createImageViews() {
         createInfo.subresourceRange.baseArrayLayer = 0u;
         createInfo.subresourceRange.layerCount     = 1u;
 
-        if ( vkCreateImageView( m_logicalDevice->getHandler(), &createInfo, nullptr,
+        if ( vkCreateImageView( m_logicalDevice.getHandler(), &createInfo, nullptr,
                                 &m_swapChainImageViews.at( imageViewIndex ) ) != VK_SUCCESS ) {
             throw std::runtime_error( "failed to create image views!" );
         }
@@ -219,7 +219,7 @@ void Swapchain::createRenderPass() {
     renderPassInfo.dependencyCount = 1;
     renderPassInfo.pDependencies   = &dependency;
 
-    if ( vkCreateRenderPass( m_logicalDevice->getHandler(), &renderPassInfo, nullptr, &m_renderPass ) != VK_SUCCESS ) {
+    if ( vkCreateRenderPass( m_logicalDevice.getHandler(), &renderPassInfo, nullptr, &m_renderPass ) != VK_SUCCESS ) {
         throw std::runtime_error( "failed to create render pass" );
     }
 }
@@ -238,7 +238,7 @@ void Swapchain::createFramebuffers() {
         framebufferInfo.height          = m_extent.height;
         framebufferInfo.layers          = 1u;
 
-        if ( vkCreateFramebuffer( m_logicalDevice->getHandler(), &framebufferInfo, nullptr,
+        if ( vkCreateFramebuffer( m_logicalDevice.getHandler(), &framebufferInfo, nullptr,
                                   &m_framebuffers.at( framebufferIndex ) ) != VK_SUCCESS ) {
             throw std::runtime_error( "failed to create framebuffer" );
         }

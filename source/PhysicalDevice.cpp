@@ -14,21 +14,21 @@
 
 namespace ve {
 
-PhysicalDevice::PhysicalDevice( std::shared_ptr< VulkanInstance > instance, std::shared_ptr< Window > window )
-    : m_vulkanInstance{ instance }, m_window{ window } {
+PhysicalDevice::PhysicalDevice( const ve::VulkanInstance& instance, const ve::Window& window )
+    : m_instance{ instance }, m_window{ window } {
     pickPhysicalDevice();
 }
 
 void PhysicalDevice::pickPhysicalDevice() {
     uint32_t deviceCount{};
-    vkEnumeratePhysicalDevices( m_vulkanInstance->get(), &deviceCount, nullptr );
+    vkEnumeratePhysicalDevices( m_instance.get(), &deviceCount, nullptr );
 
     if ( deviceCount == 0u ) {
         throw std::runtime_error( "failed to find GPU with Vulkan support" );
     }
 
     std::vector< VkPhysicalDevice > devices( deviceCount );
-    vkEnumeratePhysicalDevices( m_vulkanInstance->get(), &deviceCount, devices.data() );
+    vkEnumeratePhysicalDevices( m_instance.get(), &deviceCount, devices.data() );
 
     std::multimap< uint32_t, VkPhysicalDevice > candidates{};
     const auto makeRateDevicePair{ [ this, &candidates ]( const auto& device ) {
@@ -51,7 +51,7 @@ void PhysicalDevice::pickPhysicalDevice() {
 }
 
 uint32_t PhysicalDevice::rate( const VkPhysicalDevice physicalDevice ) const {
-    QueueFamilyIndices queueIndices{ QueueFamilyIndices::findQueueFamilies( physicalDevice, m_window->getSurface() ) };
+    QueueFamilyIndices queueIndices{ QueueFamilyIndices::findQueueFamilies( physicalDevice, m_window.getSurface() ) };
     VkPhysicalDeviceProperties deviceProperties{};
     VkPhysicalDeviceFeatures deviceFeatures{};
 
@@ -62,7 +62,7 @@ uint32_t PhysicalDevice::rate( const VkPhysicalDevice physicalDevice ) const {
     bool isSwapchainAdequate{};
     if ( isExtensionSupportAvailable ) {
         SwapchainSupportDetails swapchainSupport{ Swapchain::querySwapChainSupport( physicalDevice,
-                                                                                    m_window->getSurface() ) };
+                                                                                    m_window.getSurface() ) };
         isSwapchainAdequate = !swapchainSupport.formats.empty() && !swapchainSupport.formats.empty();
     }
 
@@ -103,12 +103,8 @@ VkPhysicalDevice PhysicalDevice::getHandler() const {
     return m_physicalDevice;
 }
 
-const std::vector< const char * > PhysicalDevice::getExtensions() const noexcept {
+const extentions& PhysicalDevice::getExtensions() const noexcept {
     return m_deviceExtensions;
-}
-
-VkSurfaceKHR PhysicalDevice::getSurface() const noexcept {
-    return m_window->getSurface();
 }
 
 } // namespace ve

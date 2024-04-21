@@ -3,14 +3,14 @@
 
 namespace ve {
 
-Shader::Shader( std::string_view shaderPath, std::shared_ptr< LogicalDevice > logicalDevice )
+Shader::Shader( std::string_view shaderPath, const ve::LogicalDevice& logicalDevice )
     : m_logicalDevice{ logicalDevice } {
     const auto& shaderCode{ readShaderBinary( shaderPath ) };
     createShaderModule( shaderCode );
 }
 
 Shader::~Shader() {
-    vkDestroyShaderModule( m_logicalDevice->getHandler(), m_shaderModule, nullptr );
+    vkDestroyShaderModule( m_logicalDevice.getHandler(), m_shaderModule, nullptr );
 }
 
 std::vector< char > Shader::readShaderBinary( std::string_view shaderPath ) const {
@@ -35,7 +35,7 @@ void Shader::createShaderModule( const std::vector< char >& shaderByteCode ) {
     createInfo.codeSize = std::size( shaderByteCode );
     createInfo.pCode    = reinterpret_cast< const uint32_t    *>( shaderByteCode.data() );
 
-    if ( vkCreateShaderModule( m_logicalDevice->getHandler(), &createInfo, nullptr, &m_shaderModule ) != VK_SUCCESS )
+    if ( vkCreateShaderModule( m_logicalDevice.getHandler(), &createInfo, nullptr, &m_shaderModule ) != VK_SUCCESS )
         throw std::runtime_error( "failed to create shader module" );
 }
 

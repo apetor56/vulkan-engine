@@ -13,7 +13,7 @@ namespace ve {
 
 class Window {
 public:
-    Window( const int width, const int height, std::string_view name, std::shared_ptr< VulkanInstance > instance );
+    Window( const int width, const int height, std::string_view name, const ve::VulkanInstance& instance );
     ~Window();
 
     Window( const Window& other ) = delete;
@@ -30,7 +30,7 @@ private:
     const int m_width;
     const int m_height;
     const std::string m_name;
-    std::shared_ptr< VulkanInstance > m_vulkanInstance;
+    const ve::VulkanInstance& m_vulkanInstance;
     GLFWwindow *m_windowHandler;
     VkSurfaceKHR m_surface;
 

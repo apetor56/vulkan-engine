@@ -2,7 +2,7 @@
 #include "Config.hpp"
 
 namespace ve {
-Pipeline::Pipeline( std::shared_ptr< LogicalDevice > logicalDevice, std::shared_ptr< Swapchain > swapchain )
+Pipeline::Pipeline( const ve::LogicalDevice& logicalDevice, const ve::Swapchain& swapchain )
     : m_vertexShader{ cfg::shader::vertShaderBinaryPath, logicalDevice },
       m_fragmentShader{ cfg::shader::fragShaderBinaryPath, logicalDevice },
       m_logicalDevice{ logicalDevice },
@@ -14,8 +14,8 @@ Pipeline::Pipeline( std::shared_ptr< LogicalDevice > logicalDevice, std::shared_
 }
 
 Pipeline::~Pipeline() {
-    vkDestroyPipeline( m_logicalDevice->getHandler(), m_graphicsPipeline, nullptr );
-    vkDestroyPipelineLayout( m_logicalDevice->getHandler(), m_pipelineLayout, nullptr );
+    vkDestroyPipeline( m_logicalDevice.getHandler(), m_graphicsPipeline, nullptr );
+    vkDestroyPipelineLayout( m_logicalDevice.getHandler(), m_pipelineLayout, nullptr );
 }
 
 void Pipeline::createPipeline() {
@@ -43,14 +43,14 @@ void Pipeline::createPipeline() {
     pipelineInfo.pDepthStencilState  = nullptr;
 
     pipelineInfo.layout     = m_pipelineLayout;
-    pipelineInfo.renderPass = m_swapchain->getRenderpass();
+    pipelineInfo.renderPass = m_swapchain.getRenderpass();
     pipelineInfo.subpass    = 0u;
 
     pipelineInfo.basePipelineHandle = VK_NULL_HANDLE;
     pipelineInfo.basePipelineIndex  = -1;
 
     constexpr uint32_t graphicsPipelineInfosCount{ 1u };
-    if ( vkCreateGraphicsPipelines( m_logicalDevice->getHandler(), VK_NULL_HANDLE, graphicsPipelineInfosCount,
+    if ( vkCreateGraphicsPipelines( m_logicalDevice.getHandler(), VK_NULL_HANDLE, graphicsPipelineInfosCount,
                                     &pipelineInfo, nullptr, &m_graphicsPipeline ) != VK_SUCCESS ) {
         throw std::runtime_error( "failed to create graphics pipeline" );
     }
@@ -116,7 +116,7 @@ VkPipelineInputAssemblyStateCreateInfo Pipeline::createInputAsemblyInfo() const 
 }
 
 void Pipeline::createViewport() {
-    const auto& extent{ m_swapchain->getExtent() };
+    const auto& extent{ m_swapchain.getExtent() };
     m_viewport.x        = 0.0f;
     m_viewport.y        = 0.0f;
     m_viewport.width    = static_cast< float >( extent.width );
@@ -127,7 +127,7 @@ void Pipeline::createViewport() {
 
 void Pipeline::createScissor() {
     m_scissor.offset = { 0, 0 };
-    m_scissor.extent = m_swapchain->getExtent();
+    m_scissor.extent = m_swapchain.getExtent();
 }
 
 VkPipelineRasterizationStateCreateInfo Pipeline::createRasterizerInfo() const {
@@ -197,7 +197,7 @@ void Pipeline::createPipelineLayout() {
     pipelineLayoutInfo.pushConstantRangeCount = 0;
     pipelineLayoutInfo.pPushConstantRanges    = nullptr;
 
-    if ( vkCreatePipelineLayout( m_logicalDevice->getHandler(), &pipelineLayoutInfo, nullptr, &m_pipelineLayout ) !=
+    if ( vkCreatePipelineLayout( m_logicalDevice.getHandler(), &pipelineLayoutInfo, nullptr, &m_pipelineLayout ) !=
          VK_SUCCESS ) {
         throw std::runtime_error( "failed to create pipeline layout!" );
     }

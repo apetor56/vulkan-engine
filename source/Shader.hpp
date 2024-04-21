@@ -13,14 +13,14 @@ namespace ve {
 
 class Shader {
 public:
-    Shader( std::string_view shaderPath, std::shared_ptr< LogicalDevice > logicalDevice );
+    Shader( std::string_view shaderPath, const ve::LogicalDevice& logicalDevice );
     ~Shader();
 
     VkShaderModule getModule() const;
 
 private:
     VkShaderModule m_shaderModule;
-    std::shared_ptr< LogicalDevice > m_logicalDevice;
+    const ve::LogicalDevice& m_logicalDevice;
 
     std::vector< char > readShaderBinary( std::string_view shaderPath ) const;
     void createShaderModule( const std::vector< char >& shaderByteCode );

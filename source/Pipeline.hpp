@@ -23,7 +23,7 @@ struct PipelineConfigInfo {
 
 class Pipeline {
 public:
-    Pipeline( std::shared_ptr< LogicalDevice > logicalDevice, std::shared_ptr< Swapchain > swapchain );
+    Pipeline( const ve::LogicalDevice& logicalDevice, const ve::Swapchain& swapchain );
 
     ~Pipeline();
 
@@ -34,8 +34,8 @@ public:
 private:
     Shader m_vertexShader;
     Shader m_fragmentShader;
-    std::shared_ptr< LogicalDevice > m_logicalDevice;
-    std::shared_ptr< Swapchain > m_swapchain;
+    const ve::LogicalDevice& m_logicalDevice;
+    const ve::Swapchain& m_swapchain;
     VkPipelineLayout m_pipelineLayout;
     VkPipeline m_graphicsPipeline;
     VkViewport m_viewport;

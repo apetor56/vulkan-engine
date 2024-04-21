@@ -4,7 +4,7 @@
 
 namespace ve {
 
-Window::Window( const int width, const int height, std::string_view name, std::shared_ptr< VulkanInstance > instance )
+Window::Window( const int width, const int height, std::string_view name, const ve::VulkanInstance& instance )
     : m_width{ width }, m_height{ height }, m_name{ name }, m_vulkanInstance{ instance } {
     init();
     createSurface();
@@ -12,7 +12,7 @@ Window::Window( const int width, const int height, std::string_view name, std::s
 
 Window::~Window() {
     glfwDestroyWindow( m_windowHandler );
-    vkDestroySurfaceKHR( m_vulkanInstance->get(), m_surface, nullptr );
+    vkDestroySurfaceKHR( m_vulkanInstance.get(), m_surface, nullptr );
 }
 
 void Window::init() {
@@ -23,7 +23,7 @@ void Window::init() {
 }
 
 void Window::createSurface() {
-    if ( glfwCreateWindowSurface( m_vulkanInstance->get(), m_windowHandler, nullptr, &m_surface ) != VK_SUCCESS )
+    if ( glfwCreateWindowSurface( m_vulkanInstance.get(), m_windowHandler, nullptr, &m_surface ) != VK_SUCCESS )
         throw std::runtime_error( "failed to create window surface" );
 }
 

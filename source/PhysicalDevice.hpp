@@ -5,9 +5,11 @@
 
 namespace ve {
 
+using extentions = std::vector< const char * >;
+
 class PhysicalDevice {
 public:
-    PhysicalDevice( std::shared_ptr< VulkanInstance > instance, std::shared_ptr< Window > window );
+    PhysicalDevice( const ve::VulkanInstance& instance, const ve::Window& window );
 
     PhysicalDevice( const PhysicalDevice& other ) = delete;
     PhysicalDevice( PhysicalDevice&& other )      = delete;
@@ -16,15 +18,14 @@ public:
     PhysicalDevice& operator=( PhysicalDevice&& other )      = delete;
 
     VkPhysicalDevice getHandler() const;
-
-    const std::vector< const char * > getExtensions() const noexcept;
-    VkSurfaceKHR getSurface() const noexcept;
+    const extentions& getExtensions() const noexcept;
 
 private:
-    std::shared_ptr< VulkanInstance > m_vulkanInstance;
-    std::shared_ptr< Window > m_window;
     VkPhysicalDevice m_physicalDevice;
-    const std::vector< const char * > m_deviceExtensions{ VK_KHR_SWAPCHAIN_EXTENSION_NAME };
+    const extentions m_deviceExtensions{ VK_KHR_SWAPCHAIN_EXTENSION_NAME };
+
+    const ve::VulkanInstance& m_instance;
+    const ve::Window& m_window;
 
     void pickPhysicalDevice();
     uint32_t rate( const VkPhysicalDevice device ) const;

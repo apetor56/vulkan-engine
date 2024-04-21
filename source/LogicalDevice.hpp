@@ -6,7 +6,7 @@ namespace ve {
 
 class LogicalDevice {
 public:
-    LogicalDevice( std::shared_ptr< PhysicalDevice > physicalDevice, std::shared_ptr< Window > window );
+    LogicalDevice( const ve::PhysicalDevice& physicalDevice, const ve::Window& window );
 
     LogicalDevice( const LogicalDevice& other ) = delete;
     LogicalDevice( LogicalDevice&& other )      = delete;
@@ -25,7 +25,10 @@ private:
     VkQueue m_graphicsQueue;
     VkQueue m_presentQueue;
 
-    void createLogicalDevice( std::shared_ptr< PhysicalDevice > physicalDevice, std::shared_ptr< Window > window );
+    const ve::PhysicalDevice& m_physicalDevice;
+    const ve::Window& m_window;
+
+    void createLogicalDevice();
 };
 
 } // namespace ve

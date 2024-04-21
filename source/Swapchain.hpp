@@ -16,8 +16,8 @@ struct SwapchainSupportDetails {
 
 class Swapchain {
 public:
-    Swapchain( std::shared_ptr< PhysicalDevice > physicalDevice, std::shared_ptr< LogicalDevice > logicalDevice,
-               std::shared_ptr< Window > window );
+    Swapchain( const ve::PhysicalDevice& physicalDevice, const ve::LogicalDevice& logicalDevice,
+               const ve::Window& window );
 
     ~Swapchain();
 
@@ -37,9 +37,9 @@ public:
     VkSwapchainKHR getHandler() const noexcept;
 
 private:
-    std::shared_ptr< PhysicalDevice > m_physicalDevice;
-    std::shared_ptr< LogicalDevice > m_logicalDevice;
-    std::shared_ptr< Window > m_window;
+    const ve::PhysicalDevice& m_physicalDevice;
+    const ve::LogicalDevice& m_logicalDevice;
+    const ve::Window& m_window;
 
     VkSwapchainKHR m_swapchain;
     VkFormat m_format;

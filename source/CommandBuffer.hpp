@@ -4,13 +4,14 @@
 #include "LogicalDevice.hpp"
 #include "Swapchain.hpp"
 #include "Pipeline.hpp"
+#include "Window.hpp"
 
 namespace ve {
 
 class CommandBuffer {
 public:
-    CommandBuffer( std::shared_ptr< PhysicalDevice > physicalDevice, std::shared_ptr< LogicalDevice > logicalDevice,
-                   std::shared_ptr< Swapchain > swapchain, std::shared_ptr< Pipeline > pipeline );
+    CommandBuffer( const ve::PhysicalDevice& physicalDevice, const ve::LogicalDevice& logicalDevice,
+                   const ve::Swapchain& swapchain, const ve::Pipeline& pipeline, const ve::Window& window );
 
     ~CommandBuffer();
 
@@ -21,13 +22,13 @@ public:
 private:
     VkCommandPool m_commandPool;
     VkCommandBuffer m_commandBuffer;
-    std::shared_ptr< PhysicalDevice > m_physicalDevice;
-    std::shared_ptr< LogicalDevice > m_logicalDevice;
-    std::shared_ptr< Swapchain > m_swapchain;
-    std::shared_ptr< Pipeline > m_pipeline;
+    const ve::PhysicalDevice& m_physicalDevice;
+    const ve::LogicalDevice& m_logicalDevice;
+    const ve::Swapchain& m_swapchain;
+    const ve::Pipeline& m_pipeline;
+    const ve::Window& m_window;
 
     void createCommandPool();
-
     void createCommandBuffer();
 };
 
