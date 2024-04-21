@@ -1,53 +1,77 @@
 {
-    "version": 6,
+  "version": 6,
 
-    "cmakeMinimumRequired": {
-        "major": 3,
-        "minor": 19,
-        "patch": 0
-    },
+  "cmakeMinimumRequired": {
+    "major": 3,
+    "minor": 19,
+    "patch": 0
+  },
 
-    "configurePresets": [
+  "configurePresets": [
     {
-        "name": "debug-x64",
-        "architecture": {
-            "value": "x64",
-            "strategy": "external"
-        },
-        "cacheVariables": {
-            "CMAKE_BUILD_TYPE": "Debug"
-        }
-    },
-
-    {
-        "name": "mingw-base",
-        "binaryDir": "${sourceDir}/build",
-        "generator": "MinGW Makefiles",
-        "toolchainFile": "${sourceDir}/cmake/toolchains/mingw.cmake"
+      "name": "debug-x64",
+      "architecture": {
+        "value": "x64",
+        "strategy": "external"
+      },
+      "cacheVariables": {
+        "CMAKE_BUILD_TYPE": "Debug"
+      }
     },
 
     {
-        "name": "mingw-g++-debug",
-         "inherits": [
-            "mingw-base",
-            "debug-x64"
-        ] 
-    },
-    
-    {
-        "name": "mvsc-base",
-        "binaryDir": "${sourceDir}/build",
-        "generator": "Visual Studio 17 2022",
-        "toolchainFile": "${sourceDir}/cmake/toolchains/mvsc.cmake"
+      "name": "mingw-base",
+      "binaryDir": "${sourceDir}/build",
+      "generator": "MinGW Makefiles",
+      "toolchainFile": "${sourceDir}/cmake/toolchains/mingw.cmake"
     },
 
     {
-        "name": "vs2022-mvsc-debug",
-        "inherits": [
-            "mvsc-base",
-            "debug-x64"
-        ]
+      "name": "mingw-g++-debug",
+      "inherits": [
+        "mingw-base",
+        "debug-x64"
+      ]
+    },
+
+    {
+      "name": "mvsc-base",
+      "binaryDir": "${sourceDir}/build",
+      "generator": "Visual Studio 17 2022",
+      "toolchainFile": "${sourceDir}/cmake/toolchains/vs22.cmake"
+    },
+
+    {
+      "name": "vs2022-mvsc-debug",
+      "inherits": [
+        "mvsc-base",
+        "debug-x64"
+      ]
+    },
+
+    {
+      "name": "vs2022-clangcl-debug",
+      "toolset": "ClangCL",
+      "inherits": [
+        "mvsc-base",
+        "debug-x64"
+      ]
+    },
+
+    {
+      "name": "llvm-clang-base",
+      "binaryDir": "${sourceDir}/build",
+      "generator": "MinGW Makefiles",
+      "toolchainFile": "${sourceDir}/cmake/toolchains/llvm.cmake"
+    },
+
+    {
+      "name": "llvm-clang-debug",
+      "inherits": [
+        "llvm-clang-base",
+        "debug-x64"
+      ]
     }
 
-    ]
+  ]
 }
