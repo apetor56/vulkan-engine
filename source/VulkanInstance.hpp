@@ -22,7 +22,6 @@ public:
 
     void createVulkanInstance();
     const extentions getRequiredInstanceExtensions() const;
-
     VkInstance get() const noexcept;
     void showAllSupportedExtensions() const;
 
@@ -30,7 +29,7 @@ private:
     VkInstance m_instance;
 
 #ifndef NDEBUG
-    DebugMessenger m_debugMessenger{};
+    ve::DebugMessenger m_debugMessenger{};
 #endif
 };
 
