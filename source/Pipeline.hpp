@@ -4,7 +4,6 @@
 #include "Shader.hpp"
 #include "Swapchain.hpp"
 
-#include <memory>
 #include <array>
 
 using ShaderStageInfos = std::array< VkPipelineShaderStageCreateInfo, 2u >;

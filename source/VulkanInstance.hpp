@@ -5,9 +5,9 @@
 #define GLFW_INCLUDE_VULKAN
 #include <GLFW/glfw3.h>
 
-#include <memory>
-
 namespace ve {
+
+using extentions = std::vector< const char * >;
 
 class VulkanInstance {
 public:
@@ -21,7 +21,7 @@ public:
     VulkanInstance& operator=( VulkanInstance&& other )      = delete;
 
     void createVulkanInstance();
-    std::vector< const char * > getRequiredInstanceExtensions() const;
+    const extentions getRequiredInstanceExtensions() const;
 
     VkInstance get() const noexcept;
     void showAllSupportedExtensions() const;

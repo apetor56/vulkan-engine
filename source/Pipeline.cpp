@@ -1,6 +1,8 @@
 #include "Pipeline.hpp"
 #include "Config.hpp"
 
+#include <stdexcept>
+
 namespace ve {
 Pipeline::Pipeline( const ve::LogicalDevice& logicalDevice, const ve::Swapchain& swapchain )
     : m_vertexShader{ cfg::shader::vertShaderBinaryPath, logicalDevice },

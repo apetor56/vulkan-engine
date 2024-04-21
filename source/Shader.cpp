@@ -1,6 +1,8 @@
 #include "Shader.hpp"
 #include "LogicalDevice.hpp"
 
+#include <fstream>
+
 namespace ve {
 
 Shader::Shader( std::string_view shaderPath, const ve::LogicalDevice& logicalDevice )
@@ -29,7 +31,7 @@ std::vector< char > Shader::readShaderBinary( std::string_view shaderPath ) cons
     return shaderByteCode;
 }
 
-void Shader::createShaderModule( const std::vector< char >& shaderByteCode ) {
+void Shader::createShaderModule( const shaderCode& shaderByteCode ) {
     VkShaderModuleCreateInfo createInfo{};
     createInfo.sType    = VK_STRUCTURE_TYPE_SHADER_MODULE_CREATE_INFO;
     createInfo.codeSize = std::size( shaderByteCode );

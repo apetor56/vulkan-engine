@@ -5,8 +5,6 @@
 
 namespace ve {
 
-using extentions = std::vector< const char * >;
-
 class PhysicalDevice {
 public:
     PhysicalDevice( const ve::VulkanInstance& instance, const ve::Window& window );

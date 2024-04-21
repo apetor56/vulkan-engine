@@ -1,6 +1,8 @@
 #include "CommandBuffer.hpp"
 #include "QueueFamilyIndices.hpp"
 
+#include <stdexcept>
+
 namespace ve {
 
 CommandBuffer::CommandBuffer( const ve::PhysicalDevice& physicalDevice, const ve::LogicalDevice& logicalDevice,

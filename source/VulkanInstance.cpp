@@ -66,11 +66,11 @@ void VulkanInstance::createVulkanInstance() {
     }
 }
 
-std::vector< const char * > VulkanInstance::getRequiredInstanceExtensions() const {
+const extentions VulkanInstance::getRequiredInstanceExtensions() const {
     uint32_t glfwExtensionCount{};
     const char **glfwExtensions{ glfwGetRequiredInstanceExtensions( &glfwExtensionCount ) };
 
-    std::vector< const char * > extensions( glfwExtensions, glfwExtensions + glfwExtensionCount );
+    extentions extensions( glfwExtensions, glfwExtensions + glfwExtensionCount );
 
 #ifndef NDEBUG
     extensions.push_back( VK_EXT_DEBUG_UTILS_EXTENSION_NAME );

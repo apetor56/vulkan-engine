@@ -8,8 +8,6 @@
 #include "Pipeline.hpp"
 #include "CommandBuffer.hpp"
 
-#include <memory>
-
 namespace ve {
 
 class Application {
