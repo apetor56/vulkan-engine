@@ -1,5 +1,5 @@
 #include "Application.hpp"
-#include "Config.hpp"
+#include "core/Config.hpp"
 
 #include <chrono>
 #include <thread>

@@ -1,12 +1,12 @@
 #pragma once
 
-#include "Window.hpp"
-#include "VulkanInstance.hpp"
-#include "PhysicalDevice.hpp"
-#include "LogicalDevice.hpp"
-#include "Swapchain.hpp"
-#include "Pipeline.hpp"
-#include "CommandBuffer.hpp"
+#include "core/Window.hpp"
+#include "core/VulkanInstance.hpp"
+#include "core/PhysicalDevice.hpp"
+#include "core/LogicalDevice.hpp"
+#include "core/Swapchain.hpp"
+#include "core/Pipeline.hpp"
+#include "core/CommandBuffer.hpp"
 
 namespace ve {
 
