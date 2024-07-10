@@ -1,8 +1,8 @@
 @echo off
 
 if exist build (
-	cmake --build build
-	exit
+    cmake --build build
+    exit
 )
 
 echo Pass the number to select your toolset:

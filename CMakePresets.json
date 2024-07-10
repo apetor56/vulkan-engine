@@ -24,9 +24,9 @@
       "binaryDir": "${sourceDir}/build",
       "generator": "MinGW Makefiles",
       "toolchainFile": "${sourceDir}/cmake/toolchains/gcc.cmake",
-	  "cacheVariables": {
-		"CMAKE_C_COMPILER": "gcc",
-		"CMAKE_CXX_COMPILER": "g++"
+      "cacheVariables": {
+        "CMAKE_C_COMPILER": "gcc",
+        "CMAKE_CXX_COMPILER": "g++"
       }
     },
 
@@ -67,9 +67,9 @@
       "binaryDir": "${sourceDir}/build",
       "generator": "MinGW Makefiles",
       "toolchainFile": "${sourceDir}/cmake/toolchains/clang.cmake",
-	  "cacheVariables": {
-		"CMAKE_C_COMPILER": "clang",
-		"CMAKE_CXX_COMPILER": "clang++"
+      "cacheVariables": {
+        "CMAKE_C_COMPILER": "clang",
+        "CMAKE_CXX_COMPILER": "clang++"
       }
     },
 
