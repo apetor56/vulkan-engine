@@ -1,6 +1,24 @@
 add_executable(${PROJECT_NAME})
 target_compile_features(${PROJECT_NAME} PUBLIC cxx_std_23)
 
+if (CMAKE_GENERATOR MATCHES "Visual Studio")
+	target_compile_options(${PROJECT_NAME}
+		PRIVATE
+			/permissive-
+			/W4
+			/w14640
+	)
+else()
+	target_compile_options(${PROJECT_NAME}
+		PRIVATE
+			-Wall
+			-Wextra
+			-Wshadow
+			-Wnon-virtual-dtor
+			-pedantic
+	)
+endif()
+
 set(CORE
     core/Config.hpp
     core/VulkanInstance.cpp core/VulkanInstance.hpp

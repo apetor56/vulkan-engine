@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.19)
-project(VulkanEngine VERSION 1.0)
+project(VulkanEngine VERSION 0.1)
 
 add_subdirectory(source)
 add_subdirectory(external)

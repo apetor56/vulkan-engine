@@ -9,7 +9,7 @@
 
   "configurePresets": [
     {
-      "name": "debug-x64",
+      "name": "debug",
       "architecture": {
         "value": "x64",
         "strategy": "external"
@@ -20,56 +20,64 @@
     },
 
     {
-      "name": "mingw-base",
+      "name": "gcc-base",
       "binaryDir": "${sourceDir}/build",
       "generator": "MinGW Makefiles",
-      "toolchainFile": "${sourceDir}/cmake/toolchains/mingw.cmake"
+      "toolchainFile": "${sourceDir}/cmake/toolchains/gcc.cmake",
+	  "cacheVariables": {
+		"CMAKE_C_COMPILER": "gcc",
+		"CMAKE_CXX_COMPILER": "g++"
+      }
     },
 
     {
-      "name": "mingw-g++-debug",
+      "name": "mingw-makefiles-gcc-debug",
       "inherits": [
-        "mingw-base",
-        "debug-x64"
+        "gcc-base",
+        "debug"
       ]
     },
 
     {
-      "name": "mvsc-base",
+      "name": "visual-studio-base",
       "binaryDir": "${sourceDir}/build",
       "generator": "Visual Studio 17 2022",
-      "toolchainFile": "${sourceDir}/cmake/toolchains/vs22.cmake"
+      "toolchainFile": "${sourceDir}/cmake/toolchains/msvc.cmake"
     },
 
     {
-      "name": "vs2022-mvsc-debug",
+      "name": "visual-studio-msvc-debug",
       "inherits": [
-        "mvsc-base",
-        "debug-x64"
+        "visual-studio-base",
+        "debug"
       ]
     },
 
     {
-      "name": "vs2022-clangcl-debug",
+      "name": "visual-studio-clangcl-debug",
       "toolset": "ClangCL",
       "inherits": [
-        "mvsc-base",
-        "debug-x64"
+        "visual-studio-base",
+        "debug"
       ]
     },
 
     {
-      "name": "llvm-clang-base",
+      "name": "clang-base",
       "binaryDir": "${sourceDir}/build",
       "generator": "MinGW Makefiles",
-      "toolchainFile": "${sourceDir}/cmake/toolchains/llvm.cmake"
+      "toolchainFile": "${sourceDir}/cmake/toolchains/clang.cmake",
+	  "cacheVariables": {
+		"CMAKE_C_COMPILER": "clang",
+		"CMAKE_CXX_COMPILER": "clang++"
+      }
     },
 
     {
-      "name": "llvm-clang-debug",
+      "name": "mingw-makefiles-clang-debug",
       "inherits": [
-        "llvm-clang-base",
-        "debug-x64"
+        "clang-base",
+        "debug"
       ]
     }
 
