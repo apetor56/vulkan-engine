@@ -1,6 +1,17 @@
 add_executable(${PROJECT_NAME})
 target_compile_features(${PROJECT_NAME} PUBLIC cxx_std_23)
 
+# find_program(CLANG_TIDY_EXE "clang-tidy")
+# if(CLANG_TIDY_EXE)
+#     message(STATUS "Found clang-tidy: ${CLANG_TIDY_EXE}")
+#     set(CMAKE_CXX_CLANG_TIDY "${CLANG_TIDY_EXE};--config-file=${CMAKE_SOURCE_DIR}/.clang-tidy;-p")
+# 	set_target_properties(${PROJECT_NAME} PROPERTIES
+# 	    CXX_CLANG_TIDY "${CMAKE_CXX_CLANG_TIDY}"
+# 	)
+# else()
+#     message(STATUS "clang-tidy not found")
+# endif()
+
 if (CMAKE_GENERATOR MATCHES "Visual Studio")
 	target_compile_options(${PROJECT_NAME}
 		PRIVATE
