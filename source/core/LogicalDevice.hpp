@@ -6,29 +6,29 @@ namespace ve {
 
 class LogicalDevice {
 public:
-	LogicalDevice( const ve::PhysicalDevice& physicalDevice, const ve::Window& window );
+    LogicalDevice( const ve::PhysicalDevice& physicalDevice, const ve::Window& window );
 
-	LogicalDevice( const LogicalDevice& other ) = delete;
-	LogicalDevice( LogicalDevice&& other )		= delete;
+    LogicalDevice( const LogicalDevice& other ) = delete;
+    LogicalDevice( LogicalDevice&& other )      = delete;
 
-	LogicalDevice& operator=( const LogicalDevice& other ) = delete;
-	LogicalDevice& operator=( LogicalDevice&& other )	   = delete;
+    LogicalDevice& operator=( const LogicalDevice& other ) = delete;
+    LogicalDevice& operator=( LogicalDevice&& other )      = delete;
 
-	~LogicalDevice();
+    ~LogicalDevice();
 
-	VkDevice getHandler() const noexcept;
-	VkQueue getGraphicsQueue() const noexcept;
-	VkQueue getPresentationQueue() const noexcept;
+    VkDevice getHandler() const noexcept;
+    VkQueue getGraphicsQueue() const noexcept;
+    VkQueue getPresentationQueue() const noexcept;
 
 private:
-	VkDevice m_logicalDevice;
-	VkQueue m_graphicsQueue;
-	VkQueue m_presentQueue;
+    VkDevice m_logicalDevice;
+    VkQueue m_graphicsQueue;
+    VkQueue m_presentQueue;
 
-	const ve::PhysicalDevice& m_physicalDevice;
-	const ve::Window& m_window;
+    const ve::PhysicalDevice& m_physicalDevice;
+    const ve::Window& m_window;
 
-	void createLogicalDevice();
+    void createLogicalDevice();
 };
 
 } // namespace ve

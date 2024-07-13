@@ -84,5 +84,5 @@ PointerAlignment: Right
 ReferenceAlignment: Left
 Standard: Latest
 TabWidth: 4
-UseTab: Always
+UseTab: Never
 ...
