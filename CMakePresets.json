@@ -12,6 +12,7 @@
         "value": "x64",
         "strategy": "external"
       },
+	  "binaryDir": "${sourceDir}/build",
       "cacheVariables": {
         "CMAKE_BUILD_TYPE": "Debug",
         "CMAKE_EXPORT_COMPILE_COMMANDS": "ON"
@@ -19,7 +20,6 @@
     },
     {
       "name": "gcc-base",
-      "binaryDir": "${sourceDir}/build",
       "generator": "MinGW Makefiles",
       "toolchainFile": "${sourceDir}/cmake/toolchains/gcc.cmake",
       "cacheVariables": {
@@ -36,12 +36,12 @@
     },
     {
       "name": "visual-studio-base",
-      "binaryDir": "${sourceDir}/build",
       "generator": "Visual Studio 17 2022",
       "toolchainFile": "${sourceDir}/cmake/toolchains/msvc.cmake"
     },
     {
       "name": "visual-studio-msvc-debug",
+	  "toolset": "v143",
       "inherits": [
         "visual-studio-base",
         "debug"
@@ -57,7 +57,6 @@
     },
     {
       "name": "clang-base",
-      "binaryDir": "${sourceDir}/build",
       "generator": "MinGW Makefiles",
       "toolchainFile": "${sourceDir}/cmake/toolchains/clang.cmake",
       "cacheVariables": {
