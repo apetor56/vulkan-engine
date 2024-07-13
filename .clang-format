@@ -82,7 +82,7 @@ SpacesInParentheses: true
 SpacesInSquareBrackets: true
 PointerAlignment: Right
 ReferenceAlignment: Left
-Standard: Cpp11
-TabWidth: 8
-UseTab: Never
+Standard: Latest
+TabWidth: 4
+UseTab: Always
 ...
