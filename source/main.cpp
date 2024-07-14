@@ -4,13 +4,13 @@
 #include <stdexcept>
 
 int main( void ) {
-	ve::Application application{};
+    ve::Application application{};
 
-	try {
-		application.run();
-	}
-	catch ( const std::exception& e ) {
-		std::cerr << e.what() << '\n';
-		return 1;
-	}
+    try {
+        application.run();
+    }
+    catch ( const std::exception& e ) {
+        std::cerr << e.what() << '\n';
+        return 1;
+    }
 }
