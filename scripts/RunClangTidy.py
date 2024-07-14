@@ -11,7 +11,7 @@ buildPath = rootPath / 'build'
 clangTidyConfig = rootPath / '.clang-tidy'
 
 def runClangTidy():    
-    clangTidyCmd = ['clang-tidy', '--config-file', clangTidyConfig, '-p', buildPath]
+    clangTidyCmd = ['clang-tidy', '--config-file', clangTidyConfig, '-p', buildPath, '--use-color']
     
     if len(sys.argv) > 1:
         clangTidyCmd.extend(sys.argv[1:])
