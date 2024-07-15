@@ -11,11 +11,11 @@ def setup():
     }
     menu = (
         "Select configuration:\n"
-        "   Generator                Compiler\n"
-        "1) Visual Studio 17 2022    msvc143\n"
-        "2) Visual Studio 17 2022    clang-cl\n"
-        "3) MinGW Makefile           clang++\n"
-        "4) MinGW Makefile           g++\n"
+        "   Generator                Toolset/Compiler\n"
+        "1) Visual Studio 17 2022    v143\n"
+        "2) Visual Studio 17 2022    ClangCL\n"
+        "3) MinGW Makefiles          clang++\n"
+        "4) MinGW Makefiles          g++\n"
     )
     
     userInput = input(menu)
