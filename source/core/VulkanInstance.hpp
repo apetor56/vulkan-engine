@@ -1,8 +1,6 @@
 #pragma once
 
-#include "DebugMessenger.hpp"
-
-#define GLFW_INCLUDE_VULKAN
+#include <vulkan/vulkan.hpp>
 #include <GLFW/glfw3.h>
 
 namespace ve {
@@ -20,17 +18,14 @@ public:
     VulkanInstance& operator=( const VulkanInstance& other ) = delete;
     VulkanInstance& operator=( VulkanInstance&& other )      = delete;
 
-    void createVulkanInstance();
-    const extentions getRequiredInstanceExtensions() const;
-    VkInstance get() const noexcept;
-    void showAllSupportedExtensions() const;
+    vk::Instance get() const noexcept;
 
 private:
-    VkInstance m_instance;
+    vk::Instance m_instance;
 
-#ifndef NDEBUG
-    ve::DebugMessenger m_debugMessenger{};
-#endif
+    void createVulkanInstance();
+    void showAllSupportedExtensions();
+    ve::extentions getRequiredInstanceExtensions();
 };
 
 } // namespace ve
