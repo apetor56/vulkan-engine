@@ -7,8 +7,17 @@ Checks: >
   modernize*,
   performance*,
   readability*,
-  -readability-avoid-const-params-in-decls,
+  -cppcoreguidelines-pro-bounds-array-to-pointer-decay,
+  -cppcoreguidelines-pro-bounds-pointer-arithmetic,
+  -hicpp-braces-around-statements,
+  -hicpp-no-array-decay,
   -modernize-use-trailing-return-type,
+  -modernize-use-nodiscard,
+  -readability-avoid-const-params-in-decls,
+  -readability-braces-around-statements,
+  -readability-convert-member-functions-to-static,
+  -misc-include-cleaner,
+  -clang-diagnostic-pragma-once-outside-header
 WarningsAsErrors: ''
 HeaderFilterRegex: '.*\.(hpp)$'
 FormatStyle: file
