@@ -1,5 +1,9 @@
 #pragma once
 
+// TODO: better config system
+
+#include <filesystem>
+
 namespace cfg {
 
 namespace window {
@@ -9,8 +13,8 @@ inline constexpr int height{ 600 };
 
 namespace shader {
 // TODO: add filesystem
-inline const char *vertShaderBinaryPath{ "./shaders/simple.vert.spv" };
-inline const char *fragShaderBinaryPath{ "./shaders/simple.frag.spv" };
+inline const std::filesystem::path vertShaderBinaryPath{ std::filesystem::path{ SHADER_PATH } / "simple.vert.spv" };
+inline const std::filesystem::path fragShaderBinaryPath{ std::filesystem::path{ SHADER_PATH } / "simple.frag.spv" };
 } // namespace shader
 
 namespace gpu {

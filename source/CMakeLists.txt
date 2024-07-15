@@ -21,6 +21,8 @@ else()
 	)
 endif()
 
+target_compile_definitions(${PROJECT_NAME} PRIVATE SHADER_PATH="${CMAKE_CURRENT_SOURCE_DIR}/shaders")
+
 set(CORE
     core/Config.hpp
     core/VulkanInstance.cpp core/VulkanInstance.hpp

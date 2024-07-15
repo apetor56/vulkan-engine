@@ -5,8 +5,8 @@
 
 namespace ve {
 Pipeline::Pipeline( const ve::LogicalDevice& logicalDevice, const ve::Swapchain& swapchain )
-    : m_vertexShader{ cfg::shader::vertShaderBinaryPath, logicalDevice },
-      m_fragmentShader{ cfg::shader::fragShaderBinaryPath, logicalDevice },
+    : m_vertexShader{ cfg::shader::vertShaderBinaryPath.string(), logicalDevice },
+      m_fragmentShader{ cfg::shader::fragShaderBinaryPath.string(), logicalDevice },
       m_logicalDevice{ logicalDevice },
       m_swapchain{ swapchain } {
     createPipelineLayout();
