@@ -1,3 +1,5 @@
+include(ShaderCompilation)
+
 add_executable(${PROJECT_NAME})
 target_compile_features(${PROJECT_NAME} PUBLIC cxx_std_23)
 
@@ -33,10 +35,21 @@ set(CORE
     core/CommandBuffer.cpp core/CommandBuffer.hpp  
 )
 
-source_group("Core" FILES ${CORE})
+set(SHADER_SOURCE
+    "${CMAKE_CURRENT_SOURCE_DIR}/shaders/simple.vert"
+    "${CMAKE_CURRENT_SOURCE_DIR}/shaders/simple.frag"
+)
 
+set(COMPILED_SHADERS_OUTPUT)
+compile_shaders("${SHADER_SOURCE}" COMPILED_SHADERS_OUTPUT)
+add_custom_target(Shaders DEPENDS ${COMPILED_SHADERS_OUTPUT})
+target_sources(Shaders PRIVATE ${SHADER_SOURCE})
+
+source_group("Core" FILES ${CORE})
 target_sources(${PROJECT_NAME} PRIVATE
     main.cpp
     Application.cpp Application.hpp
     ${CORE}
 )
+
+add_dependencies(${PROJECT_NAME} Shaders)
