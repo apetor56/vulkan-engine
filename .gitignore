@@ -33,5 +33,4 @@
 
 bin
 build
-source/shaders/*.spv
 .vscode/settings.json

@@ -13,8 +13,8 @@ inline constexpr int height{ 600 };
 
 namespace shader {
 // TODO: add filesystem
-inline const std::filesystem::path vertShaderBinaryPath{ std::filesystem::path{ SHADER_PATH } / "simple.vert.spv" };
-inline const std::filesystem::path fragShaderBinaryPath{ std::filesystem::path{ SHADER_PATH } / "simple.frag.spv" };
+inline const std::filesystem::path vertShaderBinaryPath{ std::filesystem::path{ SHADER_BINARIES_DIR } / "simple.vert.spv" };
+inline const std::filesystem::path fragShaderBinaryPath{ std::filesystem::path{ SHADER_BINARIES_DIR } / "simple.frag.spv" };
 } // namespace shader
 
 namespace gpu {

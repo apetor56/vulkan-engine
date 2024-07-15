@@ -21,7 +21,7 @@ else()
 	)
 endif()
 
-target_compile_definitions(${PROJECT_NAME} PRIVATE SHADER_PATH="${CMAKE_CURRENT_SOURCE_DIR}/shaders")
+target_compile_definitions(${PROJECT_NAME} PRIVATE SHADER_BINARIES_DIR="${CMAKE_BINARY_DIR}/shaders")
 
 set(CORE
     core/Config.hpp
@@ -44,14 +44,14 @@ set(SHADER_SOURCE
 
 set(COMPILED_SHADERS_OUTPUT)
 compile_shaders("${SHADER_SOURCE}" COMPILED_SHADERS_OUTPUT)
-add_custom_target(Shaders DEPENDS ${COMPILED_SHADERS_OUTPUT})
-target_sources(Shaders PRIVATE ${SHADER_SOURCE})
+add_custom_target(Shaders DEPENDS "${COMPILED_SHADERS_OUTPUT}")
+target_sources(Shaders PRIVATE "${SHADER_SOURCE}")
 
 source_group("Core" FILES ${CORE})
 target_sources(${PROJECT_NAME} PRIVATE
     main.cpp
     Application.cpp Application.hpp
-    ${CORE}
+    "${CORE}"
 )
 
 add_dependencies(${PROJECT_NAME} Shaders)
