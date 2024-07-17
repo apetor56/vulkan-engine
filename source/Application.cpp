@@ -7,7 +7,7 @@
 namespace ve {
 
 Application::Application()
-    : m_window{ cfg::window::width, cfg::window::height, "example", m_vulkanInstance },
+    : m_window{ WindowInfo{ cfg::window::width, cfg::window::height, "example" }, m_vulkanInstance },
       m_physicalDevice{ m_vulkanInstance, m_window },
       m_logicalDevice{ m_physicalDevice, m_window },
       m_swapchain{ m_physicalDevice, m_logicalDevice, m_window },
@@ -17,14 +17,14 @@ Application::Application()
 }
 
 Application::~Application() {
-    const auto logicalDeviceHandle{ m_logicalDevice.getHandler() };
-    vkDestroySemaphore( logicalDeviceHandle, m_imageAvailableSemapore, nullptr );
-    vkDestroySemaphore( logicalDeviceHandle, m_renderFinishedSemaphore, nullptr );
-    vkDestroyFence( logicalDeviceHandle, m_inFlightFence, nullptr );
+    auto *const logicalDeviceHandler{ m_logicalDevice.getHandler() };
+    vkDestroySemaphore( logicalDeviceHandler, m_imageAvailableSemapore, nullptr );
+    vkDestroySemaphore( logicalDeviceHandler, m_renderFinishedSemaphore, nullptr );
+    vkDestroyFence( logicalDeviceHandler, m_inFlightFence, nullptr );
 }
 
 void Application::run() {
-    while ( m_window.shouldClose() == false ) {
+    while ( m_window.shouldClose() == GLFW_FALSE ) {
         glfwPollEvents();
         render();
 
@@ -52,15 +52,15 @@ void Application::createSyncObjects() {
 }
 
 void Application::render() {
-    const auto logicalDeviceHandle{ m_logicalDevice.getHandler() };
-    const auto swapchainHandle{ m_swapchain.getHandler() };
-    const auto commadBufferHandle{ m_commandBuffer.getHandler() };
+    auto *const logicalDeviceHandler{ m_logicalDevice.getHandler() };
+    auto *const swapchainHandle{ m_swapchain.getHandler() };
+    auto *const commadBufferHandle{ m_commandBuffer.getHandler() };
 
-    vkWaitForFences( logicalDeviceHandle, 1u, &m_inFlightFence, VK_TRUE, UINT64_MAX );
-    vkResetFences( logicalDeviceHandle, 1u, &m_inFlightFence );
+    vkWaitForFences( logicalDeviceHandler, 1U, &m_inFlightFence, VK_TRUE, UINT64_MAX );
+    vkResetFences( logicalDeviceHandler, 1U, &m_inFlightFence );
 
-    uint32_t imageIndex{};
-    vkAcquireNextImageKHR( logicalDeviceHandle, swapchainHandle, UINT64_MAX, m_imageAvailableSemapore, VK_NULL_HANDLE,
+    std::uint32_t imageIndex{};
+    vkAcquireNextImageKHR( logicalDeviceHandler, swapchainHandle, UINT64_MAX, m_imageAvailableSemapore, VK_NULL_HANDLE,
                            &imageIndex );
 
     m_commandBuffer.reset();
@@ -69,31 +69,25 @@ void Application::render() {
     const std::vector< VkPipelineStageFlags > waitStages{ VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT };
 
     VkSubmitInfo submitInfo{};
-    submitInfo.sType              = VK_STRUCTURE_TYPE_SUBMIT_INFO;
-    submitInfo.waitSemaphoreCount = 1u;
-    submitInfo.pWaitSemaphores    = &m_imageAvailableSemapore;
-    submitInfo.pWaitDstStageMask  = waitStages.data();
-
-    submitInfo.commandBufferCount = 1u;
-    submitInfo.pCommandBuffers    = &commadBufferHandle;
-
-    submitInfo.signalSemaphoreCount = 1u;
+    submitInfo.sType                = VK_STRUCTURE_TYPE_SUBMIT_INFO;
+    submitInfo.waitSemaphoreCount   = 1U;
+    submitInfo.pWaitSemaphores      = &m_imageAvailableSemapore;
+    submitInfo.pWaitDstStageMask    = waitStages.data();
+    submitInfo.commandBufferCount   = 1U;
+    submitInfo.pCommandBuffers      = &commadBufferHandle;
+    submitInfo.signalSemaphoreCount = 1U;
     submitInfo.pSignalSemaphores    = &m_renderFinishedSemaphore;
 
-    if ( vkQueueSubmit( m_logicalDevice.getGraphicsQueue(), 1u, &submitInfo, m_inFlightFence ) != VK_SUCCESS ) {
+    if ( vkQueueSubmit( m_logicalDevice.getGraphicsQueue(), 1U, &submitInfo, m_inFlightFence ) != VK_SUCCESS )
         throw std::runtime_error( "failed to submit draw command buffer" );
-    }
 
     VkPresentInfoKHR presentInfo{};
     presentInfo.sType              = VK_STRUCTURE_TYPE_PRESENT_INFO_KHR;
-    presentInfo.waitSemaphoreCount = 1u;
+    presentInfo.waitSemaphoreCount = 1U;
     presentInfo.pWaitSemaphores    = &m_renderFinishedSemaphore;
-
-    presentInfo.swapchainCount = 1u;
-    presentInfo.pSwapchains    = &swapchainHandle;
-    presentInfo.pImageIndices  = &imageIndex;
-
-    presentInfo.pResults = nullptr; // Optional
+    presentInfo.swapchainCount     = 1U;
+    presentInfo.pSwapchains        = &swapchainHandle;
+    presentInfo.pImageIndices      = &imageIndex;
 
     vkQueuePresentKHR( m_logicalDevice.getPresentationQueue(), &presentInfo );
 }
