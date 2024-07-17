@@ -137,7 +137,7 @@ VkExtent2D Swapchain::chooseSwapExtent( const VkSurfaceCapabilitiesKHR& capabili
 
     int width{};
     int height{};
-    glfwGetFramebufferSize( m_window.getWindowHandler(), &width, &height );
+    glfwGetFramebufferSize( m_window.getHandler(), &width, &height );
 
     return VkExtent2D{ .width{ std::clamp( static_cast< uint32_t >( width ), capabilities.minImageExtent.width,
                                            capabilities.maxImageExtent.width ) },

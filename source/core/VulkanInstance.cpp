@@ -54,16 +54,16 @@ vk::Instance VulkanInstance::get() const noexcept {
 
 void VulkanInstance::showAllSupportedExtensions() const {
     std::uint32_t extensionCount{};
-    vkEnumerateInstanceExtensionProperties( nullptr, &extensionCount, nullptr );
+    vk::enumerateInstanceExtensionProperties( nullptr, &extensionCount, nullptr );
 
-    std::vector< VkExtensionProperties > extensions( extensionCount );
-    vkEnumerateInstanceExtensionProperties( nullptr, &extensionCount, extensions.data() );
+    std::vector< vk::ExtensionProperties > extensions( extensionCount );
+    vk::enumerateInstanceExtensionProperties( nullptr, &extensionCount, extensions.data() );
 
     const auto getName{ []( const auto& extension ) { return extension.extensionName; } };
     const auto extensionNames{ extensions | std::views::transform( getName ) };
 
     std::cout << "all available vulkan instance extensions: \n";
-    std::ranges::for_each( extensionNames, []( auto extension ) { std::cout << '\t' << extension << '\n'; } );
+    std::ranges::for_each( extensionNames, []( const auto& extension ) { std::cout << '\t' << extension << '\n'; } );
 }
 
 } // namespace ve

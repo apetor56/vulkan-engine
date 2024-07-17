@@ -4,8 +4,8 @@
 
 namespace ve {
 
-Window::Window( const int width, const int height, std::string_view name, const ve::VulkanInstance& instance )
-    : m_width{ width }, m_height{ height }, m_name{ name }, m_vulkanInstance{ instance } {
+Window::Window( WindowInfo windowInfo, const ve::VulkanInstance& instance )
+    : m_windowInfo{ std::move( windowInfo ) }, m_vulkanInstance{ instance } {
     init();
     createSurface();
 }
@@ -19,7 +19,8 @@ void Window::init() {
     glfwWindowHint( GLFW_CLIENT_API, GLFW_NO_API );
     glfwWindowHint( GLFW_RESIZABLE, GLFW_FALSE );
 
-    m_windowHandler = glfwCreateWindow( m_width, m_height, m_name.c_str(), nullptr, nullptr );
+    auto& [ width, height, name ]{ m_windowInfo };
+    m_windowHandler = glfwCreateWindow( width, height, name.c_str(), nullptr, nullptr );
 }
 
 void Window::createSurface() {
@@ -27,11 +28,11 @@ void Window::createSurface() {
         throw std::runtime_error( "failed to create window surface" );
 }
 
-bool Window::shouldClose() const {
+int Window::shouldClose() const {
     return glfwWindowShouldClose( m_windowHandler );
 }
 
-GLFWwindow *Window::getWindowHandler() const noexcept {
+GLFWwindow *Window::getHandler() const noexcept {
     return m_windowHandler;
 }
 
