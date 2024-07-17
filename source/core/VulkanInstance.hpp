@@ -24,8 +24,8 @@ private:
     vk::Instance m_instance;
 
     void createVulkanInstance();
-    void showAllSupportedExtensions();
-    ve::extentions getRequiredInstanceExtensions();
+    void showAllSupportedExtensions() const;
+    ve::extentions getRequiredInstanceExtensions() const;
 };
 
 } // namespace ve

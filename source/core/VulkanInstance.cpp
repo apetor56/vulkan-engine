@@ -1,6 +1,7 @@
 #include "VulkanInstance.hpp"
 
 #include <iostream>
+#include <ranges>
 
 namespace ve {
 
@@ -25,7 +26,7 @@ void VulkanInstance::createVulkanInstance() {
     appInfo.applicationVersion = vk::makeApiVersion( 0, 1, 0, 0 );
     appInfo.engineVersion      = vk::makeApiVersion( 0, 1, 0, 0 );
 
-    const auto extensions{ getRequiredInstanceExtensions() };
+    auto extensions{ getRequiredInstanceExtensions() };
 
     vk::InstanceCreateInfo instanceInfo{};
     instanceInfo.sType                   = vk::StructureType::eInstanceCreateInfo;
@@ -39,7 +40,7 @@ void VulkanInstance::createVulkanInstance() {
         throw std::runtime_error( "failed to create vulkan instance" );
 }
 
-ve::extentions VulkanInstance::getRequiredInstanceExtensions() {
+ve::extentions VulkanInstance::getRequiredInstanceExtensions() const {
     std::uint32_t extensionCount{};
     const char **extensions{ glfwGetRequiredInstanceExtensions( &extensionCount ) };
     ve::extentions instanceExtensions{ extensions, extensions + extensionCount };
@@ -51,16 +52,18 @@ vk::Instance VulkanInstance::get() const noexcept {
     return m_instance;
 }
 
-void VulkanInstance::showAllSupportedExtensions() {
+void VulkanInstance::showAllSupportedExtensions() const {
     std::uint32_t extensionCount{};
     vkEnumerateInstanceExtensionProperties( nullptr, &extensionCount, nullptr );
 
     std::vector< VkExtensionProperties > extensions( extensionCount );
     vkEnumerateInstanceExtensionProperties( nullptr, &extensionCount, extensions.data() );
 
+    const auto getName{ []( const auto& extension ) { return extension.extensionName; } };
+    const auto extensionNames{ extensions | std::views::transform( getName ) };
+
     std::cout << "all available vulkan instance extensions: \n";
-    std::ranges::for_each( extensions,
-                           []( const auto extension ) { std::cout << '\t' << extension.extensionName << '\n'; } );
+    std::ranges::for_each( extensionNames, []( auto extension ) { std::cout << '\t' << extension << '\n'; } );
 }
 
 } // namespace ve
