@@ -7,7 +7,7 @@
 namespace cfg::debug {
 
 #ifndef NDEBUG
-inline constexpr bool areValidationLayersEnabled{ false };
+inline constexpr bool areValidationLayersEnabled{ true };
 #else
 inline constexpr bool areValidationLayersEnabled{ false };
 #endif
