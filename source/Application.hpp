@@ -1,7 +1,7 @@
 #pragma once
 
-#include "core/Window.hpp"
 #include "core/VulkanInstance.hpp"
+#include "core/Window.hpp"
 #include "core/PhysicalDevice.hpp"
 #include "core/LogicalDevice.hpp"
 #include "core/Swapchain.hpp"

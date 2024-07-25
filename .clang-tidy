@@ -17,9 +17,10 @@ Checks: >
   -readability-braces-around-statements,
   -readability-convert-member-functions-to-static,
   -misc-include-cleaner,
-  -clang-diagnostic-pragma-once-outside-header
+  -clang-diagnostic-pragma-once-outside-header,
+  -clang-diagnostic-unused-result
 WarningsAsErrors: ''
-HeaderFilterRegex: '.*\.(hpp)$'
+HeaderFilterRegex: 'source/.*\.hpp$'
 FormatStyle: file
 UseColor: false
 CheckOptions:
