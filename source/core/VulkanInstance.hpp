@@ -1,7 +1,11 @@
 #pragma once
 
+#include "DebugMessenger.hpp"
+
 #include <vulkan/vulkan.hpp>
 #include <GLFW/glfw3.h>
+
+#include <optional>
 
 namespace ve {
 
@@ -22,6 +26,7 @@ public:
 
 private:
     vk::Instance m_instance;
+    std::optional< ve::DebugMessenger > m_debugMessenger;
 
     void createVulkanInstance();
     void showAllSupportedExtensions() const;
