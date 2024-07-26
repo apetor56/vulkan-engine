@@ -1,75 +1,19 @@
 {
   "version": 6,
-  "cmakeMinimumRequired": {
+  "cmakeMinimumRequired":
+  {
     "major": 3,
     "minor": 19,
     "patch": 0
   },
-  "configurePresets": [
+  
+  "configurePresets":
+  [
     {
-      "name": "debug",
-      "architecture": {
-        "value": "x64",
-        "strategy": "external"
-      },
-	  "binaryDir": "${sourceDir}/build",
-      "cacheVariables": {
-        "CMAKE_BUILD_TYPE": "Debug",
-        "CMAKE_EXPORT_COMPILE_COMMANDS": "ON"
-      }
-    },
-    {
-      "name": "gcc-base",
-      "generator": "MinGW Makefiles",
-      "toolchainFile": "${sourceDir}/cmake/toolchains/gcc.cmake",
-      "cacheVariables": {
-        "CMAKE_C_COMPILER": "gcc",
-        "CMAKE_CXX_COMPILER": "g++"
-      }
-    },
-    {
-      "name": "mingw-makefiles-gcc-debug",
-      "inherits": [
-        "gcc-base",
-        "debug"
-      ]
-    },
-    {
-      "name": "visual-studio-base",
+      "name": "visual-studio-2022",
       "generator": "Visual Studio 17 2022",
-      "toolchainFile": "${sourceDir}/cmake/toolchains/msvc.cmake"
-    },
-    {
-      "name": "visual-studio-msvc-debug",
 	  "toolset": "v143",
-      "inherits": [
-        "visual-studio-base",
-        "debug"
-      ]
-    },
-    {
-      "name": "visual-studio-clangcl-debug",
-      "toolset": "ClangCL",
-      "inherits": [
-        "visual-studio-base",
-        "debug"
-      ]
-    },
-    {
-      "name": "clang-base",
-      "generator": "MinGW Makefiles",
-      "toolchainFile": "${sourceDir}/cmake/toolchains/clang.cmake",
-      "cacheVariables": {
-        "CMAKE_C_COMPILER": "clang",
-        "CMAKE_CXX_COMPILER": "clang++"
-      }
-    },
-    {
-      "name": "mingw-makefiles-clang-debug",
-      "inherits": [
-        "clang-base",
-        "debug"
-      ]
+	  "binaryDir": "${sourceDir}/build"
     }
   ]
 }
