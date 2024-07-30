@@ -13,8 +13,6 @@ VulkanInstance::VulkanInstance() {
 
     if ( cfg::debug::areValidationLayersEnabled )
         m_debugMessenger.emplace( m_instance );
-
-    showAllSupportedExtensions();
 }
 
 VulkanInstance::~VulkanInstance() {
