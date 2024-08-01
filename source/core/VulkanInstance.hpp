@@ -29,7 +29,6 @@ private:
     std::optional< ve::DebugMessenger > m_debugMessenger;
 
     void createVulkanInstance();
-    void showAllSupportedExtensions() const;
     ve::extentions getRequiredInstanceExtensions() const;
 };
 

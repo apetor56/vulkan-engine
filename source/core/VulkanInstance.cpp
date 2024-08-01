@@ -2,7 +2,6 @@
 #include "DebugMessenger.hpp"
 #include "Config.hpp"
 
-#include <iostream>
 #include <ranges>
 
 namespace ve {
@@ -54,8 +53,7 @@ void VulkanInstance::createVulkanInstance() {
         instanceInfo.ppEnabledLayerNames = nullptr;
     }
 
-    if ( vk::createInstance( &instanceInfo, nullptr, &m_instance ) != vk::Result::eSuccess )
-        throw std::runtime_error( "failed to create vulkan instance" );
+    vk::resultCheck( vk::createInstance( &instanceInfo, nullptr, &m_instance ), "failed to create vulkan instance" );
 }
 
 ve::extentions VulkanInstance::getRequiredInstanceExtensions() const {
@@ -63,7 +61,7 @@ ve::extentions VulkanInstance::getRequiredInstanceExtensions() const {
     const char **extensions{ glfwGetRequiredInstanceExtensions( &extensionCount ) };
     ve::extentions instanceExtensions{ extensions, extensions + extensionCount };
 
-    if ( cfg::debug::areValidationLayersEnabled )
+    if constexpr ( cfg::debug::areValidationLayersEnabled )
         instanceExtensions.emplace_back( vk::EXTDebugUtilsExtensionName );
 
     return instanceExtensions;
@@ -71,20 +69,6 @@ ve::extentions VulkanInstance::getRequiredInstanceExtensions() const {
 
 vk::Instance VulkanInstance::get() const noexcept {
     return m_instance;
-}
-
-void VulkanInstance::showAllSupportedExtensions() const {
-    std::uint32_t extensionCount{};
-    vk::enumerateInstanceExtensionProperties( nullptr, &extensionCount, nullptr );
-
-    std::vector< vk::ExtensionProperties > extensions( extensionCount );
-    vk::enumerateInstanceExtensionProperties( nullptr, &extensionCount, std::data( extensions ) );
-
-    const auto getName{ []( const auto& extension ) { return extension.extensionName; } };
-    const auto extensionNames{ extensions | std::ranges::views::transform( getName ) };
-
-    std::cout << "all available vulkan instance extensions: \n";
-    std::ranges::for_each( extensionNames, []( const auto& extension ) { std::cout << '\t' << extension << '\n'; } );
 }
 
 } // namespace ve
