@@ -1,41 +1,32 @@
 #include "QueueFamilyIndices.hpp"
 
-#include <vector>
-
 namespace ve {
 
-bool QueueFamilyIndices::isComplete() const {
-    return graphicsFamily.has_value() && presentFamily.has_value();
+bool QueueFamilyIndices::hasRequiredFamilies() const noexcept {
+    return graphicsFamilyID.has_value() && presentFamilyID.has_value();
 }
 
-QueueFamilyIndices QueueFamilyIndices::findQueueFamilies( const VkPhysicalDevice device, const VkSurfaceKHR surface ) {
+QueueFamilyIndices QueueFamilyIndices::findQueueFamilies( const vk::PhysicalDevice device,
+                                                          const vk::SurfaceKHR surface ) {
     QueueFamilyIndices queueFamilyIndices{};
+    const auto queueFamilyProperties{ device.getQueueFamilyProperties() };
 
-    uint32_t queueFamilyCount{};
-    vkGetPhysicalDeviceQueueFamilyProperties( device, &queueFamilyCount, nullptr );
+    std::uint32_t queueFamilyID{};
+    vk::Bool32 isPresentionSupportAvailable{ false };
 
-    std::vector< VkQueueFamilyProperties > queueFamilies( queueFamilyCount );
-    vkGetPhysicalDeviceQueueFamilyProperties( device, &queueFamilyCount, queueFamilies.data() );
+    for ( const auto& queueFamily : queueFamilyProperties ) {
+        isPresentionSupportAvailable = device.getSurfaceSupportKHR( queueFamilyID, surface );
 
-    uint32_t queueFamilyIndex{};
-    VkBool32 isPresentSupportAvailable{ false };
+        if ( queueFamily.queueFlags & vk::QueueFlagBits::eGraphics )
+            queueFamilyIndices.graphicsFamilyID = queueFamilyID;
 
-    for ( const auto& queueFamily : queueFamilies ) {
-        if ( queueFamily.queueFlags & VK_QUEUE_GRAPHICS_BIT ) {
-            queueFamilyIndices.graphicsFamily = queueFamilyIndex;
-        }
+        if ( isPresentionSupportAvailable )
+            queueFamilyIndices.presentFamilyID = queueFamilyID;
 
-        vkGetPhysicalDeviceSurfaceSupportKHR( device, queueFamilyIndex, surface, &isPresentSupportAvailable );
-
-        if ( isPresentSupportAvailable ) {
-            queueFamilyIndices.presentFamily = queueFamilyIndex;
-        }
-
-        if ( queueFamilyIndices.isComplete() ) {
+        if ( queueFamilyIndices.hasRequiredFamilies() )
             break;
-        }
 
-        queueFamilyIndex++;
+        queueFamilyID++;
     }
 
     return queueFamilyIndices;

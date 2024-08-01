@@ -58,10 +58,10 @@ void Swapchain::createSwapchain() {
     createInfo.imageUsage       = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT;
 
     const QueueFamilyIndices indices{ QueueFamilyIndices::findQueueFamilies( physicalDeviceHandle, surface ) };
-    const std::array< uint32_t, cfg::device::queueFamiliesCount > queueFamilyIndices{ indices.graphicsFamily.value(),
-                                                                                      indices.presentFamily.value() };
+    const std::array< uint32_t, cfg::device::queueFamiliesCount > queueFamilyIndices{ indices.graphicsFamilyID.value(),
+                                                                                      indices.presentFamilyID.value() };
 
-    if ( indices.graphicsFamily != indices.presentFamily ) {
+    if ( indices.graphicsFamilyID != indices.presentFamilyID ) {
         createInfo.imageSharingMode      = VK_SHARING_MODE_CONCURRENT;
         createInfo.queueFamilyIndexCount = static_cast< uint32_t >( std::size( queueFamilyIndices ) );
         createInfo.pQueueFamilyIndices   = queueFamilyIndices.data();

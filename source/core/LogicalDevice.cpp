@@ -6,8 +6,7 @@
 
 namespace ve {
 
-LogicalDevice::LogicalDevice( const ve::PhysicalDevice& physicalDevice, const ve::Window& window )
-    : m_physicalDevice{ physicalDevice }, m_window{ window } {
+LogicalDevice::LogicalDevice( const ve::PhysicalDevice& physicalDevice ) : m_physicalDevice{ physicalDevice } {
     createLogicalDevice();
 }
 
@@ -17,16 +16,15 @@ LogicalDevice::~LogicalDevice() {
 
 void LogicalDevice::createLogicalDevice() {
     const auto physicalDeviceHandle{ m_physicalDevice.getHandler() };
-    const auto surface{ m_window.getSurface() };
     const auto& extensions{ m_physicalDevice.getExtensions() };
 
-    QueueFamilyIndices queueFamilyIndices{ QueueFamilyIndices::findQueueFamilies( physicalDeviceHandle, surface ) };
+    QueueFamilyIndices queueFamilyIndices{ m_physicalDevice.getQueueFamilies() };
     constexpr uint32_t queueCount{ 1u };
     constexpr float queuePriority{ 1.f };
 
     std::vector< VkDeviceQueueCreateInfo > queueCreateInfos{};
-    std::set< uint32_t > uniqueQueueFamilies{ queueFamilyIndices.graphicsFamily.value(),
-                                              queueFamilyIndices.presentFamily.value() };
+    std::set< uint32_t > uniqueQueueFamilies{ queueFamilyIndices.graphicsFamilyID.value(),
+                                              queueFamilyIndices.presentFamilyID.value() };
 
     for ( const auto& queueFamily : uniqueQueueFamilies ) {
         VkDeviceQueueCreateInfo queueCreateInfo{};
@@ -53,8 +51,8 @@ void LogicalDevice::createLogicalDevice() {
     }
 
     constexpr uint32_t queueIndex{};
-    vkGetDeviceQueue( m_logicalDevice, queueFamilyIndices.graphicsFamily.value(), queueIndex, &m_graphicsQueue );
-    vkGetDeviceQueue( m_logicalDevice, queueFamilyIndices.presentFamily.value(), queueIndex, &m_presentQueue );
+    vkGetDeviceQueue( m_logicalDevice, queueFamilyIndices.graphicsFamilyID.value(), queueIndex, &m_graphicsQueue );
+    vkGetDeviceQueue( m_logicalDevice, queueFamilyIndices.presentFamilyID.value(), queueIndex, &m_presentQueue );
 }
 
 VkDevice LogicalDevice::getHandler() const noexcept {

@@ -11,7 +11,7 @@ namespace ve {
 class CommandBuffer {
 public:
     CommandBuffer( const ve::PhysicalDevice& physicalDevice, const ve::LogicalDevice& logicalDevice,
-                   const ve::Swapchain& swapchain, const ve::Pipeline& pipeline, const ve::Window& window );
+                   const ve::Swapchain& swapchain, const ve::Pipeline& pipeline );
 
     ~CommandBuffer();
 
@@ -26,7 +26,6 @@ private:
     const ve::LogicalDevice& m_logicalDevice;
     const ve::Swapchain& m_swapchain;
     const ve::Pipeline& m_pipeline;
-    const ve::Window& m_window;
 
     void createCommandPool();
     void createCommandBuffer();

@@ -6,12 +6,11 @@
 namespace ve {
 
 CommandBuffer::CommandBuffer( const ve::PhysicalDevice& physicalDevice, const ve::LogicalDevice& logicalDevice,
-                              const ve::Swapchain& swapchain, const ve::Pipeline& pipeline, const ve::Window& window )
+                              const ve::Swapchain& swapchain, const ve::Pipeline& pipeline )
     : m_physicalDevice{ physicalDevice },
       m_logicalDevice{ logicalDevice },
       m_swapchain{ swapchain },
-      m_pipeline{ pipeline },
-      m_window{ window } {
+      m_pipeline{ pipeline } {
     createCommandPool();
     createCommandBuffer();
 }
@@ -21,13 +20,12 @@ CommandBuffer::~CommandBuffer() {
 }
 
 void CommandBuffer::createCommandPool() {
-    QueueFamilyIndices queueFamilyIndices{
-        QueueFamilyIndices::findQueueFamilies( m_physicalDevice.getHandler(), m_window.getSurface() ) };
+    QueueFamilyIndices queueFamilies{ m_physicalDevice.getQueueFamilies() };
 
     VkCommandPoolCreateInfo poolInfo{};
     poolInfo.sType            = VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO;
     poolInfo.flags            = VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT;
-    poolInfo.queueFamilyIndex = queueFamilyIndices.graphicsFamily.value();
+    poolInfo.queueFamilyIndex = queueFamilies.graphicsFamilyID.value();
 
     if ( vkCreateCommandPool( m_logicalDevice.getHandler(), &poolInfo, nullptr, &m_commandPool ) != VK_SUCCESS ) {
         throw std::runtime_error( "failed to create command pool!" );

@@ -3,14 +3,12 @@
 #include "Swapchain.hpp"
 #include "Config.hpp"
 
+#include <spdlog/spdlog.h>
+
 #include <map>
 #include <algorithm>
 #include <cstring>
 #include <ranges>
-
-#ifndef NDEBUG
-#include <iostream>
-#endif
 
 namespace ve {
 
@@ -20,43 +18,30 @@ PhysicalDevice::PhysicalDevice( const ve::VulkanInstance& instance, const ve::Wi
 }
 
 void PhysicalDevice::pickPhysicalDevice() {
-    uint32_t deviceCount{};
-    vkEnumeratePhysicalDevices( m_instance.get(), &deviceCount, nullptr );
-
-    if ( deviceCount == 0u ) {
+    const auto devices{ m_instance.get().enumeratePhysicalDevices() };
+    if ( std::size( devices ) == 0U )
         throw std::runtime_error( "failed to find GPU with Vulkan support" );
-    }
 
-    std::vector< VkPhysicalDevice > devices( deviceCount );
-    vkEnumeratePhysicalDevices( m_instance.get(), &deviceCount, devices.data() );
+    std::map< std::uint32_t, vk::PhysicalDevice > deviceCandidates{};
+    std::ranges::for_each( devices, [ this, &deviceCandidates ]( const auto& device ) {
+        deviceCandidates.insert( { rate( device ), device } );
+    } );
 
-    std::multimap< uint32_t, VkPhysicalDevice > candidates{};
-    const auto makeRateDevicePair{ [ this, &candidates ]( const auto& device ) {
-        candidates.insert( std::make_pair( rate( device ), device ) );
-    } };
-    std::ranges::for_each( devices, makeRateDevicePair );
-
-    const auto& bestDeviceRate{ std::rbegin( candidates )->first };
-    if ( bestDeviceRate > 0u ) {
-        m_physicalDevice = std::rbegin( candidates )->second;
-
-#ifndef NDEBUG
-        VkPhysicalDeviceProperties deviceProperties{};
-        vkGetPhysicalDeviceProperties( m_physicalDevice, &deviceProperties );
-        std::cout << "picked GPU: " << deviceProperties.deviceName << '\n';
-#endif
-    } else {
+    const auto [ bestRate, bestDevice ]{ *std::rbegin( deviceCandidates ) };
+    if ( bestRate == 0U )
         throw std::runtime_error( "failed to find suitable device" );
-    }
+
+    m_physicalDevice = bestDevice;
+    m_queueFamilies  = QueueFamilyIndices::findQueueFamilies( m_physicalDevice, m_window.getSurface() );
+
+    const auto deviceProperties{ m_physicalDevice.getProperties() };
+    SPDLOG_INFO( "Picked GPU: {}", deviceProperties.deviceName.data() );
 }
 
-uint32_t PhysicalDevice::rate( const VkPhysicalDevice physicalDevice ) const {
-    QueueFamilyIndices queueIndices{ QueueFamilyIndices::findQueueFamilies( physicalDevice, m_window.getSurface() ) };
-    VkPhysicalDeviceProperties deviceProperties{};
-    VkPhysicalDeviceFeatures deviceFeatures{};
-
-    vkGetPhysicalDeviceProperties( physicalDevice, &deviceProperties );
-    vkGetPhysicalDeviceFeatures( physicalDevice, &deviceFeatures );
+std::uint32_t PhysicalDevice::rate( const vk::PhysicalDevice physicalDevice ) const {
+    const auto queueFamilyIndices{ QueueFamilyIndices::findQueueFamilies( physicalDevice, m_window.getSurface() ) };
+    const auto deviceProperties{ physicalDevice.getProperties() };
+    const auto deviceFeatures{ physicalDevice.getFeatures() };
 
     const bool isExtensionSupportAvailable{ areRequiredExtensionsSupported( physicalDevice ) };
     bool isSwapchainAdequate{};
@@ -67,14 +52,14 @@ uint32_t PhysicalDevice::rate( const VkPhysicalDevice physicalDevice ) const {
     }
 
     if ( !isExtensionSupportAvailable || !isSwapchainAdequate || !deviceFeatures.geometryShader ||
-         !queueIndices.isComplete() ) {
-        return 0u;
+         !queueFamilyIndices.hasRequiredFamilies() ) {
+        return 0U;
     }
 
-    uint32_t score{};
-    if ( deviceProperties.deviceType == VK_PHYSICAL_DEVICE_TYPE_DISCRETE_GPU ) {
+    std::uint32_t score{};
+    if ( deviceProperties.deviceType == vk::PhysicalDeviceType::eDiscreteGpu )
         score += cfg::gpu::discreteGpuValue;
-    }
+
     score += deviceProperties.limits.maxImageDimension2D;
 
     return score;
@@ -99,12 +84,16 @@ bool PhysicalDevice::areRequiredExtensionsSupported( const VkPhysicalDevice phys
     return coveredExtensions == std::size( m_deviceExtensions );
 }
 
-VkPhysicalDevice PhysicalDevice::getHandler() const {
+vk::PhysicalDevice PhysicalDevice::getHandler() const noexcept {
     return m_physicalDevice;
 }
 
 const extentions& PhysicalDevice::getExtensions() const noexcept {
     return m_deviceExtensions;
+}
+
+ve::QueueFamilyIndices PhysicalDevice::getQueueFamilies() const noexcept {
+    return m_queueFamilies;
 }
 
 } // namespace ve

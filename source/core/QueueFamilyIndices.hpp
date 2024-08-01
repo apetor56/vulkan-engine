@@ -1,18 +1,17 @@
 #pragma once
 
-#include <vulkan/vulkan.h>
+#include <vulkan/vulkan.hpp>
 
 #include <optional>
-#include <cstdint>
 
 namespace ve {
 
 struct QueueFamilyIndices {
-    std::optional< uint32_t > graphicsFamily;
-    std::optional< uint32_t > presentFamily;
+    std::optional< std::uint32_t > graphicsFamilyID;
+    std::optional< std::uint32_t > presentFamilyID;
 
-    bool isComplete() const;
-    static QueueFamilyIndices findQueueFamilies( const VkPhysicalDevice device, const VkSurfaceKHR surface );
+    bool hasRequiredFamilies() const noexcept;
+    static QueueFamilyIndices findQueueFamilies( const vk::PhysicalDevice device, const vk::SurfaceKHR surface );
 };
 
 } // namespace ve

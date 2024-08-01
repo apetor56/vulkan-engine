@@ -6,7 +6,7 @@ namespace ve {
 
 class LogicalDevice {
 public:
-    LogicalDevice( const ve::PhysicalDevice& physicalDevice, const ve::Window& window );
+    LogicalDevice( const ve::PhysicalDevice& physicalDevice );
 
     LogicalDevice( const LogicalDevice& other ) = delete;
     LogicalDevice( LogicalDevice&& other )      = delete;
@@ -26,7 +26,6 @@ private:
     VkQueue m_presentQueue;
 
     const ve::PhysicalDevice& m_physicalDevice;
-    const ve::Window& m_window;
 
     void createLogicalDevice();
 };

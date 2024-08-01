@@ -9,10 +9,10 @@ namespace ve {
 Application::Application()
     : m_window{ WindowInfo{ cfg::window::width, cfg::window::height, "example" }, m_vulkanInstance },
       m_physicalDevice{ m_vulkanInstance, m_window },
-      m_logicalDevice{ m_physicalDevice, m_window },
+      m_logicalDevice{ m_physicalDevice },
       m_swapchain{ m_physicalDevice, m_logicalDevice, m_window },
       m_pipeline{ m_logicalDevice, m_swapchain },
-      m_commandBuffer{ m_physicalDevice, m_logicalDevice, m_swapchain, m_pipeline, m_window } {
+      m_commandBuffer{ m_physicalDevice, m_logicalDevice, m_swapchain, m_pipeline } {
     createSyncObjects();
 }
 
