@@ -31,12 +31,12 @@ inline const std::filesystem::path fragShaderBinaryPath{ std::filesystem::path{ 
 
 namespace cfg::gpu {
 
-inline constexpr size_t discreteGpuValue{ 1000u };
+inline constexpr std::uint32_t discreteGpuValue{ 1000U };
 
 } // namespace cfg::gpu
 
 namespace cfg::device {
 
-inline constexpr uint32_t queueFamiliesCount{ 2u };
+inline constexpr std::uint32_t queueFamiliesCount{ 2U };
 
 } // namespace cfg::device
