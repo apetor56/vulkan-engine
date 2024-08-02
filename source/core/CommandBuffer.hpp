@@ -15,13 +15,13 @@ public:
 
     ~CommandBuffer();
 
-    void record( const uint32_t imageIndex ) const;
+    void record( const std::uint32_t imageIndex ) const;
     void reset();
-    VkCommandBuffer getHandler() const noexcept;
+    vk::CommandBuffer getHandler() const noexcept;
 
 private:
     VkCommandPool m_commandPool;
-    VkCommandBuffer m_commandBuffer;
+    vk::CommandBuffer m_commandBuffer;
     const ve::PhysicalDevice& m_physicalDevice;
     const ve::LogicalDevice& m_logicalDevice;
     const ve::Swapchain& m_swapchain;

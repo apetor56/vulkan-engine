@@ -58,10 +58,10 @@ void Swapchain::createSwapchain() {
     createInfo.imageUsage       = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT;
 
     const QueueFamilyIndices indices{ QueueFamilyIndices::findQueueFamilies( physicalDeviceHandle, surface ) };
-    const std::array< uint32_t, cfg::device::queueFamiliesCount > queueFamilyIndices{ indices.graphicsFamilyID.value(),
-                                                                                      indices.presentFamilyID.value() };
+    const std::array< uint32_t, cfg::device::queueFamiliesCount > queueFamilyIndices{
+        indices.graphicsFamilyID.value(), indices.presentationFamilyID.value() };
 
-    if ( indices.graphicsFamilyID != indices.presentFamilyID ) {
+    if ( indices.graphicsFamilyID != indices.presentationFamilyID ) {
         createInfo.imageSharingMode      = VK_SHARING_MODE_CONCURRENT;
         createInfo.queueFamilyIndexCount = static_cast< uint32_t >( std::size( queueFamilyIndices ) );
         createInfo.pQueueFamilyIndices   = queueFamilyIndices.data();
@@ -75,8 +75,7 @@ void Swapchain::createSwapchain() {
     createInfo.clipped        = VK_TRUE;
     createInfo.oldSwapchain   = VK_NULL_HANDLE;
 
-    if ( vkCreateSwapchainKHR( logicalDeviceHandle, &createInfo, nullptr, &m_swapchain ) != VK_SUCCESS )
-        throw std::runtime_error( "failed to create swapchain" );
+    m_swapchain = logicalDeviceHandle.createSwapchainKHR( createInfo );
 
     vkGetSwapchainImagesKHR( logicalDeviceHandle, m_swapchain, &imageCount, nullptr );
     m_swapchainImages.resize( imageCount );
@@ -265,7 +264,7 @@ uint32_t Swapchain::getImagesCount() const noexcept {
     return static_cast< uint32_t >( std::size( m_swapchainImages ) );
 }
 
-VkSwapchainKHR Swapchain::getHandler() const noexcept {
+vk::SwapchainKHR Swapchain::getHandler() const noexcept {
     return m_swapchain;
 }
 

@@ -16,14 +16,14 @@ public:
 
     ~LogicalDevice();
 
-    VkDevice getHandler() const noexcept;
-    VkQueue getGraphicsQueue() const noexcept;
-    VkQueue getPresentationQueue() const noexcept;
+    vk::Device getHandler() const noexcept;
+    vk::Queue getGraphicsQueue() const noexcept;
+    vk::Queue getPresentationQueue() const noexcept;
 
 private:
-    VkDevice m_logicalDevice;
-    VkQueue m_graphicsQueue;
-    VkQueue m_presentQueue;
+    vk::Device m_logicalDevice;
+    vk::Queue m_graphicsQueue;
+    vk::Queue m_presentationQueue;
 
     const ve::PhysicalDevice& m_physicalDevice;
 

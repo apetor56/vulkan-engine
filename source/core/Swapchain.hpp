@@ -34,14 +34,14 @@ public:
     VkRenderPass getRenderpass() const noexcept;
     VkFramebuffer getFrambuffer( const uint32_t index ) const;
     uint32_t getImagesCount() const noexcept;
-    VkSwapchainKHR getHandler() const noexcept;
+    vk::SwapchainKHR getHandler() const noexcept;
 
 private:
     const ve::PhysicalDevice& m_physicalDevice;
     const ve::LogicalDevice& m_logicalDevice;
     const ve::Window& m_window;
 
-    VkSwapchainKHR m_swapchain;
+    vk::SwapchainKHR m_swapchain;
     VkFormat m_format;
     VkExtent2D m_extent;
     VkRenderPass m_renderPass;

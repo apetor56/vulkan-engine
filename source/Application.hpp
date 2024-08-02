@@ -27,9 +27,9 @@ private:
     ve::Pipeline m_pipeline;
     ve::CommandBuffer m_commandBuffer;
 
-    VkSemaphore m_imageAvailableSemapore{};
-    VkSemaphore m_renderFinishedSemaphore{};
-    VkFence m_inFlightFence{};
+    vk::Semaphore m_imageAvailableSemaphore{};
+    vk::Semaphore m_renderFinishedSemaphore{};
+    vk::Fence m_inFlightFence{};
 
     void createSyncObjects();
 };

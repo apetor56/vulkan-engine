@@ -3,6 +3,8 @@
 
 #include <set>
 #include <stdexcept>
+#include <ranges>
+#include <algorithm>
 
 namespace ve {
 
@@ -11,60 +13,56 @@ LogicalDevice::LogicalDevice( const ve::PhysicalDevice& physicalDevice ) : m_phy
 }
 
 LogicalDevice::~LogicalDevice() {
-    vkDestroyDevice( m_logicalDevice, nullptr );
+    m_logicalDevice.destroy();
 }
 
 void LogicalDevice::createLogicalDevice() {
-    const auto physicalDeviceHandle{ m_physicalDevice.getHandler() };
-    const auto& extensions{ m_physicalDevice.getExtensions() };
+    const auto physicalDeviceHandler{ m_physicalDevice.getHandler() };
+    const auto& physicalDeviceExtensions{ m_physicalDevice.getExtensions() };
 
-    QueueFamilyIndices queueFamilyIndices{ m_physicalDevice.getQueueFamilies() };
-    constexpr uint32_t queueCount{ 1u };
-    constexpr float queuePriority{ 1.f };
+    const ve::QueueFamilyIndices queueFamilyIndices{ m_physicalDevice.getQueueFamilies() };
+    static constexpr std::uint32_t queueCount{ 1U };
+    static constexpr float queuePriority{ 1.0F };
 
-    std::vector< VkDeviceQueueCreateInfo > queueCreateInfos{};
-    std::set< uint32_t > uniqueQueueFamilies{ queueFamilyIndices.graphicsFamilyID.value(),
-                                              queueFamilyIndices.presentFamilyID.value() };
+    std::vector< vk::DeviceQueueCreateInfo > queueCreateInfos{};
+    std::set< std::uint32_t > uniqueQueueFamilies{ queueFamilyIndices.graphicsFamilyID.value(),
+                                                   queueFamilyIndices.presentationFamilyID.value() };
 
-    for ( const auto& queueFamily : uniqueQueueFamilies ) {
-        VkDeviceQueueCreateInfo queueCreateInfo{};
-        queueCreateInfo.sType            = VK_STRUCTURE_TYPE_DEVICE_QUEUE_CREATE_INFO;
-        queueCreateInfo.queueFamilyIndex = queueFamily;
+    std::ranges::for_each( uniqueQueueFamilies, [ &queueCreateInfos ]( const auto queueFamilyID ) {
+        vk::DeviceQueueCreateInfo queueCreateInfo{};
+        queueCreateInfo.sType            = vk::StructureType::eDeviceQueueCreateInfo;
+        queueCreateInfo.queueFamilyIndex = queueFamilyID;
         queueCreateInfo.queueCount       = queueCount;
         queueCreateInfo.pQueuePriorities = &queuePriority;
 
         queueCreateInfos.emplace_back( queueCreateInfo );
-    }
+    } );
 
-    VkPhysicalDeviceFeatures deviceFeatures{}; // empty for now
+    vk::DeviceCreateInfo deviceCreateInfo{};
+    deviceCreateInfo.sType                   = vk::StructureType::eDeviceCreateInfo;
+    deviceCreateInfo.pQueueCreateInfos       = std::data( queueCreateInfos );
+    deviceCreateInfo.queueCreateInfoCount    = static_cast< std::uint32_t >( std::size( queueCreateInfos ) );
+    deviceCreateInfo.pEnabledFeatures        = nullptr;
+    deviceCreateInfo.enabledExtensionCount   = static_cast< std::uint32_t >( std::size( physicalDeviceExtensions ) );
+    deviceCreateInfo.ppEnabledExtensionNames = std::data( physicalDeviceExtensions );
 
-    VkDeviceCreateInfo deviceCreateInfo{};
-    deviceCreateInfo.sType                   = VK_STRUCTURE_TYPE_DEVICE_CREATE_INFO;
-    deviceCreateInfo.pQueueCreateInfos       = queueCreateInfos.data();
-    deviceCreateInfo.queueCreateInfoCount    = static_cast< uint32_t >( std::size( queueCreateInfos ) );
-    deviceCreateInfo.pEnabledFeatures        = &deviceFeatures;
-    deviceCreateInfo.enabledExtensionCount   = static_cast< uint32_t >( std::size( extensions ) );
-    deviceCreateInfo.ppEnabledExtensionNames = extensions.data();
+    m_logicalDevice = physicalDeviceHandler.createDevice( deviceCreateInfo, nullptr );
 
-    if ( vkCreateDevice( physicalDeviceHandle, &deviceCreateInfo, nullptr, &m_logicalDevice ) != VK_SUCCESS ) {
-        throw std::runtime_error( "failed to create logical device" );
-    }
-
-    constexpr uint32_t queueIndex{};
-    vkGetDeviceQueue( m_logicalDevice, queueFamilyIndices.graphicsFamilyID.value(), queueIndex, &m_graphicsQueue );
-    vkGetDeviceQueue( m_logicalDevice, queueFamilyIndices.presentFamilyID.value(), queueIndex, &m_presentQueue );
+    constexpr std::uint32_t queueIndex{ 0U };
+    m_graphicsQueue     = m_logicalDevice.getQueue( queueFamilyIndices.graphicsFamilyID.value(), queueIndex );
+    m_presentationQueue = m_logicalDevice.getQueue( queueFamilyIndices.graphicsFamilyID.value(), queueIndex );
 }
 
-VkDevice LogicalDevice::getHandler() const noexcept {
+vk::Device LogicalDevice::getHandler() const noexcept {
     return m_logicalDevice;
 }
 
-VkQueue LogicalDevice::getGraphicsQueue() const noexcept {
+vk::Queue LogicalDevice::getGraphicsQueue() const noexcept {
     return m_graphicsQueue;
 }
 
-VkQueue LogicalDevice::getPresentationQueue() const noexcept {
-    return m_presentQueue;
+vk::Queue LogicalDevice::getPresentationQueue() const noexcept {
+    return m_presentationQueue;
 }
 
 } // namespace ve

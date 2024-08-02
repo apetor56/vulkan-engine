@@ -17,10 +17,10 @@ Application::Application()
 }
 
 Application::~Application() {
-    auto *const logicalDeviceHandler{ m_logicalDevice.getHandler() };
-    vkDestroySemaphore( logicalDeviceHandler, m_imageAvailableSemapore, nullptr );
-    vkDestroySemaphore( logicalDeviceHandler, m_renderFinishedSemaphore, nullptr );
-    vkDestroyFence( logicalDeviceHandler, m_inFlightFence, nullptr );
+    const auto logicalDeviceHandler{ m_logicalDevice.getHandler() };
+    logicalDeviceHandler.destroySemaphore( m_imageAvailableSemaphore );
+    logicalDeviceHandler.destroySemaphore( m_renderFinishedSemaphore );
+    logicalDeviceHandler.destroyFence( m_inFlightFence );
 }
 
 void Application::run() {
@@ -35,61 +35,58 @@ void Application::run() {
 }
 
 void Application::createSyncObjects() {
-    VkSemaphoreCreateInfo semaphoreInfo{};
-    semaphoreInfo.sType = VK_STRUCTURE_TYPE_SEMAPHORE_CREATE_INFO;
+    vk::SemaphoreCreateInfo semaphoreInfo{};
+    semaphoreInfo.sType = vk::StructureType::eSemaphoreCreateInfo;
 
-    VkFenceCreateInfo fenceInfo{};
-    fenceInfo.sType = VK_STRUCTURE_TYPE_FENCE_CREATE_INFO;
-    fenceInfo.flags = VK_FENCE_CREATE_SIGNALED_BIT;
+    vk::FenceCreateInfo fenceInfo{};
+    fenceInfo.sType = vk::StructureType::eFenceCreateInfo;
+    fenceInfo.flags = vk::FenceCreateFlagBits::eSignaled;
 
-    if ( vkCreateSemaphore( m_logicalDevice.getHandler(), &semaphoreInfo, nullptr, &m_imageAvailableSemapore ) !=
-             VK_SUCCESS ||
-         vkCreateSemaphore( m_logicalDevice.getHandler(), &semaphoreInfo, nullptr, &m_renderFinishedSemaphore ) !=
-             VK_SUCCESS ||
-         vkCreateFence( m_logicalDevice.getHandler(), &fenceInfo, nullptr, &m_inFlightFence ) != VK_SUCCESS ) {
-        throw std::runtime_error( "failed to create semaphore or fence sync object(s)" );
-    }
+    const auto logicalDeviceHandler{ m_logicalDevice.getHandler() };
+    m_imageAvailableSemaphore = logicalDeviceHandler.createSemaphore( semaphoreInfo );
+    m_renderFinishedSemaphore = logicalDeviceHandler.createSemaphore( semaphoreInfo );
+    m_inFlightFence           = logicalDeviceHandler.createFence( fenceInfo );
 }
 
 void Application::render() {
-    auto *const logicalDeviceHandler{ m_logicalDevice.getHandler() };
-    auto *const swapchainHandle{ m_swapchain.getHandler() };
-    auto *const commadBufferHandle{ m_commandBuffer.getHandler() };
+    const auto logicalDeviceHandler{ m_logicalDevice.getHandler() };
+    const auto swapchainHandler{ m_swapchain.getHandler() };
+    const auto commadBufferHandler{ m_commandBuffer.getHandler() };
 
-    vkWaitForFences( logicalDeviceHandler, 1U, &m_inFlightFence, VK_TRUE, UINT64_MAX );
-    vkResetFences( logicalDeviceHandler, 1U, &m_inFlightFence );
+    logicalDeviceHandler.waitForFences( m_inFlightFence, vk::True, UINT64_MAX );
+    logicalDeviceHandler.resetFences( m_inFlightFence );
 
-    std::uint32_t imageIndex{};
-    vkAcquireNextImageKHR( logicalDeviceHandler, swapchainHandle, UINT64_MAX, m_imageAvailableSemapore, VK_NULL_HANDLE,
-                           &imageIndex );
+    const std::uint32_t imageIndex{
+        logicalDeviceHandler.acquireNextImageKHR( swapchainHandler, UINT64_MAX, m_imageAvailableSemaphore ).value };
 
     m_commandBuffer.reset();
     m_commandBuffer.record( imageIndex );
 
-    const std::vector< VkPipelineStageFlags > waitStages{ VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT };
+    const std::vector< vk::PipelineStageFlags > waitStages{ vk::PipelineStageFlagBits::eColorAttachmentOutput };
 
-    VkSubmitInfo submitInfo{};
-    submitInfo.sType                = VK_STRUCTURE_TYPE_SUBMIT_INFO;
+    vk::SubmitInfo submitInfo{};
+    submitInfo.sType                = vk::StructureType::eSubmitInfo;
     submitInfo.waitSemaphoreCount   = 1U;
-    submitInfo.pWaitSemaphores      = &m_imageAvailableSemapore;
+    submitInfo.pWaitSemaphores      = &m_imageAvailableSemaphore;
     submitInfo.pWaitDstStageMask    = waitStages.data();
     submitInfo.commandBufferCount   = 1U;
-    submitInfo.pCommandBuffers      = &commadBufferHandle;
+    submitInfo.pCommandBuffers      = &commadBufferHandler;
     submitInfo.signalSemaphoreCount = 1U;
     submitInfo.pSignalSemaphores    = &m_renderFinishedSemaphore;
 
-    if ( vkQueueSubmit( m_logicalDevice.getGraphicsQueue(), 1U, &submitInfo, m_inFlightFence ) != VK_SUCCESS )
-        throw std::runtime_error( "failed to submit draw command buffer" );
+    const auto graphicsQueue{ m_logicalDevice.getGraphicsQueue() };
+    graphicsQueue.submit( submitInfo, m_inFlightFence );
 
-    VkPresentInfoKHR presentInfo{};
-    presentInfo.sType              = VK_STRUCTURE_TYPE_PRESENT_INFO_KHR;
+    vk::PresentInfoKHR presentInfo{};
+    presentInfo.sType              = vk::StructureType::ePresentInfoKHR;
     presentInfo.waitSemaphoreCount = 1U;
     presentInfo.pWaitSemaphores    = &m_renderFinishedSemaphore;
     presentInfo.swapchainCount     = 1U;
-    presentInfo.pSwapchains        = &swapchainHandle;
+    presentInfo.pSwapchains        = &swapchainHandler;
     presentInfo.pImageIndices      = &imageIndex;
 
-    vkQueuePresentKHR( m_logicalDevice.getPresentationQueue(), &presentInfo );
+    const auto presentationQueue{ m_logicalDevice.getPresentationQueue() };
+    presentationQueue.presentKHR( presentInfo );
 }
 
 } // namespace ve

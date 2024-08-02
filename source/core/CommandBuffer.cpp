@@ -33,15 +33,14 @@ void CommandBuffer::createCommandPool() {
 }
 
 void CommandBuffer::createCommandBuffer() {
-    VkCommandBufferAllocateInfo allocInfo{};
-    allocInfo.sType              = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
+    vk::CommandBufferAllocateInfo allocInfo{};
+    allocInfo.sType              = vk::StructureType::eCommandBufferAllocateInfo;
     allocInfo.commandPool        = m_commandPool;
-    allocInfo.level              = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
+    allocInfo.level              = vk::CommandBufferLevel::ePrimary;
     allocInfo.commandBufferCount = 1;
 
-    if ( vkAllocateCommandBuffers( m_logicalDevice.getHandler(), &allocInfo, &m_commandBuffer ) != VK_SUCCESS ) {
-        throw std::runtime_error( "failed to allocate command buffers!" );
-    }
+    const auto logicalDeviceHandler{ m_logicalDevice.getHandler() };
+    m_commandBuffer = logicalDeviceHandler.allocateCommandBuffers( allocInfo ).at( 0 );
 }
 
 void CommandBuffer::record( const uint32_t imageIndex ) const {
@@ -86,7 +85,7 @@ void CommandBuffer::reset() {
     vkResetCommandBuffer( m_commandBuffer, 0 );
 }
 
-VkCommandBuffer CommandBuffer::getHandler() const noexcept {
+vk::CommandBuffer CommandBuffer::getHandler() const noexcept {
     return m_commandBuffer;
 }
 
