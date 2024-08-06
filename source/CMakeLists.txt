@@ -22,17 +22,17 @@ endif()
 target_compile_definitions(${PROJECT_NAME} PRIVATE SHADER_BINARIES_DIR="${CMAKE_BINARY_DIR}/shaders")
 
 set(CORE
-    core/Config.hpp
-    core/VulkanInstance.cpp core/VulkanInstance.hpp
-    core/DebugMessenger.cpp core/DebugMessenger.hpp
-    core/Window.cpp core/Window.hpp 
-    core/PhysicalDevice.cpp core/PhysicalDevice.hpp
-    core/QueueFamilyIndices.cpp core/QueueFamilyIndices.hpp
-    core/LogicalDevice.cpp core/LogicalDevice.hpp
-    core/Swapchain.cpp core/Swapchain.hpp
-    core/Pipeline.cpp core/Pipeline.hpp
-    core/Shader.cpp core/Shader.hpp
-    core/CommandBuffer.cpp core/CommandBuffer.hpp  
+    core/Config.hpp             
+    core/VulkanInstance.cpp        core/VulkanInstance.hpp
+    core/DebugMessenger.cpp        core/DebugMessenger.hpp
+    core/Window.cpp                core/Window.hpp 
+    core/PhysicalDevice.cpp        core/PhysicalDevice.hpp
+    core/QueueFamilyIndices.cpp    core/QueueFamilyIndices.hpp
+    core/LogicalDevice.cpp         core/LogicalDevice.hpp
+    core/Swapchain.cpp             core/Swapchain.hpp
+    core/Pipeline.cpp              core/Pipeline.hpp
+    core/Shader.cpp                core/Shader.hpp
+    core/CommandBuffer.cpp         core/CommandBuffer.hpp  
 )
 
 set(SHADER_SOURCE

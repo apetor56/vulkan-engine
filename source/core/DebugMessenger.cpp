@@ -1,9 +1,10 @@
 #include "DebugMessenger.hpp"
 
+#include <spdlog/spdlog.h>
+
 #include <iostream>
 #include <ranges>
 #include <algorithm>
-#include <format>
 
 namespace ve {
 
@@ -54,7 +55,10 @@ VKAPI_ATTR VkBool32 VKAPI_CALL DebugMessenger::debugCallback( VkDebugUtilsMessag
                                                               VkDebugUtilsMessageTypeFlagsEXT messageType,
                                                               const VkDebugUtilsMessengerCallbackDataEXT *pCallbackData,
                                                               void *pUserData ) {
-    std::cerr << std::format( "validation layer: {}\n", pCallbackData->pMessage );
+    if ( messageSeverity & VK_DEBUG_UTILS_MESSAGE_SEVERITY_ERROR_BIT_EXT )
+        SPDLOG_ERROR( "\nmessage name: {}\nmessage: {}", pCallbackData->pMessageIdName, pCallbackData->pMessage );
+    else if ( messageSeverity & VK_DEBUG_UTILS_MESSAGE_SEVERITY_WARNING_BIT_EXT )
+        SPDLOG_WARN( "\nmessage name: {}\nmessage: {}", pCallbackData->pMessageIdName, pCallbackData->pMessage );
     return VK_FALSE;
 }
 
