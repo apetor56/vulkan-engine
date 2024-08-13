@@ -18,7 +18,7 @@ VulkanInstance::~VulkanInstance() {
     if ( m_debugMessenger.has_value() )
         m_debugMessenger->destroy();
 
-    vkDestroyInstance( m_instance, nullptr );
+    m_instance.destroy();
     glfwTerminate();
 }
 

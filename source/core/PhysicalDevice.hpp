@@ -30,7 +30,7 @@ private:
 
     void pickPhysicalDevice();
     std::uint32_t rate( const vk::PhysicalDevice device ) const;
-    bool areRequiredExtensionsSupported( const VkPhysicalDevice physicalDevice ) const;
+    bool areRequiredExtensionsSupported( const vk::PhysicalDevice physicalDevice ) const;
 };
 
 } // namespace ve

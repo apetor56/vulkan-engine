@@ -2,20 +2,18 @@
 
 #include "LogicalDevice.hpp"
 
-#include <vulkan/vulkan.h>
-
 #include <vector>
 
 namespace ve {
 
-struct SwapchainSupportDetails {
-    VkSurfaceCapabilitiesKHR capabilities;
-    std::vector< VkSurfaceFormatKHR > formats;
-    std::vector< VkPresentModeKHR > presentModes;
-};
-
 class Swapchain {
 public:
+    struct Details {
+        vk::SurfaceCapabilitiesKHR capabilities;
+        std::vector< vk::SurfaceFormatKHR > formats;
+        std::vector< vk::PresentModeKHR > presentationModes;
+    };
+
     Swapchain( const ve::PhysicalDevice& physicalDevice, const ve::LogicalDevice& logicalDevice,
                const ve::Window& window );
 
@@ -27,36 +25,38 @@ public:
     Swapchain& operator=( const Swapchain& other ) = delete;
     Swapchain& operator=( Swapchain&& other )      = delete;
 
-    static SwapchainSupportDetails querySwapChainSupport( const VkPhysicalDevice physicalDevice,
-                                                          const VkSurfaceKHR surface );
+    static Details getSwapchainDetails( const vk::PhysicalDevice physicalDevice, const vk::SurfaceKHR surface );
 
-    VkExtent2D getExtent() const noexcept;
-    VkRenderPass getRenderpass() const noexcept;
-    VkFramebuffer getFrambuffer( const uint32_t index ) const;
-    uint32_t getImagesCount() const noexcept;
+    vk::Extent2D getExtent() const noexcept;
+    vk::RenderPass getRenderpass() const noexcept;
+    vk::Framebuffer getFrambuffer( const uint32_t index ) const;
+    std::uint32_t getImagesCount() const noexcept;
     vk::SwapchainKHR getHandler() const noexcept;
 
 private:
+    std::vector< vk::Image > m_swapchainImages;
+    std::vector< vk::ImageView > m_swapchainImageViews;
+    std::vector< vk::Framebuffer > m_framebuffers;
+
     const ve::PhysicalDevice& m_physicalDevice;
     const ve::LogicalDevice& m_logicalDevice;
     const ve::Window& m_window;
 
     vk::SwapchainKHR m_swapchain;
-    VkFormat m_format;
-    VkExtent2D m_extent;
-    VkRenderPass m_renderPass;
-    std::vector< VkImage > m_swapchainImages;
-    std::vector< VkImageView > m_swapChainImageViews;
-    std::vector< VkFramebuffer > m_framebuffers;
+    vk::Extent2D m_extent;
+    vk::RenderPass m_renderPass;
+    vk::Format m_format;
 
     void createSwapchain();
     void createImageViews();
     void createRenderPass();
     void createFramebuffers();
 
-    VkSurfaceFormatKHR chooseSwapSurfaceFormat( const std::vector< VkSurfaceFormatKHR >& availableFormats ) const;
-    VkPresentModeKHR chooseSwapPresentMode( const std::vector< VkPresentModeKHR >& availablePresentModes ) const;
-    VkExtent2D chooseSwapExtent( const VkSurfaceCapabilitiesKHR& capabilities ) const;
+    vk::SurfaceFormatKHR
+        chooseSurfaceFormat( const std::vector< vk::SurfaceFormatKHR >& availableFormats ) const noexcept;
+    vk::PresentModeKHR
+        choosePresentationMode( const std::vector< vk::PresentModeKHR >& availablePresentModes ) const noexcept;
+    vk::Extent2D chooseExtent( const vk::SurfaceCapabilitiesKHR& capabilities ) const noexcept;
 };
 
 } // namespace ve

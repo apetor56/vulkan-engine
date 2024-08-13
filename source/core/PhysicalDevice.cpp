@@ -7,7 +7,6 @@
 
 #include <map>
 #include <algorithm>
-#include <cstring>
 #include <ranges>
 
 namespace ve {
@@ -46,15 +45,14 @@ std::uint32_t PhysicalDevice::rate( const vk::PhysicalDevice physicalDevice ) co
     const bool isExtensionSupportAvailable{ areRequiredExtensionsSupported( physicalDevice ) };
     bool isSwapchainAdequate{};
     if ( isExtensionSupportAvailable ) {
-        SwapchainSupportDetails swapchainSupport{
-            Swapchain::querySwapChainSupport( physicalDevice, m_window.getSurface() ) };
-        isSwapchainAdequate = !swapchainSupport.formats.empty() && !swapchainSupport.formats.empty();
+        const Swapchain::Details swapchainDetails{
+            Swapchain::getSwapchainDetails( physicalDevice, m_window.getSurface() ) };
+        isSwapchainAdequate = !swapchainDetails.formats.empty() && !swapchainDetails.presentationModes.empty();
     }
 
     if ( !isExtensionSupportAvailable || !isSwapchainAdequate || !deviceFeatures.geometryShader ||
-         !queueFamilyIndices.hasRequiredFamilies() ) {
+         !queueFamilyIndices.hasRequiredFamilies() )
         return 0U;
-    }
 
     std::uint32_t score{};
     if ( deviceProperties.deviceType == vk::PhysicalDeviceType::eDiscreteGpu )
@@ -65,23 +63,18 @@ std::uint32_t PhysicalDevice::rate( const vk::PhysicalDevice physicalDevice ) co
     return score;
 }
 
-bool PhysicalDevice::areRequiredExtensionsSupported( const VkPhysicalDevice physicalDevice ) const {
-    uint32_t extensionCount{};
-    vkEnumerateDeviceExtensionProperties( physicalDevice, nullptr, &extensionCount, nullptr );
+bool PhysicalDevice::areRequiredExtensionsSupported( const vk::PhysicalDevice physicalDevice ) const {
+    const auto allDeviceExtensions{ physicalDevice.enumerateDeviceExtensionProperties() };
+    const auto getName{
+        []( const auto& extensionProperty ) { return std::string_view( extensionProperty.extensionName ); } };
+    const auto allDeviceExtensionsNames{ allDeviceExtensions | std::views::transform( getName ) };
 
-    std::vector< VkExtensionProperties > allExtensions( extensionCount );
-    vkEnumerateDeviceExtensionProperties( physicalDevice, nullptr, &extensionCount, allExtensions.data() );
+    const auto isRequiredExtensionSupported{ [ &allDeviceExtensionsNames ]( const auto& requiredExtensionName ) {
+        return std::ranges::find( allDeviceExtensionsNames, requiredExtensionName ) !=
+               std::end( allDeviceExtensionsNames );
+    } };
 
-    size_t coveredExtensions{};
-    for ( const char *requiredExtensionName : m_deviceExtensions ) {
-        for ( const VkExtensionProperties& extension : allExtensions ) {
-            if ( strcmp( extension.extensionName, requiredExtensionName ) == 0 ) {
-                coveredExtensions++;
-            }
-        }
-    }
-
-    return coveredExtensions == std::size( m_deviceExtensions );
+    return std::ranges::all_of( m_deviceExtensions, isRequiredExtensionSupported );
 }
 
 vk::PhysicalDevice PhysicalDevice::getHandler() const noexcept {
