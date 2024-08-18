@@ -59,11 +59,11 @@ void Pipeline::createPipeline() {
 }
 
 VkPipelineShaderStageCreateInfo Pipeline::pupulateShaderStageInfo( enum VkShaderStageFlagBits shaderType,
-                                                                   const Shader& shader ) const {
+                                                                   const ve::ShaderModule& shaderModule ) const {
     VkPipelineShaderStageCreateInfo vertexStageCreateInfo{};
     vertexStageCreateInfo.sType  = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
     vertexStageCreateInfo.stage  = shaderType;
-    vertexStageCreateInfo.module = shader.getModule();
+    vertexStageCreateInfo.module = shaderModule.getHandler();
     vertexStageCreateInfo.pName  = "main";
 
     return vertexStageCreateInfo;

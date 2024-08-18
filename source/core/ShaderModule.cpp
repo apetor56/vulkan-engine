@@ -7,8 +7,7 @@ namespace ve {
 
 ShaderModule::ShaderModule( std::string_view shaderBinaryPath, const ve::LogicalDevice& logicalDevice )
     : m_logicalDevice{ logicalDevice } {
-    const auto& shaderCode{ readShaderBinary( shaderPath ) };
-    createShaderModule( shaderCode );
+    createShaderModule( getShaderBinaryCode( shaderBinaryPath ) );
 }
 
 ShaderModule::~ShaderModule() {

@@ -1,7 +1,7 @@
 #pragma once
 
 #include "LogicalDevice.hpp"
-#include "Shader.hpp"
+#include "ShaderModule.hpp"
 #include "Swapchain.hpp"
 
 #include <array>
@@ -31,8 +31,8 @@ public:
     VkRect2D getScissor() const;
 
 private:
-    Shader m_vertexShader;
-    Shader m_fragmentShader;
+    ve::ShaderModule m_vertexShader;
+    ve::ShaderModule m_fragmentShader;
     const ve::LogicalDevice& m_logicalDevice;
     const ve::Swapchain& m_swapchain;
     VkPipelineLayout m_pipelineLayout;
@@ -44,7 +44,7 @@ private:
     void createPipeline();
 
     VkPipelineShaderStageCreateInfo pupulateShaderStageInfo( enum VkShaderStageFlagBits shaderType,
-                                                             const Shader& shader ) const;
+                                                             const ve::ShaderModule& shaderModule ) const;
     ShaderStageInfos createShaderStagesInfo() const;
     VkPipelineDynamicStateCreateInfo createDynamicStatesInfo() const;
     void createViewport();
