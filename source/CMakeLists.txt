@@ -31,7 +31,7 @@ set(CORE
     core/LogicalDevice.cpp         core/LogicalDevice.hpp
     core/Swapchain.cpp             core/Swapchain.hpp
     core/Pipeline.cpp              core/Pipeline.hpp
-    core/Shader.cpp                core/Shader.hpp
+    core/ShaderModule.cpp          core/ShaderModule.hpp
     core/CommandBuffer.cpp         core/CommandBuffer.hpp  
 )
 

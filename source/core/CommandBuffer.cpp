@@ -68,10 +68,10 @@ void CommandBuffer::record( const uint32_t imageIndex ) const {
     vkCmdBeginRenderPass( m_commandBuffer, &renderPassInfo, VK_SUBPASS_CONTENTS_INLINE );
     vkCmdBindPipeline( m_commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, m_pipeline.getHandler() );
 
-    const auto& viewport{ m_pipeline.getViewport() };
-    vkCmdSetViewport( m_commandBuffer, 0, 1, &viewport );
-    const auto& scissor{ m_pipeline.getScissor() };
-    vkCmdSetScissor( m_commandBuffer, 0, 1, &scissor );
+    const auto viewport{ m_pipeline.getViewport() };
+    m_commandBuffer.setViewport( 0U, viewport );
+    const auto scissor{ m_pipeline.getScissor() };
+    m_commandBuffer.setScissor( 0U, scissor );
 
     vkCmdDraw( m_commandBuffer, 3, 1, 0, 0 );
     vkCmdEndRenderPass( m_commandBuffer );

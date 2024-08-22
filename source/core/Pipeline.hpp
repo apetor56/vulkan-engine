@@ -6,57 +6,63 @@
 
 #include <array>
 
-using ShaderStageInfos = std::array< VkPipelineShaderStageCreateInfo, 2u >;
+using ShaderStageInfos = std::array< vk::PipelineShaderStageCreateInfo, 2u >;
 
 namespace ve {
 
 struct PipelineConfigInfo {
-    const VkPipelineDynamicStateCreateInfo dynamicState{};
-    const VkPipelineViewportStateCreateInfo viewport{};
-    const VkPipelineVertexInputStateCreateInfo vertexInput{};
-    const VkPipelineInputAssemblyStateCreateInfo inputAsembly{};
-    const VkPipelineRasterizationStateCreateInfo rasterizer{};
-    const VkPipelineMultisampleStateCreateInfo multisampling{};
-    const VkPipelineColorBlendStateCreateInfo colorBlends{};
+    const vk::PipelineDynamicStateCreateInfo dynamicState{};
+    const vk::PipelineViewportStateCreateInfo viewportState{};
+    const vk::PipelineVertexInputStateCreateInfo vertexInputState{};
+    const vk::PipelineInputAssemblyStateCreateInfo inputAsemblyState{};
+    const vk::PipelineRasterizationStateCreateInfo rasterizerState{};
+    const vk::PipelineMultisampleStateCreateInfo multisamplingState{};
+    const vk::PipelineColorBlendStateCreateInfo colorBlendsState{};
 };
 
 class Pipeline {
 public:
     Pipeline( const ve::LogicalDevice& logicalDevice, const ve::Swapchain& swapchain );
 
+    Pipeline( const Pipeline& other ) = delete;
+    Pipeline( Pipeline&& other )      = delete;
+
+    Pipeline& operator=( const Pipeline& other ) = delete;
+    Pipeline& operator=( Pipeline&& other )      = delete;
+
     ~Pipeline();
 
-    VkPipeline getHandler() const;
-    VkViewport getViewport() const;
-    VkRect2D getScissor() const;
+    vk::Pipeline getHandler() const noexcept;
+    vk::Viewport getViewport() const noexcept;
+    vk::Rect2D getScissor() const noexcept;
 
 private:
+    vk::Viewport m_viewport;
+    vk::Rect2D m_scissor;
     ve::ShaderModule m_vertexShader;
     ve::ShaderModule m_fragmentShader;
+    vk::Pipeline m_graphicsPipeline;
+    vk::PipelineLayout m_pipelineLayout;
     const ve::LogicalDevice& m_logicalDevice;
     const ve::Swapchain& m_swapchain;
-    VkPipelineLayout m_pipelineLayout;
-    VkPipeline m_graphicsPipeline;
-    VkViewport m_viewport;
-    VkRect2D m_scissor;
 
     void createPipelineLayout();
     void createPipeline();
 
-    VkPipelineShaderStageCreateInfo pupulateShaderStageInfo( enum VkShaderStageFlagBits shaderType,
-                                                             const ve::ShaderModule& shaderModule ) const;
+    vk::PipelineShaderStageCreateInfo pupulateShaderStageInfo( const vk::ShaderStageFlagBits shaderType,
+                                                               const ve::ShaderModule& shaderModule ) const;
     ShaderStageInfos createShaderStagesInfo() const;
-    VkPipelineDynamicStateCreateInfo createDynamicStatesInfo() const;
-    void createViewport();
-    void createScissor();
-    VkPipelineViewportStateCreateInfo createViewportStateInfo() const;
-    VkPipelineVertexInputStateCreateInfo createVertexInputInfo() const;
-    VkPipelineInputAssemblyStateCreateInfo createInputAsemblyInfo() const;
-    VkPipelineRasterizationStateCreateInfo createRasterizerInfo() const;
-    VkPipelineMultisampleStateCreateInfo createMultisamplingInfo() const;
-    VkPipelineColorBlendAttachmentState createColorBlendAttachmentState() const;
-    VkPipelineColorBlendStateCreateInfo
-        createColorBlendAttachmentInfo( VkPipelineColorBlendAttachmentState state ) const;
+    vk::PipelineDynamicStateCreateInfo createDynamicStatesInfo() const;
+    void createViewport() noexcept;
+    void createScissor() noexcept;
+    vk::PipelineViewportStateCreateInfo createViewportStateInfo() const noexcept;
+    vk::PipelineVertexInputStateCreateInfo createVertexInputInfo() const noexcept;
+    vk::PipelineInputAssemblyStateCreateInfo createInputAsemblyInfo() const noexcept;
+    vk::PipelineRasterizationStateCreateInfo createRasterizerInfo() const noexcept;
+    vk::PipelineMultisampleStateCreateInfo createMultisamplingInfo() const noexcept;
+    vk::PipelineColorBlendAttachmentState createColorBlendAttachmentState() const noexcept;
+    vk::PipelineColorBlendStateCreateInfo
+        createColorBlendAttachmentInfo( const vk::PipelineColorBlendAttachmentState state ) const noexcept;
 };
 
 }; // namespace ve
