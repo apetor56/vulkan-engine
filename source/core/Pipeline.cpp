@@ -32,9 +32,11 @@ void Pipeline::createPipeline() {
         .colorBlendsState{ createColorBlendAttachmentInfo( createColorBlendAttachmentState() ) } };
 
     vk::GraphicsPipelineCreateInfo pipelineInfo{};
-    pipelineInfo.sType      = vk::StructureType::eGraphicsPipelineCreateInfo;
-    pipelineInfo.stageCount = 2U;
-    pipelineInfo.pStages    = createShaderStagesInfo().data();
+    pipelineInfo.sType = vk::StructureType::eGraphicsPipelineCreateInfo;
+
+    const auto shaderStagesInfos{ createShaderStagesInfo() };
+    pipelineInfo.stageCount = static_cast< std::uint32_t >( std::size( shaderStagesInfos ) );
+    pipelineInfo.pStages    = std::data( shaderStagesInfos );
 
     pipelineInfo.pDynamicState       = &pipelineConfig.dynamicState;
     pipelineInfo.pViewportState      = &pipelineConfig.viewportState;
@@ -49,14 +51,11 @@ void Pipeline::createPipeline() {
     pipelineInfo.renderPass = m_swapchain.getRenderpass();
     pipelineInfo.subpass    = 0U;
 
-    pipelineInfo.basePipelineHandle = nullptr;
-    pipelineInfo.basePipelineIndex  = -1;
-
-    const auto [ result, value ]{ m_logicalDevice.getHandler().createGraphicsPipeline( nullptr, pipelineInfo ) };
+    const auto [ result, pipeline ]{ m_logicalDevice.getHandler().createGraphicsPipeline( nullptr, pipelineInfo ) };
     if ( result != vk::Result::eSuccess )
         throw std::runtime_error( "failed to create graphics pipeline" );
 
-    m_graphicsPipeline = value;
+    m_graphicsPipeline = pipeline;
 }
 
 vk::PipelineShaderStageCreateInfo Pipeline::pupulateShaderStageInfo( const vk::ShaderStageFlagBits shaderType,

@@ -43,9 +43,9 @@ private:
     const ve::Window& m_window;
 
     vk::SwapchainKHR m_swapchain;
-    vk::Extent2D m_extent;
+    vk::Extent2D m_swapchainImageExtent;
     vk::RenderPass m_renderPass;
-    vk::Format m_format;
+    vk::Format m_swapchainImageFormat;
 
     void createSwapchain();
     void createImageViews();

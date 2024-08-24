@@ -76,10 +76,10 @@ void Swapchain::createSwapchain() {
     createInfo.clipped        = vk::True;
     createInfo.oldSwapchain   = nullptr;
 
-    m_swapchain       = logicalDeviceHandler.createSwapchainKHR( createInfo );
-    m_swapchainImages = logicalDeviceHandler.getSwapchainImagesKHR( m_swapchain );
-    m_format          = surfaceFormat.format;
-    m_extent          = extent;
+    m_swapchain            = logicalDeviceHandler.createSwapchainKHR( createInfo );
+    m_swapchainImages      = logicalDeviceHandler.getSwapchainImagesKHR( m_swapchain );
+    m_swapchainImageFormat = surfaceFormat.format;
+    m_swapchainImageExtent = extent;
 }
 
 Swapchain::Details Swapchain::getSwapchainDetails( const vk::PhysicalDevice physicalDevice,
@@ -133,7 +133,7 @@ void Swapchain::createImageViews() {
     vk::ImageViewCreateInfo createInfo{};
     createInfo.sType                           = vk::StructureType::eImageViewCreateInfo;
     createInfo.viewType                        = vk::ImageViewType::e2D;
-    createInfo.format                          = m_format;
+    createInfo.format                          = m_swapchainImageFormat;
     createInfo.components.r                    = vk::ComponentSwizzle::eIdentity;
     createInfo.components.g                    = vk::ComponentSwizzle::eIdentity;
     createInfo.components.b                    = vk::ComponentSwizzle::eIdentity;
@@ -154,7 +154,7 @@ void Swapchain::createImageViews() {
 
 void Swapchain::createRenderPass() {
     vk::AttachmentDescription colorAttachment{};
-    colorAttachment.format         = m_format;
+    colorAttachment.format         = m_swapchainImageFormat;
     colorAttachment.samples        = vk::SampleCountFlagBits::e1;
     colorAttachment.loadOp         = vk::AttachmentLoadOp::eClear;
     colorAttachment.storeOp        = vk::AttachmentStoreOp::eStore;
@@ -200,8 +200,8 @@ void Swapchain::createFramebuffers() {
     framebufferInfo.sType           = vk::StructureType::eFramebufferCreateInfo;
     framebufferInfo.renderPass      = m_renderPass;
     framebufferInfo.attachmentCount = 1U;
-    framebufferInfo.width           = m_extent.width;
-    framebufferInfo.height          = m_extent.height;
+    framebufferInfo.width           = m_swapchainImageExtent.width;
+    framebufferInfo.height          = m_swapchainImageExtent.height;
     framebufferInfo.layers          = 1U;
 
     const auto createFramebuffer{ [ this, &framebufferInfo, logicalDeviceHandler ]( const vk::ImageView imageView ) {
@@ -213,7 +213,7 @@ void Swapchain::createFramebuffers() {
 }
 
 vk::Extent2D Swapchain::getExtent() const noexcept {
-    return m_extent;
+    return m_swapchainImageExtent;
 }
 
 vk::RenderPass Swapchain::getRenderpass() const noexcept {
