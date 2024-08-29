@@ -2,7 +2,7 @@
 
 #include "VulkanInstance.hpp"
 #include "Window.hpp"
-#include "QueueFamilyIndices.hpp"
+#include "QueueFamilyIDs.hpp"
 
 namespace ve {
 
@@ -18,11 +18,11 @@ public:
 
     vk::PhysicalDevice getHandler() const noexcept;
     const ve::extentions& getExtensions() const noexcept;
-    ve::QueueFamilyIndices getQueueFamilies() const noexcept;
+    [[nodiscard]] ve::QueueFamilyIDs getQueueFamilyIDs() const noexcept;
 
 private:
     vk::PhysicalDevice m_physicalDevice{};
-    ve::QueueFamilyIndices m_queueFamilies{};
+    ve::QueueFamilyIDs m_queueFamilies{};
     const ve::extentions m_deviceExtensions{ vk::KHRSwapchainExtensionName };
 
     const ve::VulkanInstance& m_instance;

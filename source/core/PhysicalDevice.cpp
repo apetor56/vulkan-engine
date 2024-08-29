@@ -1,5 +1,5 @@
 #include "PhysicalDevice.hpp"
-#include "QueueFamilyIndices.hpp"
+#include "QueueFamilyIDs.hpp"
 #include "Swapchain.hpp"
 #include "Config.hpp"
 
@@ -31,14 +31,14 @@ void PhysicalDevice::pickPhysicalDevice() {
         throw std::runtime_error( "failed to find suitable device" );
 
     m_physicalDevice = bestDevice;
-    m_queueFamilies  = ve::QueueFamilyIndices::findQueueFamilies( m_physicalDevice, m_window.getSurface() );
+    m_queueFamilies  = ve::QueueFamilyIDs::findQueueFamilies( m_physicalDevice, m_window.getSurface() );
 
     const auto deviceProperties{ m_physicalDevice.getProperties() };
     SPDLOG_INFO( "Picked GPU: {}", deviceProperties.deviceName.data() );
 }
 
 std::uint32_t PhysicalDevice::rate( const vk::PhysicalDevice physicalDevice ) const {
-    const auto queueFamilyIndices{ ve::QueueFamilyIndices::findQueueFamilies( physicalDevice, m_window.getSurface() ) };
+    const auto queueFamilyIndices{ ve::QueueFamilyIDs::findQueueFamilies( physicalDevice, m_window.getSurface() ) };
     const auto deviceProperties{ physicalDevice.getProperties() };
     const auto deviceFeatures{ physicalDevice.getFeatures() };
 
@@ -85,7 +85,7 @@ const ve::extentions& PhysicalDevice::getExtensions() const noexcept {
     return m_deviceExtensions;
 }
 
-ve::QueueFamilyIndices PhysicalDevice::getQueueFamilies() const noexcept {
+[[nodiscard]] ve::QueueFamilyIDs PhysicalDevice::getQueueFamilyIDs() const noexcept {
     return m_queueFamilies;
 }
 

@@ -19,6 +19,7 @@ public:
     vk::Device getHandler() const noexcept;
     vk::Queue getGraphicsQueue() const noexcept;
     vk::Queue getPresentationQueue() const noexcept;
+    [[nodiscard]] ve::QueueFamilyIDs getQueueFamilyIDs() const noexcept;
 
 private:
     vk::Device m_logicalDevice;

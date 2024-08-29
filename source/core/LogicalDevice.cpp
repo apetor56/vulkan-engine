@@ -1,5 +1,5 @@
 #include "LogicalDevice.hpp"
-#include "QueueFamilyIndices.hpp"
+#include "QueueFamilyIDs.hpp"
 
 #include <set>
 #include <stdexcept>
@@ -20,7 +20,7 @@ void LogicalDevice::createLogicalDevice() {
     const auto physicalDeviceHandler{ m_physicalDevice.getHandler() };
     const auto& physicalDeviceExtensions{ m_physicalDevice.getExtensions() };
 
-    const ve::QueueFamilyIndices queueFamilyIndices{ m_physicalDevice.getQueueFamilies() };
+    const ve::QueueFamilyIDs queueFamilyIndices{ getQueueFamilyIDs() };
     static constexpr std::uint32_t queueCount{ 1U };
     static constexpr float queuePriority{ 1.0F };
 
@@ -63,6 +63,10 @@ vk::Queue LogicalDevice::getGraphicsQueue() const noexcept {
 
 vk::Queue LogicalDevice::getPresentationQueue() const noexcept {
     return m_presentationQueue;
+}
+
+[[nodiscard]] ve::QueueFamilyIDs LogicalDevice::getQueueFamilyIDs() const noexcept {
+    return m_physicalDevice.getQueueFamilyIDs();
 }
 
 } // namespace ve

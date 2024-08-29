@@ -1,37 +1,24 @@
 #pragma once
 
-#include "core/VulkanInstance.hpp"
-#include "core/Window.hpp"
-#include "core/PhysicalDevice.hpp"
-#include "core/LogicalDevice.hpp"
-#include "core/Swapchain.hpp"
-#include "core/Pipeline.hpp"
-#include "core/CommandBuffer.hpp"
+#include "core/Engine.hpp"
 
 namespace ve {
 
 class Application {
 public:
-    Application();
-    ~Application();
+    Application()  = default;
+    ~Application() = default;
+
+    Application( const Application& other ) = delete;
+    Application( Application&& other )      = delete;
+
+    Application& operator=( const Application& other ) = delete;
+    Application& operator=( Application&& other )      = delete;
 
     void run();
-    void render();
 
 private:
-    ve::VulkanInstance m_vulkanInstance{};
-    ve::Window m_window;
-    ve::PhysicalDevice m_physicalDevice;
-    ve::LogicalDevice m_logicalDevice;
-    ve::Swapchain m_swapchain;
-    ve::Pipeline m_pipeline;
-    ve::CommandBuffer m_commandBuffer;
-
-    vk::Semaphore m_imageAvailableSemaphore{};
-    vk::Semaphore m_renderFinishedSemaphore{};
-    vk::Fence m_inFlightFence{};
-
-    void createSyncObjects();
+    ve::Engine m_graphicsEngine{};
 };
 
 } // namespace ve

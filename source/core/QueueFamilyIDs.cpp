@@ -1,14 +1,13 @@
-#include "QueueFamilyIndices.hpp"
+#include "QueueFamilyIDs.hpp"
 
 namespace ve {
 
-bool QueueFamilyIndices::hasRequiredFamilies() const noexcept {
+bool QueueFamilyIDs::hasRequiredFamilies() const noexcept {
     return graphicsFamilyID.has_value() && presentationFamilyID.has_value();
 }
 
-QueueFamilyIndices QueueFamilyIndices::findQueueFamilies( const vk::PhysicalDevice device,
-                                                          const vk::SurfaceKHR surface ) {
-    QueueFamilyIndices queueFamilyIndices{};
+QueueFamilyIDs QueueFamilyIDs::findQueueFamilies( const vk::PhysicalDevice device, const vk::SurfaceKHR surface ) {
+    QueueFamilyIDs queueFamilyIndices{};
     const auto queueFamilyProperties{ device.getQueueFamilyProperties() };
 
     std::uint32_t queueFamilyID{};

@@ -23,16 +23,18 @@ target_compile_definitions(${PROJECT_NAME} PRIVATE SHADER_BINARIES_DIR="${CMAKE_
 
 set(CORE
     core/Config.hpp             
+    core/Engine.cpp                core/Engine.hpp
     core/VulkanInstance.cpp        core/VulkanInstance.hpp
     core/DebugMessenger.cpp        core/DebugMessenger.hpp
     core/Window.cpp                core/Window.hpp 
     core/PhysicalDevice.cpp        core/PhysicalDevice.hpp
-    core/QueueFamilyIndices.cpp    core/QueueFamilyIndices.hpp
+    core/QueueFamilyIDs.cpp        core/QueueFamilyIDs.hpp
     core/LogicalDevice.cpp         core/LogicalDevice.hpp
     core/Swapchain.cpp             core/Swapchain.hpp
     core/Pipeline.cpp              core/Pipeline.hpp
     core/ShaderModule.cpp          core/ShaderModule.hpp
-    core/CommandBuffer.cpp         core/CommandBuffer.hpp  
+    core/CommandPool.cpp           core/CommandPool.hpp
+    core/CommandBuffer.cpp         core/CommandBuffer.hpp
 )
 
 set(SHADER_SOURCE

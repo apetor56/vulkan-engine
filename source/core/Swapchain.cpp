@@ -1,5 +1,5 @@
 #include "Swapchain.hpp"
-#include "QueueFamilyIndices.hpp"
+#include "QueueFamilyIDs.hpp"
 #include "Config.hpp"
 
 #include <algorithm>
@@ -56,7 +56,7 @@ void Swapchain::createSwapchain() {
     createInfo.imageArrayLayers = 1U;
     createInfo.imageUsage       = vk::ImageUsageFlagBits::eColorAttachment;
 
-    const ve::QueueFamilyIndices indices{ QueueFamilyIndices::findQueueFamilies( physicalDeviceHandler, surface ) };
+    const ve::QueueFamilyIDs indices{ QueueFamilyIDs::findQueueFamilies( physicalDeviceHandler, surface ) };
     const std::array< std::uint32_t, cfg::device::queueFamiliesCount > queueFamilyIndices{
         indices.graphicsFamilyID.value(), indices.presentationFamilyID.value() };
 
