@@ -23,17 +23,21 @@ void CommandPool::createCommandPool() {
     m_commandPool = m_logicalDevice.getHandler().createCommandPool( poolInfo );
 }
 
-ve::CommandBuffer CommandPool::createCommandBuffer() {
+std::vector< ve::CommandBuffer > CommandPool::createCommandBuffers( const std::uint32_t count ) {
     vk::CommandBufferAllocateInfo allocInfo{};
     allocInfo.sType              = vk::StructureType::eCommandBufferAllocateInfo;
     allocInfo.commandPool        = m_commandPool;
     allocInfo.level              = vk::CommandBufferLevel::ePrimary;
-    allocInfo.commandBufferCount = 1U;
+    allocInfo.commandBufferCount = count;
 
     const auto logicalDeviceHandler{ m_logicalDevice.getHandler() };
-    vk::CommandBuffer commandBufferHandler{ logicalDeviceHandler.allocateCommandBuffers( allocInfo ).at( 0 ) };
+    const auto commandBufferHandlers{ logicalDeviceHandler.allocateCommandBuffers( allocInfo ) };
 
-    return { commandBufferHandler, m_swapchain, m_pipeline };
+    std::vector< ve::CommandBuffer > m_commandBuffers;
+    for ( std::uint32_t index{ 0 }; index < count; index++ )
+        m_commandBuffers.emplace_back( commandBufferHandlers.at( index ), m_swapchain, m_pipeline );
+
+    return m_commandBuffers;
 }
 
 } // namespace ve

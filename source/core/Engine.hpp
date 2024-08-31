@@ -27,11 +27,13 @@ private:
     ve::Swapchain m_swapchain;
     ve::Pipeline m_pipeline;
     ve::CommandPool m_graphicsCommandPool;
-    ve::CommandBuffer m_commandBuffer;
 
-    vk::Semaphore m_imageAvailableSemaphore{};
-    vk::Semaphore m_renderFinishedSemaphore{};
-    vk::Fence m_inFlightFence{};
+    inline static constexpr std::uint32_t s_maxFramesInFlight{ 2U };
+    std::vector< ve::CommandBuffer > m_commandBuffers;
+    std::array< vk::Semaphore, s_maxFramesInFlight > m_imageAvailableSemaphores{};
+    std::array< vk::Semaphore, s_maxFramesInFlight > m_renderFinishedSemaphores{};
+    std::array< vk::Fence, s_maxFramesInFlight > m_inFlightFences{};
+    std::uint32_t m_currentFrame{};
 
     void createSyncObjects();
 };

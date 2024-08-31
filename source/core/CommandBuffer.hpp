@@ -11,7 +11,7 @@ public:
                    const ve::Pipeline& pipeline );
 
     CommandBuffer( const CommandBuffer& other ) = delete;
-    CommandBuffer( CommandBuffer&& other )      = delete;
+    CommandBuffer( CommandBuffer&& other )      = default;
 
     CommandBuffer& operator=( const CommandBuffer& other ) = delete;
     CommandBuffer& operator=( CommandBuffer&& other )      = delete;

@@ -18,7 +18,7 @@ public:
     CommandPool& operator=( const CommandPool& other ) = delete;
     CommandPool& operator=( CommandPool&& other )      = delete;
 
-    ve::CommandBuffer createCommandBuffer();
+    std::vector< ve::CommandBuffer > createCommandBuffers( const std::uint32_t count );
 
 private:
     vk::CommandPool m_commandPool;
