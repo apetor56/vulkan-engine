@@ -10,8 +10,6 @@ Pipeline::Pipeline( const ve::LogicalDevice& logicalDevice, const ve::Swapchain&
       m_logicalDevice{ logicalDevice },
       m_swapchain{ swapchain } {
     createPipelineLayout();
-    createViewport();
-    createScissor();
     createPipeline();
 }
 
@@ -91,6 +89,8 @@ vk::PipelineDynamicStateCreateInfo Pipeline::createDynamicStatesInfo() const {
 vk::PipelineViewportStateCreateInfo Pipeline::createViewportStateInfo() const noexcept {
     vk::PipelineViewportStateCreateInfo viewportState{};
     viewportState.sType         = vk::StructureType::ePipelineViewportStateCreateInfo;
+    viewportState.pViewports    = nullptr;
+    viewportState.pScissors     = nullptr;
     viewportState.viewportCount = 1U;
     viewportState.scissorCount  = 1U;
 
@@ -115,21 +115,6 @@ vk::PipelineInputAssemblyStateCreateInfo Pipeline::createInputAsemblyInfo() cons
     assembly.primitiveRestartEnable = vk::False;
 
     return assembly;
-}
-
-void Pipeline::createViewport() noexcept {
-    const auto extent{ m_swapchain.getExtent() };
-    m_viewport.x        = 0.0F;
-    m_viewport.y        = 0.0F;
-    m_viewport.width    = static_cast< float >( extent.width );
-    m_viewport.height   = static_cast< float >( extent.height );
-    m_viewport.minDepth = 0.0F;
-    m_viewport.maxDepth = 1.0F;
-}
-
-void Pipeline::createScissor() noexcept {
-    m_scissor.offset = vk::Offset2D{ 0, 0 };
-    m_scissor.extent = m_swapchain.getExtent();
 }
 
 vk::PipelineRasterizationStateCreateInfo Pipeline::createRasterizerInfo() const noexcept {
@@ -200,14 +185,6 @@ void Pipeline::createPipelineLayout() {
 
 vk::Pipeline Pipeline::getHandler() const noexcept {
     return m_graphicsPipeline;
-}
-
-vk::Viewport Pipeline::getViewport() const noexcept {
-    return m_viewport;
-}
-
-vk::Rect2D Pipeline::getScissor() const noexcept {
-    return m_scissor;
 }
 
 } // namespace ve

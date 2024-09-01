@@ -33,12 +33,8 @@ public:
     ~Pipeline();
 
     vk::Pipeline getHandler() const noexcept;
-    vk::Viewport getViewport() const noexcept;
-    vk::Rect2D getScissor() const noexcept;
 
 private:
-    vk::Viewport m_viewport;
-    vk::Rect2D m_scissor;
     ve::ShaderModule m_vertexShader;
     ve::ShaderModule m_fragmentShader;
     vk::Pipeline m_graphicsPipeline;
@@ -53,8 +49,6 @@ private:
                                                                const ve::ShaderModule& shaderModule ) const;
     ShaderStageInfos createShaderStagesInfo() const;
     vk::PipelineDynamicStateCreateInfo createDynamicStatesInfo() const;
-    void createViewport() noexcept;
-    void createScissor() noexcept;
     vk::PipelineViewportStateCreateInfo createViewportStateInfo() const noexcept;
     vk::PipelineVertexInputStateCreateInfo createVertexInputInfo() const noexcept;
     vk::PipelineInputAssemblyStateCreateInfo createInputAsemblyInfo() const noexcept;

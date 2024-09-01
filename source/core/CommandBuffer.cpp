@@ -27,8 +27,8 @@ void CommandBuffer::record( const uint32_t imageIndex ) const {
     m_commandBuffer.beginRenderPass( renderPassBeginInfo, vk::SubpassContents::eInline );
 
     m_commandBuffer.bindPipeline( vk::PipelineBindPoint::eGraphics, m_pipeline.getHandler() );
-    m_commandBuffer.setViewport( 0U, m_pipeline.getViewport() );
-    m_commandBuffer.setScissor( 0U, m_pipeline.getScissor() );
+    m_commandBuffer.setViewport( 0U, m_swapchain.getViewport() );
+    m_commandBuffer.setScissor( 0U, m_swapchain.getScissor() );
 
     static constexpr std::uint32_t vertexCount{ 3U };
     static constexpr std::uint32_t instanceCount{ 1U };
@@ -42,7 +42,7 @@ void CommandBuffer::record( const uint32_t imageIndex ) const {
 }
 
 void CommandBuffer::reset() {
-    vkResetCommandBuffer( m_commandBuffer, 0 );
+    m_commandBuffer.reset();
 }
 
 vk::CommandBuffer CommandBuffer::getHandler() const noexcept {

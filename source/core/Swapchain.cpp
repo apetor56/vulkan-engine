@@ -9,27 +9,19 @@
 namespace ve {
 
 Swapchain::Swapchain( const ve::PhysicalDevice& physicalDevice, const ve::LogicalDevice& logicalDevice,
-                      const ve::Window& window )
+                      ve::Window& window )
     : m_physicalDevice{ physicalDevice }, m_logicalDevice{ logicalDevice }, m_window{ window } {
     createSwapchain();
+    createViewport();
+    createScissor();
     createImageViews();
     createRenderPass();
     createFramebuffers();
 }
 
 Swapchain::~Swapchain() {
-    const auto logicalDeviceHandler{ m_logicalDevice.getHandler() };
-    logicalDeviceHandler.destroySwapchainKHR( m_swapchain );
-
-    std::ranges::for_each( m_swapchainImageViews, [ &logicalDeviceHandler ]( const auto& view ) {
-        logicalDeviceHandler.destroyImageView( view );
-    } );
-
-    logicalDeviceHandler.destroyRenderPass( m_renderPass );
-
-    std::ranges::for_each( m_framebuffers, [ &logicalDeviceHandler ]( const auto& framebuffer ) {
-        logicalDeviceHandler.destroyFramebuffer( framebuffer );
-    } );
+    cleanup();
+    m_logicalDevice.getHandler().destroyRenderPass( m_renderPass );
 }
 
 void Swapchain::createSwapchain() {
@@ -80,6 +72,36 @@ void Swapchain::createSwapchain() {
     m_swapchainImages      = logicalDeviceHandler.getSwapchainImagesKHR( m_swapchain );
     m_swapchainImageFormat = surfaceFormat.format;
     m_swapchainImageExtent = extent;
+}
+
+void Swapchain::recreate() {
+    m_logicalDevice.getHandler().waitIdle();
+
+    cleanup();
+
+    createSwapchain();
+    createViewport();
+    createScissor();
+    createImageViews();
+    createFramebuffers();
+
+    m_window.setResizedFlag( false );
+}
+
+void Swapchain::cleanup() {
+    const auto logicalDeviceHandler{ m_logicalDevice.getHandler() };
+
+    std::ranges::for_each( m_framebuffers, [ &logicalDeviceHandler ]( const auto& framebuffer ) {
+        logicalDeviceHandler.destroyFramebuffer( framebuffer );
+    } );
+    m_framebuffers.clear();
+
+    std::ranges::for_each( m_swapchainImageViews, [ &logicalDeviceHandler ]( const auto& view ) {
+        logicalDeviceHandler.destroyImageView( view );
+    } );
+    m_swapchainImageViews.clear();
+
+    logicalDeviceHandler.destroySwapchainKHR( m_swapchain );
 }
 
 Swapchain::Details Swapchain::getSwapchainDetails( const vk::PhysicalDevice physicalDevice,
@@ -212,6 +234,20 @@ void Swapchain::createFramebuffers() {
     std::ranges::for_each( m_swapchainImageViews, createFramebuffer );
 }
 
+void Swapchain::createViewport() noexcept {
+    m_viewport.x        = 0.0F;
+    m_viewport.y        = 0.0F;
+    m_viewport.width    = static_cast< float >( m_swapchainImageExtent.width );
+    m_viewport.height   = static_cast< float >( m_swapchainImageExtent.height );
+    m_viewport.minDepth = 0.0F;
+    m_viewport.maxDepth = 1.0F;
+}
+
+void Swapchain::createScissor() noexcept {
+    m_scissor.offset = vk::Offset2D{ 0, 0 };
+    m_scissor.extent = m_swapchainImageExtent;
+}
+
 vk::Extent2D Swapchain::getExtent() const noexcept {
     return m_swapchainImageExtent;
 }
@@ -230,6 +266,14 @@ std::uint32_t Swapchain::getImagesCount() const noexcept {
 
 vk::SwapchainKHR Swapchain::getHandler() const noexcept {
     return m_swapchain;
+}
+
+vk::Viewport Swapchain::getViewport() const noexcept {
+    return m_viewport;
+}
+
+vk::Rect2D Swapchain::getScissor() const noexcept {
+    return m_scissor;
 }
 
 } // namespace ve

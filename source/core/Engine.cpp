@@ -1,8 +1,6 @@
 #include "Engine.hpp"
 #include "Config.hpp"
 
-#include <chrono>
-#include <thread>
 #include <limits>
 
 namespace ve {
@@ -41,54 +39,14 @@ void Engine::run() {
 }
 
 void Engine::render() {
-    const auto logicalDeviceHandler{ m_logicalDevice.getHandler() };
-    const auto swapchainHandler{ m_swapchain.getHandler() };
+    const auto imageIndex{ acquireNextImage() };
+    if ( !imageIndex.has_value() )
+        return;
 
-    auto& currentCommadBuffer{ m_commandBuffers.at( m_currentFrame ) };
-    const auto currentCommandBufferHandler{ currentCommadBuffer.getHandler() };
-    const auto currentInFlightFence{ m_inFlightFences.at( m_currentFrame ) };
-    const auto currentImageAvailableSemaphore{ m_imageAvailableSemaphores.at( m_currentFrame ) };
-    const auto currentRenderFinishedSemaphore{ m_renderFinishedSemaphores.at( m_currentFrame ) };
+    draw( imageIndex.value() );
+    present( imageIndex.value() );
 
-    static constexpr auto waitForAllFences{ vk::True };
-    static constexpr auto timeoutOff{ std::numeric_limits< std::uint64_t >::max() };
-    logicalDeviceHandler.waitForFences( currentInFlightFence, waitForAllFences, timeoutOff );
-    logicalDeviceHandler.resetFences( currentInFlightFence );
-
-    const std::uint32_t imageIndex{
-        logicalDeviceHandler.acquireNextImageKHR( swapchainHandler, timeoutOff, currentImageAvailableSemaphore )
-            .value };
-
-    currentCommadBuffer.reset();
-    currentCommadBuffer.record( imageIndex );
-
-    static constexpr vk::PipelineStageFlags waitStage{ vk::PipelineStageFlagBits::eColorAttachmentOutput };
-
-    vk::SubmitInfo submitInfo{};
-    submitInfo.sType                = vk::StructureType::eSubmitInfo;
-    submitInfo.waitSemaphoreCount   = 1U;
-    submitInfo.pWaitSemaphores      = &currentImageAvailableSemaphore;
-    submitInfo.pWaitDstStageMask    = &waitStage;
-    submitInfo.commandBufferCount   = 1U;
-    submitInfo.pCommandBuffers      = &currentCommandBufferHandler;
-    submitInfo.signalSemaphoreCount = 1U;
-    submitInfo.pSignalSemaphores    = &currentRenderFinishedSemaphore;
-
-    const auto graphicsQueue{ m_logicalDevice.getGraphicsQueue() };
-    graphicsQueue.submit( submitInfo, currentInFlightFence );
-
-    vk::PresentInfoKHR presentInfo{};
-    presentInfo.sType              = vk::StructureType::ePresentInfoKHR;
-    presentInfo.waitSemaphoreCount = 1U;
-    presentInfo.pWaitSemaphores    = &currentRenderFinishedSemaphore;
-    presentInfo.swapchainCount     = 1U;
-    presentInfo.pSwapchains        = &swapchainHandler;
-    presentInfo.pImageIndices      = &imageIndex;
-
-    const auto presentationQueue{ m_logicalDevice.getPresentationQueue() };
-    presentationQueue.presentKHR( presentInfo );
-
-    m_currentFrame = ( m_currentFrame + 1 ) % s_maxFramesInFlight;
+    m_currentFrame = ( m_currentFrame + 1U ) % s_maxFramesInFlight;
 }
 
 void Engine::createSyncObjects() {
@@ -104,6 +62,72 @@ void Engine::createSyncObjects() {
         m_imageAvailableSemaphores.at( index ) = logicalDeviceHandler.createSemaphore( semaphoreInfo );
         m_renderFinishedSemaphores.at( index ) = logicalDeviceHandler.createSemaphore( semaphoreInfo );
         m_inFlightFences.at( index )           = logicalDeviceHandler.createFence( fenceInfo );
+    }
+}
+
+std::optional< std::uint32_t > Engine::acquireNextImage() {
+    static constexpr auto waitForAllFences{ vk::True };
+    m_logicalDevice.getHandler().waitForFences( m_inFlightFences.at( m_currentFrame ), waitForAllFences, s_timeoutOff );
+
+    try {
+        const auto [ result, imageIndex ]{ m_logicalDevice.getHandler().acquireNextImageKHR(
+            m_swapchain.getHandler(), s_timeoutOff, m_imageAvailableSemaphores.at( m_currentFrame ) ) };
+
+        if ( result != vk::Result::eSuccess && result != vk::Result::eSuboptimalKHR )
+            throw std::runtime_error( "failed to acquire swapchain image" );
+
+        return imageIndex;
+    }
+    catch ( const vk::OutOfDateKHRError& exception ) {
+        m_swapchain.recreate();
+        return std::nullopt;
+    }
+}
+
+void Engine::draw( const std::uint32_t imageIndex ) {
+    m_logicalDevice.getHandler().resetFences( m_inFlightFences.at( m_currentFrame ) );
+
+    auto& commandBuffer{ m_commandBuffers.at( m_currentFrame ) };
+    const auto commandBufferHandler{ commandBuffer.getHandler() };
+    const auto renderFinishedSemaphore{ m_renderFinishedSemaphores.at( m_currentFrame ) };
+
+    commandBuffer.reset();
+    commandBuffer.record( imageIndex );
+
+    static constexpr vk::PipelineStageFlags waitStage{ vk::PipelineStageFlagBits::eColorAttachmentOutput };
+
+    vk::SubmitInfo submitInfo{};
+    submitInfo.sType                = vk::StructureType::eSubmitInfo;
+    submitInfo.waitSemaphoreCount   = 1U;
+    submitInfo.pWaitSemaphores      = &m_imageAvailableSemaphores.at( m_currentFrame );
+    submitInfo.pWaitDstStageMask    = &waitStage;
+    submitInfo.commandBufferCount   = 1U;
+    submitInfo.pCommandBuffers      = &commandBufferHandler;
+    submitInfo.signalSemaphoreCount = 1U;
+    submitInfo.pSignalSemaphores    = &renderFinishedSemaphore;
+
+    const auto graphicsQueue{ m_logicalDevice.getGraphicsQueue() };
+    graphicsQueue.submit( submitInfo, m_inFlightFences.at( m_currentFrame ) );
+}
+
+void Engine::present( const std::uint32_t imageIndex ) {
+    const auto swapchainHandler{ m_swapchain.getHandler() };
+    vk::PresentInfoKHR presentInfo{};
+    presentInfo.sType              = vk::StructureType::ePresentInfoKHR;
+    presentInfo.waitSemaphoreCount = 1U;
+    presentInfo.pWaitSemaphores    = &m_renderFinishedSemaphores.at( m_currentFrame );
+    presentInfo.swapchainCount     = 1U;
+    presentInfo.pSwapchains        = &swapchainHandler;
+    presentInfo.pImageIndices      = &imageIndex;
+
+    const auto presentationQueue{ m_logicalDevice.getPresentationQueue() };
+    try {
+        const auto presentResult{ presentationQueue.presentKHR( presentInfo ) };
+        if ( presentResult == vk::Result::eSuboptimalKHR || m_window.isResized() )
+            m_swapchain.recreate();
+    }
+    catch ( const vk::OutOfDateKHRError& exception ) {
+        m_swapchain.recreate();
     }
 }
 

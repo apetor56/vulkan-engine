@@ -29,6 +29,7 @@ private:
     ve::CommandPool m_graphicsCommandPool;
 
     inline static constexpr std::uint32_t s_maxFramesInFlight{ 2U };
+    inline static constexpr std::uint64_t s_timeoutOff{ std::numeric_limits< std::uint64_t >::max() };
     std::vector< ve::CommandBuffer > m_commandBuffers;
     std::array< vk::Semaphore, s_maxFramesInFlight > m_imageAvailableSemaphores{};
     std::array< vk::Semaphore, s_maxFramesInFlight > m_renderFinishedSemaphores{};
@@ -36,6 +37,10 @@ private:
     std::uint32_t m_currentFrame{};
 
     void createSyncObjects();
+
+    std::optional< std::uint32_t > acquireNextImage();
+    void draw( const std::uint32_t imageIndex );
+    void present( const std::uint32_t imageIndex );
 };
 
 } // namespace ve

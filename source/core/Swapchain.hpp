@@ -14,8 +14,7 @@ public:
         std::vector< vk::PresentModeKHR > presentationModes;
     };
 
-    Swapchain( const ve::PhysicalDevice& physicalDevice, const ve::LogicalDevice& logicalDevice,
-               const ve::Window& window );
+    Swapchain( const ve::PhysicalDevice& physicalDevice, const ve::LogicalDevice& logicalDevice, ve::Window& window );
 
     ~Swapchain();
 
@@ -25,22 +24,28 @@ public:
     Swapchain& operator=( const Swapchain& other ) = delete;
     Swapchain& operator=( Swapchain&& other )      = delete;
 
-    static Details getSwapchainDetails( const vk::PhysicalDevice physicalDevice, const vk::SurfaceKHR surface );
+    void recreate();
 
+    static Details getSwapchainDetails( const vk::PhysicalDevice physicalDevice, const vk::SurfaceKHR surface );
     vk::Extent2D getExtent() const noexcept;
     vk::RenderPass getRenderpass() const noexcept;
     vk::Framebuffer getFrambuffer( const uint32_t index ) const;
     std::uint32_t getImagesCount() const noexcept;
     vk::SwapchainKHR getHandler() const noexcept;
+    vk::Viewport getViewport() const noexcept;
+    vk::Rect2D getScissor() const noexcept;
 
 private:
     std::vector< vk::Image > m_swapchainImages;
     std::vector< vk::ImageView > m_swapchainImageViews;
     std::vector< vk::Framebuffer > m_framebuffers;
 
+    vk::Viewport m_viewport;
+    vk::Rect2D m_scissor;
+
     const ve::PhysicalDevice& m_physicalDevice;
     const ve::LogicalDevice& m_logicalDevice;
-    const ve::Window& m_window;
+    ve::Window& m_window;
 
     vk::SwapchainKHR m_swapchain;
     vk::Extent2D m_swapchainImageExtent;
@@ -51,6 +56,10 @@ private:
     void createImageViews();
     void createRenderPass();
     void createFramebuffers();
+    void createViewport() noexcept;
+    void createScissor() noexcept;
+
+    void cleanup();
 
     vk::SurfaceFormatKHR
         chooseSurfaceFormat( const std::vector< vk::SurfaceFormatKHR >& availableFormats ) const noexcept;
