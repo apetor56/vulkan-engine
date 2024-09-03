@@ -8,6 +8,7 @@
 #include "Pipeline.hpp"
 #include "CommandPool.hpp"
 #include "CommandBuffer.hpp"
+#include "VertexBuffer.hpp"
 
 namespace ve {
 
@@ -27,6 +28,7 @@ private:
     ve::Swapchain m_swapchain;
     ve::Pipeline m_pipeline;
     ve::CommandPool m_graphicsCommandPool;
+    std::shared_ptr< ve::VertexBuffer > m_vertexBuffer;
 
     inline static constexpr std::uint32_t s_maxFramesInFlight{ 2U };
     inline static constexpr std::uint64_t s_timeoutOff{ std::numeric_limits< std::uint64_t >::max() };

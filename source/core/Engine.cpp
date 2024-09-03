@@ -12,8 +12,11 @@ Engine::Engine()
       m_swapchain{ m_physicalDevice, m_logicalDevice, m_window },
       m_pipeline{ m_logicalDevice, m_swapchain },
       m_graphicsCommandPool{ m_logicalDevice, m_swapchain, m_pipeline },
-      m_commandBuffers{ m_graphicsCommandPool.createCommandBuffers( s_maxFramesInFlight ) } {
+      m_commandBuffers{ m_graphicsCommandPool.createCommandBuffers( s_maxFramesInFlight ) },
+      m_vertexBuffer{ std::make_shared< ve::VertexBuffer >( m_logicalDevice ) } {
     createSyncObjects();
+    std::ranges::for_each( m_commandBuffers,
+                           [ this ]( auto& commandBuffer ) { commandBuffer.setData( m_vertexBuffer ); } );
 }
 
 Engine::~Engine() {
@@ -39,9 +42,14 @@ void Engine::run() {
 }
 
 void Engine::render() {
+    static constexpr auto waitForAllFences{ vk::True };
+    m_logicalDevice.getHandler().waitForFences( m_inFlightFences.at( m_currentFrame ), waitForAllFences, s_timeoutOff );
+
     const auto imageIndex{ acquireNextImage() };
     if ( !imageIndex.has_value() )
         return;
+
+    m_logicalDevice.getHandler().resetFences( m_inFlightFences.at( m_currentFrame ) );
 
     draw( imageIndex.value() );
     present( imageIndex.value() );
@@ -66,9 +74,6 @@ void Engine::createSyncObjects() {
 }
 
 std::optional< std::uint32_t > Engine::acquireNextImage() {
-    static constexpr auto waitForAllFences{ vk::True };
-    m_logicalDevice.getHandler().waitForFences( m_inFlightFences.at( m_currentFrame ), waitForAllFences, s_timeoutOff );
-
     try {
         const auto [ result, imageIndex ]{ m_logicalDevice.getHandler().acquireNextImageKHR(
             m_swapchain.getHandler(), s_timeoutOff, m_imageAvailableSemaphores.at( m_currentFrame ) ) };
@@ -85,8 +90,6 @@ std::optional< std::uint32_t > Engine::acquireNextImage() {
 }
 
 void Engine::draw( const std::uint32_t imageIndex ) {
-    m_logicalDevice.getHandler().resetFences( m_inFlightFences.at( m_currentFrame ) );
-
     auto& commandBuffer{ m_commandBuffers.at( m_currentFrame ) };
     const auto commandBufferHandler{ commandBuffer.getHandler() };
     const auto renderFinishedSemaphore{ m_renderFinishedSemaphores.at( m_currentFrame ) };

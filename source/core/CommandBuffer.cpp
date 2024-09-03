@@ -7,7 +7,7 @@ CommandBuffer::CommandBuffer( const vk::CommandBuffer& commandBufferHandler, con
                               const ve::Pipeline& pipeline )
     : m_commandBuffer{ commandBufferHandler }, m_swapchain{ swapchain }, m_pipeline{ pipeline } {}
 
-void CommandBuffer::record( const uint32_t imageIndex ) const {
+void CommandBuffer::record( const std::uint32_t imageIndex ) const {
     vk::CommandBufferBeginInfo beginInfo{};
     beginInfo.sType = vk::StructureType::eCommandBufferBeginInfo;
 
@@ -34,11 +34,23 @@ void CommandBuffer::record( const uint32_t imageIndex ) const {
     static constexpr std::uint32_t instanceCount{ 1U };
     static constexpr std::uint32_t firstVertex{ 0U };
     static constexpr std::uint32_t firstInstance{ 0U };
-    m_commandBuffer.draw( vertexCount, instanceCount, firstVertex, firstInstance );
+
+    if ( m_vertexBuffer ) {
+        static constexpr std::uint32_t firstBinding{ 0U };
+        static constexpr vk::DeviceSize offsets{ 0UL };
+        m_commandBuffer.bindVertexBuffers( firstBinding, m_vertexBuffer->getHandler(), offsets );
+        m_commandBuffer.draw( m_vertexBuffer->getVerticesCount(), instanceCount, firstVertex, firstInstance );
+    } else {
+        throw std::runtime_error( "vertex data is not set in command buffer" );
+    }
 
     m_commandBuffer.endRenderPass();
 
     m_commandBuffer.end();
+}
+
+void CommandBuffer::setData( std::shared_ptr< ve::VertexBuffer > vertexBuffer ) {
+    m_vertexBuffer = vertexBuffer;
 }
 
 void CommandBuffer::reset() {

@@ -2,6 +2,7 @@
 
 #include "Swapchain.hpp"
 #include "Pipeline.hpp"
+#include "VertexBuffer.hpp"
 
 namespace ve {
 
@@ -19,6 +20,7 @@ public:
     ~CommandBuffer() = default;
 
     void record( const std::uint32_t imageIndex ) const;
+    void setData( std::shared_ptr< ve::VertexBuffer > vertexBuffer );
     void reset();
     vk::CommandBuffer getHandler() const noexcept;
 
@@ -26,6 +28,7 @@ private:
     vk::CommandBuffer m_commandBuffer;
     const ve::Swapchain& m_swapchain;
     const ve::Pipeline& m_pipeline;
+    std::shared_ptr< ve::VertexBuffer > m_vertexBuffer{};
 };
 
 } // namespace ve

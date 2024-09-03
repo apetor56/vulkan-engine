@@ -69,4 +69,8 @@ vk::Queue LogicalDevice::getPresentationQueue() const noexcept {
     return m_physicalDevice.getQueueFamilyIDs();
 }
 
+[[nodiscard]] vk::PhysicalDeviceMemoryProperties LogicalDevice::getMemoryProperties() const noexcept {
+    return m_physicalDevice.getHandler().getMemoryProperties();
+}
+
 } // namespace ve

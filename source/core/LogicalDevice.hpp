@@ -20,6 +20,7 @@ public:
     vk::Queue getGraphicsQueue() const noexcept;
     vk::Queue getPresentationQueue() const noexcept;
     [[nodiscard]] ve::QueueFamilyIDs getQueueFamilyIDs() const noexcept;
+    [[nodiscard]] vk::PhysicalDeviceMemoryProperties getMemoryProperties() const noexcept;
 
 private:
     vk::Device m_logicalDevice;

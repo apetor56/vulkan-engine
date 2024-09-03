@@ -23,18 +23,20 @@ target_compile_definitions(${PROJECT_NAME} PRIVATE SHADER_BINARIES_DIR="${CMAKE_
 
 set(CORE
     core/Config.hpp             
-    core/Engine.cpp                core/Engine.hpp
-    core/VulkanInstance.cpp        core/VulkanInstance.hpp
-    core/DebugMessenger.cpp        core/DebugMessenger.hpp
-    core/Window.cpp                core/Window.hpp 
-    core/PhysicalDevice.cpp        core/PhysicalDevice.hpp
-    core/QueueFamilyIDs.cpp        core/QueueFamilyIDs.hpp
-    core/LogicalDevice.cpp         core/LogicalDevice.hpp
-    core/Swapchain.cpp             core/Swapchain.hpp
-    core/Pipeline.cpp              core/Pipeline.hpp
-    core/ShaderModule.cpp          core/ShaderModule.hpp
-    core/CommandPool.cpp           core/CommandPool.hpp
-    core/CommandBuffer.cpp         core/CommandBuffer.hpp
+    core/Engine.hpp                core/Engine.cpp
+    core/VulkanInstance.hpp        core/VulkanInstance.cpp
+    core/DebugMessenger.hpp        core/DebugMessenger.cpp
+    core/Window.hpp                core/Window.cpp 
+    core/PhysicalDevice.hpp        core/PhysicalDevice.cpp
+    core/QueueFamilyIDs.hpp        core/QueueFamilyIDs.cpp
+    core/LogicalDevice.hpp         core/LogicalDevice.cpp
+    core/Swapchain.hpp             core/Swapchain.cpp
+    core/Pipeline.hpp              core/Pipeline.cpp
+    core/ShaderModule.hpp          core/ShaderModule.cpp
+    core/CommandPool.hpp           core/CommandPool.cpp
+    core/CommandBuffer.hpp         core/CommandBuffer.cpp
+    core/Vertex.hpp
+    core/VertexBuffer.hpp          core/VertexBuffer.cpp
 )
 
 set(SHADER_SOURCE

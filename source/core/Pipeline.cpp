@@ -1,4 +1,5 @@
 #include "Pipeline.hpp"
+#include "Vertex.hpp"
 #include "Config.hpp"
 
 #include <stdexcept>
@@ -98,12 +99,16 @@ vk::PipelineViewportStateCreateInfo Pipeline::createViewportStateInfo() const no
 }
 
 vk::PipelineVertexInputStateCreateInfo Pipeline::createVertexInputInfo() const noexcept {
+    static constexpr auto vertexBindingDescription{ Vertex::getBindingDescription() };
+    static constexpr auto vertexAttributeDescriptions{ Vertex::getAttributeDescripstions() };
+
     vk::PipelineVertexInputStateCreateInfo vertexInput{};
-    vertexInput.sType                           = vk::StructureType::ePipelineVertexInputStateCreateInfo;
-    vertexInput.vertexBindingDescriptionCount   = 0U;
-    vertexInput.pVertexBindingDescriptions      = nullptr;
-    vertexInput.vertexAttributeDescriptionCount = 0U;
-    vertexInput.pVertexAttributeDescriptions    = nullptr;
+    vertexInput.sType                         = vk::StructureType::ePipelineVertexInputStateCreateInfo;
+    vertexInput.vertexBindingDescriptionCount = 1U;
+    vertexInput.pVertexBindingDescriptions    = &vertexBindingDescription;
+    vertexInput.vertexAttributeDescriptionCount =
+        static_cast< std::uint32_t >( std::size( vertexAttributeDescriptions ) );
+    vertexInput.pVertexAttributeDescriptions = std::data( vertexAttributeDescriptions );
 
     return vertexInput;
 }
