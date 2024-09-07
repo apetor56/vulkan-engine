@@ -1,21 +1,21 @@
-#include "VertexBuffer.hpp"
+#include "Buffer.hpp"
 
 namespace ve {
 
-VertexBuffer::VertexBuffer( const ve::LogicalDevice& logicalDevice ) : m_logicalDevice{ logicalDevice } {
-    createVertexBuffer();
+Buffer::Buffer( const ve::LogicalDevice& logicalDevice ) : m_logicalDevice{ logicalDevice } {
+    createBuffer();
     allocateMemory();
     bindBufferMemory();
     setData();
 }
 
-VertexBuffer::~VertexBuffer() {
+Buffer::~Buffer() {
     const auto logicalDeviceHandler{ m_logicalDevice.getHandler() };
     logicalDeviceHandler.destroyBuffer( m_vertexBuffer );
     logicalDeviceHandler.freeMemory( m_vertexBufferMemory );
 }
 
-void VertexBuffer::createVertexBuffer() {
+void Buffer::createBuffer() {
     const auto logicalDeviceHandler{ m_logicalDevice.getHandler() };
 
     vk::BufferCreateInfo bufferInfo{};
@@ -27,7 +27,7 @@ void VertexBuffer::createVertexBuffer() {
     m_vertexBuffer = logicalDeviceHandler.createBuffer( bufferInfo );
 }
 
-void VertexBuffer::allocateMemory() {
+void Buffer::allocateMemory() {
     const auto logicalDeviceHandler{ m_logicalDevice.getHandler() };
     const auto bufferMemoryRequirements{ logicalDeviceHandler.getBufferMemoryRequirements( m_vertexBuffer ) };
 
@@ -42,11 +42,11 @@ void VertexBuffer::allocateMemory() {
     m_vertexBufferMemory = logicalDeviceHandler.allocateMemory( allocationInfo );
 }
 
-void VertexBuffer::bindBufferMemory() {
+void Buffer::bindBufferMemory() {
     m_logicalDevice.getHandler().bindBufferMemory( m_vertexBuffer, m_vertexBufferMemory, s_bufferOffset );
 }
 
-void VertexBuffer::setData() {
+void Buffer::setData() {
     const auto logicalDeviceHandler{ m_logicalDevice.getHandler() };
 
     const auto bufferSize{ sizeof( Vertex ) * std::size( m_vertices ) };
@@ -55,8 +55,8 @@ void VertexBuffer::setData() {
     logicalDeviceHandler.unmapMemory( m_vertexBufferMemory );
 }
 
-std::uint32_t VertexBuffer::getMemoryTypeIndex( const std::uint32_t bufferMemoryTypeBits,
-                                                vk::MemoryPropertyFlags wantedPropertiesFlag ) const {
+std::uint32_t Buffer::getMemoryTypeIndex( const std::uint32_t bufferMemoryTypeBits,
+                                          vk::MemoryPropertyFlags wantedPropertiesFlag ) const {
     const auto deviceMemoryProperties{ m_logicalDevice.getMemoryProperties() };
 
     const auto isDeviceMemorySuitableForBuffer{ [ bufferMemoryTypeBits ]( auto deviceMemoryTypeBit ) {
@@ -75,11 +75,11 @@ std::uint32_t VertexBuffer::getMemoryTypeIndex( const std::uint32_t bufferMemory
     throw std::runtime_error( "failed to find memory type suitable for vertex buffer" );
 }
 
-vk::Buffer VertexBuffer::getHandler() const noexcept {
+vk::Buffer Buffer::getHandler() const noexcept {
     return m_vertexBuffer;
 }
 
-std::uint32_t VertexBuffer::getVerticesCount() const noexcept {
+std::uint32_t Buffer::getVerticesCount() const noexcept {
     return static_cast< std::uint32_t >( std::size( m_vertices ) );
 }
 

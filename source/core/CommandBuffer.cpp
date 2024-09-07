@@ -39,7 +39,7 @@ void CommandBuffer::record( const std::uint32_t imageIndex ) const {
         static constexpr std::uint32_t firstBinding{ 0U };
         static constexpr vk::DeviceSize offsets{ 0UL };
         m_commandBuffer.bindVertexBuffers( firstBinding, m_vertexBuffer->getHandler(), offsets );
-        m_commandBuffer.draw( m_vertexBuffer->getVerticesCount(), instanceCount, firstVertex, firstInstance );
+        m_commandBuffer.draw( m_vertexBuffer->getCount(), instanceCount, firstVertex, firstInstance );
     } else {
         throw std::runtime_error( "vertex data is not set in command buffer" );
     }
@@ -49,8 +49,8 @@ void CommandBuffer::record( const std::uint32_t imageIndex ) const {
     m_commandBuffer.end();
 }
 
-void CommandBuffer::setData( std::shared_ptr< ve::VertexBuffer > vertexBuffer ) {
-    m_vertexBuffer = vertexBuffer;
+void CommandBuffer::setData( std::shared_ptr< ve::VertexBuffer > dataBuffer ) noexcept {
+    m_vertexBuffer = dataBuffer;
 }
 
 void CommandBuffer::reset() {

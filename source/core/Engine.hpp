@@ -8,7 +8,7 @@
 #include "Pipeline.hpp"
 #include "CommandPool.hpp"
 #include "CommandBuffer.hpp"
-#include "VertexBuffer.hpp"
+#include "Buffer.hpp"
 
 namespace ve {
 

@@ -36,7 +36,7 @@ set(CORE
     core/CommandPool.hpp           core/CommandPool.cpp
     core/CommandBuffer.hpp         core/CommandBuffer.cpp
     core/Vertex.hpp
-    core/VertexBuffer.hpp          core/VertexBuffer.cpp
+    core/Buffer.hpp
 )
 
 set(SHADER_SOURCE

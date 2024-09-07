@@ -12,9 +12,13 @@ Engine::Engine()
       m_swapchain{ m_physicalDevice, m_logicalDevice, m_window },
       m_pipeline{ m_logicalDevice, m_swapchain },
       m_graphicsCommandPool{ m_logicalDevice, m_swapchain, m_pipeline },
-      m_commandBuffers{ m_graphicsCommandPool.createCommandBuffers( s_maxFramesInFlight ) },
-      m_vertexBuffer{ std::make_shared< ve::VertexBuffer >( m_logicalDevice ) } {
+      m_commandBuffers{ m_graphicsCommandPool.createCommandBuffers( s_maxFramesInFlight ) } {
     createSyncObjects();
+
+    static const std::vector< Vertex > temporaryVertices{ Vertex{ { 0.0F, -0.5F, 0.0F }, { 1.0F, 0.0F, 0.0F } },
+                                                          { { 0.5F, 0.5F, 0.0F }, { 0.0F, 1.0F, 0.0F } },
+                                                          { { -0.5F, 0.5F, 0.0F }, { 0.0F, 0.0F, 1.0F } } };
+    m_vertexBuffer = std::make_shared< ve::VertexBuffer >( m_logicalDevice, temporaryVertices );
     std::ranges::for_each( m_commandBuffers,
                            [ this ]( auto& commandBuffer ) { commandBuffer.setData( m_vertexBuffer ); } );
 }
@@ -83,7 +87,7 @@ std::optional< std::uint32_t > Engine::acquireNextImage() {
 
         return imageIndex;
     }
-    catch ( const vk::OutOfDateKHRError& exception ) {
+    catch ( const vk::OutOfDateKHRError& ) {
         m_swapchain.recreate();
         return std::nullopt;
     }
@@ -129,7 +133,7 @@ void Engine::present( const std::uint32_t imageIndex ) {
         if ( presentResult == vk::Result::eSuboptimalKHR || m_window.isResized() )
             m_swapchain.recreate();
     }
-    catch ( const vk::OutOfDateKHRError& exception ) {
+    catch ( const vk::OutOfDateKHRError& ) {
         m_swapchain.recreate();
     }
 }
