@@ -3,7 +3,7 @@
 namespace ve {
 
 bool QueueFamilyIDs::hasRequiredFamilies() const noexcept {
-    return graphicsFamilyID.has_value() && presentationFamilyID.has_value();
+    return graphicsFamilyID.has_value() && presentationFamilyID.has_value() && transferFamilyID.has_value();
 }
 
 QueueFamilyIDs QueueFamilyIDs::findQueueFamilies( const vk::PhysicalDevice device, const vk::SurfaceKHR surface ) {
@@ -21,6 +21,10 @@ QueueFamilyIDs QueueFamilyIDs::findQueueFamilies( const vk::PhysicalDevice devic
 
         if ( isPresentionSupportAvailable )
             queueFamilyIndices.presentationFamilyID = queueFamilyID;
+
+        if ( ( queueFamily.queueFlags & vk::QueueFlagBits::eTransfer ) &&
+             !( queueFamily.queueFlags & vk::QueueFlagBits::eGraphics ) )
+            queueFamilyIndices.transferFamilyID = queueFamilyID;
 
         if ( queueFamilyIndices.hasRequiredFamilies() )
             break;

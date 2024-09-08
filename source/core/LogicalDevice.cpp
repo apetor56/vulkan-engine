@@ -26,7 +26,8 @@ void LogicalDevice::createLogicalDevice() {
 
     std::vector< vk::DeviceQueueCreateInfo > queueCreateInfos{};
     std::set< std::uint32_t > uniqueQueueFamilies{ queueFamilyIndices.graphicsFamilyID.value(),
-                                                   queueFamilyIndices.presentationFamilyID.value() };
+                                                   queueFamilyIndices.presentationFamilyID.value(),
+                                                   queueFamilyIndices.transferFamilyID.value() };
 
     std::ranges::for_each( uniqueQueueFamilies, [ &queueCreateInfos ]( const auto queueFamilyID ) {
         vk::DeviceQueueCreateInfo queueCreateInfo{};
@@ -49,20 +50,20 @@ void LogicalDevice::createLogicalDevice() {
     m_logicalDevice = physicalDeviceHandler.createDevice( deviceCreateInfo, nullptr );
 
     constexpr std::uint32_t queueIndex{ 0U };
-    m_graphicsQueue     = m_logicalDevice.getQueue( queueFamilyIndices.graphicsFamilyID.value(), queueIndex );
-    m_presentationQueue = m_logicalDevice.getQueue( queueFamilyIndices.graphicsFamilyID.value(), queueIndex );
+    m_queues.emplace( ve::QueueType::eGraphics,
+                      m_logicalDevice.getQueue( queueFamilyIndices.graphicsFamilyID.value(), queueIndex ) );
+    m_queues.emplace( ve::QueueType::ePresentation,
+                      m_logicalDevice.getQueue( queueFamilyIndices.presentationFamilyID.value(), queueIndex ) );
+    m_queues.emplace( ve::QueueType::eTransfer,
+                      m_logicalDevice.getQueue( queueFamilyIndices.transferFamilyID.value(), queueIndex ) );
 }
 
 vk::Device LogicalDevice::getHandler() const noexcept {
     return m_logicalDevice;
 }
 
-vk::Queue LogicalDevice::getGraphicsQueue() const noexcept {
-    return m_graphicsQueue;
-}
-
-vk::Queue LogicalDevice::getPresentationQueue() const noexcept {
-    return m_presentationQueue;
+vk::Queue LogicalDevice::getQueue( ve::QueueType queueType ) const {
+    return m_queues.at( queueType );
 }
 
 [[nodiscard]] ve::QueueFamilyIDs LogicalDevice::getQueueFamilyIDs() const noexcept {

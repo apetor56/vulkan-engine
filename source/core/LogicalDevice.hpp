@@ -2,6 +2,8 @@
 
 #include "PhysicalDevice.hpp"
 
+#include <unordered_map>
+
 namespace ve {
 
 class LogicalDevice {
@@ -17,15 +19,13 @@ public:
     ~LogicalDevice();
 
     vk::Device getHandler() const noexcept;
-    vk::Queue getGraphicsQueue() const noexcept;
-    vk::Queue getPresentationQueue() const noexcept;
+    vk::Queue getQueue( const ve::QueueType queueType ) const;
     [[nodiscard]] ve::QueueFamilyIDs getQueueFamilyIDs() const noexcept;
     [[nodiscard]] vk::PhysicalDeviceMemoryProperties getMemoryProperties() const noexcept;
 
 private:
     vk::Device m_logicalDevice;
-    vk::Queue m_graphicsQueue;
-    vk::Queue m_presentationQueue;
+    std::unordered_map< ve::QueueType, vk::Queue > m_queues;
 
     const ve::PhysicalDevice& m_physicalDevice;
 

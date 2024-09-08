@@ -113,7 +113,7 @@ void Engine::draw( const std::uint32_t imageIndex ) {
     submitInfo.signalSemaphoreCount = 1U;
     submitInfo.pSignalSemaphores    = &renderFinishedSemaphore;
 
-    const auto graphicsQueue{ m_logicalDevice.getGraphicsQueue() };
+    const auto graphicsQueue{ m_logicalDevice.getQueue( ve::QueueType::eGraphics ) };
     graphicsQueue.submit( submitInfo, m_inFlightFences.at( m_currentFrame ) );
 }
 
@@ -127,7 +127,7 @@ void Engine::present( const std::uint32_t imageIndex ) {
     presentInfo.pSwapchains        = &swapchainHandler;
     presentInfo.pImageIndices      = &imageIndex;
 
-    const auto presentationQueue{ m_logicalDevice.getPresentationQueue() };
+    const auto presentationQueue{ m_logicalDevice.getQueue( ve::QueueType::ePresentation ) };
     try {
         const auto presentResult{ presentationQueue.presentKHR( presentInfo ) };
         if ( presentResult == vk::Result::eSuboptimalKHR || m_window.isResized() )
