@@ -51,6 +51,7 @@ set(SHADER_SOURCE
 
 source_group("Command" FILES ${COMMAND})
 
+file(MAKE_DIRECTORY "${CMAKE_BINARY_DIR}/shaders")
 set(COMPILED_SHADERS_OUTPUT)
 compile_shaders("${SHADER_SOURCE}" COMPILED_SHADERS_OUTPUT)
 add_custom_target(Shaders DEPENDS "${COMPILED_SHADERS_OUTPUT}")
