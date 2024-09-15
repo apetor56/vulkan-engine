@@ -100,7 +100,7 @@ vk::PipelineViewportStateCreateInfo Pipeline::createViewportStateInfo() const no
 
 vk::PipelineVertexInputStateCreateInfo Pipeline::createVertexInputInfo() const noexcept {
     static constexpr auto vertexBindingDescription{ Vertex::getBindingDescription() };
-    static constexpr auto vertexAttributeDescriptions{ Vertex::getAttributeDescripstions() };
+    static const auto vertexAttributeDescriptions{ Vertex::getAttributeDescripstions() };
 
     vk::PipelineVertexInputStateCreateInfo vertexInput{};
     vertexInput.sType                         = vk::StructureType::ePipelineVertexInputStateCreateInfo;

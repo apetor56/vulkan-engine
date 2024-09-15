@@ -42,7 +42,8 @@ void Engine::run() {
 
 void Engine::render() {
     static constexpr auto waitForAllFences{ vk::True };
-    m_logicalDevice.getHandler().waitForFences( m_inFlightFences.at( m_currentFrame ), waitForAllFences, s_timeoutOff );
+    [[maybe_unused]] const auto result{ m_logicalDevice.getHandler().waitForFences(
+        m_inFlightFences.at( m_currentFrame ), waitForAllFences, s_timeoutOff ) };
 
     const auto imageIndex{ acquireNextImage() };
     if ( !imageIndex.has_value() )

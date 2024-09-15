@@ -19,7 +19,7 @@ struct Vertex {
         return { bindingPoint, stride, inputRate };
     }
 
-    static constexpr std::array< vk::VertexInputAttributeDescription, 2U > getAttributeDescripstions() noexcept {
+    static const std::array< vk::VertexInputAttributeDescription, 2U > getAttributeDescripstions() noexcept {
         constexpr auto bindingPoint{ 0U };
         constexpr auto positionLocation{ 0U };
         constexpr auto colorLocation{ 1U };

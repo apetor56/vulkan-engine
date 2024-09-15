@@ -12,7 +12,7 @@ Window::Window( WindowInfo windowInfo, const ve::VulkanInstance& instance )
 
 Window::~Window() {
     glfwDestroyWindow( m_windowHandler );
-    vkDestroySurfaceKHR( m_vulkanInstance.get(), m_surface, nullptr );
+    m_vulkanInstance.get().destroySurfaceKHR( m_surface );
 }
 
 void Window::init() {
