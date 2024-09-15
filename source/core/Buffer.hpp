@@ -164,5 +164,6 @@ std::uint32_t Buffer< bufferUsage, T >::getCount() const noexcept {
 }
 
 using VertexBuffer = Buffer< vk::BufferUsageFlagBits::eVertexBuffer, Vertex >;
+using IndexBuffer  = Buffer< vk::BufferUsageFlagBits::eIndexBuffer, std::uint32_t >;
 
 } // namespace ve

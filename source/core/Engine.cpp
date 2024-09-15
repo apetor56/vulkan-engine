@@ -13,6 +13,7 @@ Engine::Engine()
       m_pipeline{ m_logicalDevice, m_swapchain },
       m_graphicsCommandPool{ m_logicalDevice },
       m_vertexBuffer{ m_logicalDevice, temporaryVertices },
+      m_indexBuffer{ m_logicalDevice, temporaryIndices },
       m_commandBuffers{ m_graphicsCommandPool.createCommandBuffers( s_maxFramesInFlight ) } {
     createSyncObjects();
 }
@@ -100,7 +101,8 @@ void Engine::draw( const std::uint32_t imageIndex ) {
     commandBuffer.setViewport( m_swapchain.getViewport() );
     commandBuffer.setScissor( m_swapchain.getScissor() );
     commandBuffer.bindVertexBuffer( m_vertexBuffer.getHandler() );
-    commandBuffer.draw( m_vertexBuffer.getCount() );
+    commandBuffer.bindIndexBuffer( m_indexBuffer.getHandler() );
+    commandBuffer.drawIndices( m_indexBuffer.getCount() );
     commandBuffer.endRenderPass();
     commandBuffer.end();
 

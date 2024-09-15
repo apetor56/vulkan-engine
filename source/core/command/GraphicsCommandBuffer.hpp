@@ -15,7 +15,9 @@ public:
     void setViewport( const vk::Viewport viewport ) const noexcept;
     void setScissor( const vk::Rect2D scissor ) const noexcept;
     void bindVertexBuffer( const vk::Buffer vertexBuffer ) const;
+    void bindIndexBuffer( const vk::Buffer indexBuffer ) const;
     void draw( const std::uint32_t verticesCount ) const noexcept;
+    void drawIndices( const std::uint32_t indicesCount ) const noexcept;
     void endRenderPass() const noexcept;
 };
 

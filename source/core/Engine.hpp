@@ -30,6 +30,7 @@ private:
     ve::Pipeline m_pipeline;
     ve::CommandPool< ve::FamilyType::eGraphics > m_graphicsCommandPool;
     ve::VertexBuffer m_vertexBuffer;
+    ve::IndexBuffer m_indexBuffer;
 
     inline static constexpr std::uint32_t s_maxFramesInFlight{ 2U };
     inline static constexpr std::uint64_t s_timeoutOff{ std::numeric_limits< std::uint64_t >::max() };
