@@ -31,4 +31,8 @@ struct Vertex {
     }
 };
 
+static const std::vector< Vertex > temporaryVertices{ Vertex{ { 0.0F, -0.5F, 0.0F }, { 1.0F, 0.0F, 0.0F } },
+                                                      { { 0.5F, 0.5F, 0.0F }, { 0.0F, 1.0F, 0.0F } },
+                                                      { { -0.5F, 0.5F, 0.0F }, { 0.0F, 0.0F, 1.0F } } };
+
 } // namespace ve

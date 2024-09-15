@@ -5,6 +5,7 @@
 #include <algorithm>
 #include <numeric>
 #include <array>
+#include <ranges>
 
 namespace ve {
 
@@ -48,14 +49,15 @@ void Swapchain::createSwapchain() {
     createInfo.imageArrayLayers = 1U;
     createInfo.imageUsage       = vk::ImageUsageFlagBits::eColorAttachment;
 
-    const ve::QueueFamilyIDs indices{ QueueFamilyIDs::findQueueFamilies( physicalDeviceHandler, surface ) };
-    const std::array< std::uint32_t, cfg::device::queueFamiliesCount > queueFamilyIndices{
-        indices.graphicsFamilyID.value(), indices.presentationFamilyID.value() };
+    const auto queueFamilyIDs{ m_logicalDevice.getQueueFamilyIDs() };
 
-    if ( indices.graphicsFamilyID != indices.presentationFamilyID ) {
+    if ( queueFamilyIDs.at( ve::FamilyType::eGraphics ) != queueFamilyIDs.at( ve::FamilyType::ePresentation ) ) {
+        const auto valuesView{ queueFamilyIDs | std::views::values };
+        const std::vector< std::uint32_t > indices{ std::begin( valuesView ), std::end( valuesView ) };
+        createInfo.pQueueFamilyIndices   = std::data( indices );
         createInfo.imageSharingMode      = vk::SharingMode::eConcurrent;
-        createInfo.queueFamilyIndexCount = static_cast< std::uint32_t >( std::size( queueFamilyIndices ) );
-        createInfo.pQueueFamilyIndices   = queueFamilyIndices.data();
+        createInfo.queueFamilyIndexCount = static_cast< std::uint32_t >( std::size( indices ) );
+
     } else {
         createInfo.imageSharingMode      = vk::SharingMode::eExclusive;
         createInfo.queueFamilyIndexCount = 0U;
@@ -75,6 +77,17 @@ void Swapchain::createSwapchain() {
 }
 
 void Swapchain::recreate() {
+    int width{};
+    int height{};
+    glfwGetFramebufferSize( m_window.getHandler(), &width, &height );
+    while ( width == 0 || height == 0 ) {
+        if ( m_window.shouldClose() )
+            return;
+
+        glfwGetFramebufferSize( m_window.getHandler(), &width, &height );
+        glfwWaitEvents();
+    }
+
     m_logicalDevice.getHandler().waitIdle();
 
     cleanup();

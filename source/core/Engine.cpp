@@ -11,16 +11,10 @@ Engine::Engine()
       m_logicalDevice{ m_physicalDevice },
       m_swapchain{ m_physicalDevice, m_logicalDevice, m_window },
       m_pipeline{ m_logicalDevice, m_swapchain },
-      m_graphicsCommandPool{ m_logicalDevice, m_swapchain, m_pipeline },
+      m_graphicsCommandPool{ m_logicalDevice },
+      m_vertexBuffer{ m_logicalDevice, temporaryVertices },
       m_commandBuffers{ m_graphicsCommandPool.createCommandBuffers( s_maxFramesInFlight ) } {
     createSyncObjects();
-
-    static const std::vector< Vertex > temporaryVertices{ Vertex{ { 0.0F, -0.5F, 0.0F }, { 1.0F, 0.0F, 0.0F } },
-                                                          { { 0.5F, 0.5F, 0.0F }, { 0.0F, 1.0F, 0.0F } },
-                                                          { { -0.5F, 0.5F, 0.0F }, { 0.0F, 0.0F, 1.0F } } };
-    m_vertexBuffer = std::make_shared< ve::VertexBuffer >( m_logicalDevice, temporaryVertices );
-    std::ranges::for_each( m_commandBuffers,
-                           [ this ]( auto& commandBuffer ) { commandBuffer.setData( m_vertexBuffer ); } );
 }
 
 Engine::~Engine() {
@@ -99,7 +93,16 @@ void Engine::draw( const std::uint32_t imageIndex ) {
     const auto renderFinishedSemaphore{ m_renderFinishedSemaphores.at( m_currentFrame ) };
 
     commandBuffer.reset();
-    commandBuffer.record( imageIndex );
+    commandBuffer.begin();
+    commandBuffer.beginRenderPass( m_swapchain.getRenderpass(), m_swapchain.getFrambuffer( imageIndex ),
+                                   m_swapchain.getExtent() );
+    commandBuffer.bindPipeline( m_pipeline.getHandler() );
+    commandBuffer.setViewport( m_swapchain.getViewport() );
+    commandBuffer.setScissor( m_swapchain.getScissor() );
+    commandBuffer.bindVertexBuffer( m_vertexBuffer.getHandler() );
+    commandBuffer.draw( m_vertexBuffer.getCount() );
+    commandBuffer.endRenderPass();
+    commandBuffer.end();
 
     static constexpr vk::PipelineStageFlags waitStage{ vk::PipelineStageFlagBits::eColorAttachmentOutput };
 

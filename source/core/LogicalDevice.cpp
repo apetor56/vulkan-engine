@@ -20,14 +20,14 @@ void LogicalDevice::createLogicalDevice() {
     const auto physicalDeviceHandler{ m_physicalDevice.getHandler() };
     const auto& physicalDeviceExtensions{ m_physicalDevice.getExtensions() };
 
-    const ve::QueueFamilyIDs queueFamilyIndices{ getQueueFamilyIDs() };
+    const auto queueFamilyIndices{ getQueueFamilyIDs() };
     static constexpr std::uint32_t queueCount{ 1U };
     static constexpr float queuePriority{ 1.0F };
 
     std::vector< vk::DeviceQueueCreateInfo > queueCreateInfos{};
-    std::set< std::uint32_t > uniqueQueueFamilies{ queueFamilyIndices.graphicsFamilyID.value(),
-                                                   queueFamilyIndices.presentationFamilyID.value(),
-                                                   queueFamilyIndices.transferFamilyID.value() };
+    std::set< std::uint32_t > uniqueQueueFamilies{ queueFamilyIndices.at( FamilyType::eGraphics ),
+                                                   queueFamilyIndices.at( FamilyType::ePresentation ),
+                                                   queueFamilyIndices.at( FamilyType::eTransfer ) };
 
     std::ranges::for_each( uniqueQueueFamilies, [ &queueCreateInfos ]( const auto queueFamilyID ) {
         vk::DeviceQueueCreateInfo queueCreateInfo{};
@@ -51,11 +51,11 @@ void LogicalDevice::createLogicalDevice() {
 
     constexpr std::uint32_t queueIndex{ 0U };
     m_queues.emplace( ve::QueueType::eGraphics,
-                      m_logicalDevice.getQueue( queueFamilyIndices.graphicsFamilyID.value(), queueIndex ) );
+                      m_logicalDevice.getQueue( queueFamilyIndices.at( FamilyType::eGraphics ), queueIndex ) );
     m_queues.emplace( ve::QueueType::ePresentation,
-                      m_logicalDevice.getQueue( queueFamilyIndices.presentationFamilyID.value(), queueIndex ) );
+                      m_logicalDevice.getQueue( queueFamilyIndices.at( FamilyType::ePresentation ), queueIndex ) );
     m_queues.emplace( ve::QueueType::eTransfer,
-                      m_logicalDevice.getQueue( queueFamilyIndices.transferFamilyID.value(), queueIndex ) );
+                      m_logicalDevice.getQueue( queueFamilyIndices.at( FamilyType::eTransfer ), queueIndex ) );
 }
 
 vk::Device LogicalDevice::getHandler() const noexcept {
@@ -66,7 +66,7 @@ vk::Queue LogicalDevice::getQueue( ve::QueueType queueType ) const {
     return m_queues.at( queueType );
 }
 
-[[nodiscard]] ve::QueueFamilyIDs LogicalDevice::getQueueFamilyIDs() const noexcept {
+[[nodiscard]] std::unordered_map< ve::FamilyType, std::uint32_t > LogicalDevice::getQueueFamilyIDs() const noexcept {
     return m_physicalDevice.getQueueFamilyIDs();
 }
 

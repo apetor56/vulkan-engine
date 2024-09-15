@@ -85,8 +85,8 @@ const ve::extentions& PhysicalDevice::getExtensions() const noexcept {
     return m_deviceExtensions;
 }
 
-[[nodiscard]] ve::QueueFamilyIDs PhysicalDevice::getQueueFamilyIDs() const noexcept {
-    return m_queueFamilies;
+[[nodiscard]] std::unordered_map< ve::FamilyType, std::uint32_t > PhysicalDevice::getQueueFamilyIDs() const noexcept {
+    return m_queueFamilies.getAll();
 }
 
 } // namespace ve

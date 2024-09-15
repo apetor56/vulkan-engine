@@ -18,7 +18,7 @@ public:
 
     vk::PhysicalDevice getHandler() const noexcept;
     const ve::extentions& getExtensions() const noexcept;
-    [[nodiscard]] ve::QueueFamilyIDs getQueueFamilyIDs() const noexcept;
+    [[nodiscard]] std::unordered_map< ve::FamilyType, std::uint32_t > getQueueFamilyIDs() const noexcept;
 
 private:
     vk::PhysicalDevice m_physicalDevice{};

@@ -2,19 +2,22 @@
 
 #include <vulkan/vulkan.hpp>
 
-#include <optional>
+#include <unordered_map>
 
 namespace ve {
 
 enum class QueueType : std::uint32_t { eGraphics, ePresentation, eTransfer };
+enum class FamilyType : std::uint32_t { eGraphics, ePresentation, eTransfer };
 
 struct QueueFamilyIDs {
-    std::optional< std::uint32_t > graphicsFamilyID;
-    std::optional< std::uint32_t > presentationFamilyID;
-    std::optional< std::uint32_t > transferFamilyID;
-
     bool hasRequiredFamilies() const noexcept;
     static QueueFamilyIDs findQueueFamilies( const vk::PhysicalDevice device, const vk::SurfaceKHR surface );
+    std::unordered_map< FamilyType, std::uint32_t > getAll() const;
+
+private:
+    std::unordered_map< FamilyType, std::uint32_t > m_familyIndices;
+
+    void add( FamilyType type, std::uint32_t familyID );
 };
 
 } // namespace ve

@@ -33,16 +33,22 @@ set(CORE
     core/Swapchain.hpp             core/Swapchain.cpp
     core/Pipeline.hpp              core/Pipeline.cpp
     core/ShaderModule.hpp          core/ShaderModule.cpp
-    core/CommandPool.hpp           core/CommandPool.cpp
-    core/CommandBuffer.hpp         core/CommandBuffer.cpp
     core/Vertex.hpp
     core/Buffer.hpp
+)
+
+set(COMMAND
+    core/command/CommandPool.hpp
+    core/command/BaseCommandBuffer.hpp            core/command/BaseCommandBuffer.cpp
+    core/command/GraphicsCommandBuffer.hpp        core/command/GraphicsCommandBuffer.cpp
 )
 
 set(SHADER_SOURCE
     "${CMAKE_CURRENT_SOURCE_DIR}/shaders/simple.vert"
     "${CMAKE_CURRENT_SOURCE_DIR}/shaders/simple.frag"
 )
+
+source_group("Command" FILES ${COMMAND})
 
 set(COMPILED_SHADERS_OUTPUT)
 compile_shaders("${SHADER_SOURCE}" COMPILED_SHADERS_OUTPUT)
@@ -54,5 +60,9 @@ target_sources(${PROJECT_NAME} PRIVATE
     main.cpp
     Application.cpp Application.hpp
     "${CORE}"
+    "${COMMAND}"
+)
+target_include_directories(${PROJECT_NAME} PRIVATE
+    "${CMAKE_CURRENT_SOURCE_DIR}/core"
 )
 add_dependencies(${PROJECT_NAME} Shaders)

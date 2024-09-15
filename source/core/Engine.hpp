@@ -6,9 +6,10 @@
 #include "LogicalDevice.hpp"
 #include "Swapchain.hpp"
 #include "Pipeline.hpp"
-#include "CommandPool.hpp"
-#include "CommandBuffer.hpp"
 #include "Buffer.hpp"
+
+#include "command/CommandPool.hpp"
+#include "command/GraphicsCommandBuffer.hpp"
 
 namespace ve {
 
@@ -27,12 +28,12 @@ private:
     ve::LogicalDevice m_logicalDevice;
     ve::Swapchain m_swapchain;
     ve::Pipeline m_pipeline;
-    ve::CommandPool m_graphicsCommandPool;
-    std::shared_ptr< ve::VertexBuffer > m_vertexBuffer;
+    ve::CommandPool< ve::FamilyType::eGraphics > m_graphicsCommandPool;
+    ve::VertexBuffer m_vertexBuffer;
 
     inline static constexpr std::uint32_t s_maxFramesInFlight{ 2U };
     inline static constexpr std::uint64_t s_timeoutOff{ std::numeric_limits< std::uint64_t >::max() };
-    std::vector< ve::CommandBuffer > m_commandBuffers;
+    std::vector< ve::GraphicsCommandBuffer > m_commandBuffers;
     std::array< vk::Semaphore, s_maxFramesInFlight > m_imageAvailableSemaphores{};
     std::array< vk::Semaphore, s_maxFramesInFlight > m_renderFinishedSemaphores{};
     std::array< vk::Fence, s_maxFramesInFlight > m_inFlightFences{};
