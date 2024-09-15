@@ -41,6 +41,7 @@ set(COMMAND
     core/command/CommandPool.hpp
     core/command/BaseCommandBuffer.hpp            core/command/BaseCommandBuffer.cpp
     core/command/GraphicsCommandBuffer.hpp        core/command/GraphicsCommandBuffer.cpp
+    core/command/TransferCommandBuffer.hpp        core/command/TransferCommandBuffer.cpp
 )
 
 set(SHADER_SOURCE

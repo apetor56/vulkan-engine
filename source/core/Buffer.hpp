@@ -2,6 +2,7 @@
 
 #include "Vertex.hpp"
 #include "LogicalDevice.hpp"
+#include "command/CommandPool.hpp"
 
 #include <vulkan/vulkan.hpp>
 
@@ -34,21 +35,47 @@ private:
     const ve::LogicalDevice& m_logicalDevice;
     inline static constexpr std::uint32_t s_bufferOffset{ 0U };
 
-    void createBuffer();
-    void allocateMemory();
-    void bindBufferMemory();
-    void setData();
+    vk::Buffer createBuffer( const vk::BufferUsageFlags usage ) const;
+    vk::DeviceMemory allocateMemory( const vk::Buffer buffer, const vk::MemoryPropertyFlags memoryProperties ) const;
+    void bindBufferMemory( const vk::Buffer buffer, const vk::DeviceMemory memory ) const;
+    void setData( const vk::DeviceMemory memory ) const;
     std::uint32_t getMemoryTypeIndex( const std::uint32_t bufferMemoryTypeBits,
-                                      vk::MemoryPropertyFlags wantedPropertiesFlag ) const;
+                                      const vk::MemoryPropertyFlags wantedPropertiesFlag ) const;
 };
 
 template < vk::BufferUsageFlagBits bufferUsage, BufferStorageType T >
 Buffer< bufferUsage, T >::Buffer( const ve::LogicalDevice& logicalDevice, std::vector< T > data )
-    : m_logicalDevice{ logicalDevice }, m_data{ std::move( data ) } {
-    createBuffer();
-    allocateMemory();
-    bindBufferMemory();
-    setData();
+    : m_data{ std::move( data ) }, m_logicalDevice{ logicalDevice } {
+    const auto stagingBuffer{ createBuffer( vk::BufferUsageFlagBits::eTransferSrc ) };
+    const auto stagingBufferMemory{ allocateMemory( stagingBuffer, vk::MemoryPropertyFlagBits::eHostVisible |
+                                                                       vk::MemoryPropertyFlagBits::eHostCoherent ) };
+    bindBufferMemory( stagingBuffer, stagingBufferMemory );
+    setData( stagingBufferMemory );
+
+    m_buffer       = createBuffer( vk::BufferUsageFlagBits::eTransferDst | bufferUsage );
+    m_bufferMemory = allocateMemory( m_buffer, vk::MemoryPropertyFlagBits::eDeviceLocal );
+    bindBufferMemory( m_buffer, m_bufferMemory );
+
+    ve::CommandPool< ve::FamilyType::eTransfer > transferCommandPool{ m_logicalDevice };
+    const auto commandBuffer{ std::move( transferCommandPool.createCommandBuffers( 1U ).at( 0 ) ) };
+    commandBuffer.begin( vk::CommandBufferUsageFlagBits::eOneTimeSubmit );
+    commandBuffer.copyBuffer( stagingBuffer, m_buffer, sizeof( T ) * std::size( m_data ) );
+    commandBuffer.end();
+
+    const auto commandBufferHandler{ commandBuffer.getHandler() };
+    vk::SubmitInfo submitInfo;
+    submitInfo.sType              = vk::StructureType::eSubmitInfo;
+    submitInfo.commandBufferCount = 1U;
+    submitInfo.pCommandBuffers    = &commandBufferHandler;
+
+    const auto transferQueue{ m_logicalDevice.getQueue( QueueType::eTransfer ) };
+    transferQueue.submit( submitInfo );
+    transferQueue.waitIdle();
+
+    const auto logicalDeviceHandler{ m_logicalDevice.getHandler() };
+    logicalDeviceHandler.destroyBuffer( stagingBuffer );
+    logicalDeviceHandler.freeMemory( stagingBufferMemory );
+    transferCommandPool.freeCommandBuffer( commandBufferHandler );
 }
 
 template < vk::BufferUsageFlagBits bufferUsage, BufferStorageType T >
@@ -59,52 +86,55 @@ Buffer< bufferUsage, T >::~Buffer() {
 }
 
 template < vk::BufferUsageFlagBits bufferUsage, BufferStorageType T >
-void Buffer< bufferUsage, T >::createBuffer() {
+vk::Buffer Buffer< bufferUsage, T >::createBuffer( const vk::BufferUsageFlags usage ) const {
     const auto logicalDeviceHandler{ m_logicalDevice.getHandler() };
+    const auto allQueueFamiles{ m_logicalDevice.getQueueFamilyIDs() };
+    const std::array< std::uint32_t, 2U > usedFamilyIDs{ allQueueFamiles.at( FamilyType::eGraphics ),
+                                                         allQueueFamiles.at( FamilyType::eTransfer ) };
 
     vk::BufferCreateInfo bufferInfo{};
-    bufferInfo.sType       = vk::StructureType::eBufferCreateInfo;
-    bufferInfo.size        = sizeof( T ) * std::size( m_data );
-    bufferInfo.usage       = bufferUsage;
-    bufferInfo.sharingMode = vk::SharingMode::eExclusive;
+    bufferInfo.sType                 = vk::StructureType::eBufferCreateInfo;
+    bufferInfo.size                  = sizeof( T ) * std::size( m_data );
+    bufferInfo.usage                 = usage;
+    bufferInfo.sharingMode           = vk::SharingMode::eConcurrent;
+    bufferInfo.queueFamilyIndexCount = static_cast< std::uint32_t >( std::size( usedFamilyIDs ) );
+    bufferInfo.pQueueFamilyIndices   = std::data( usedFamilyIDs );
 
-    m_buffer = logicalDeviceHandler.createBuffer( bufferInfo );
+    return logicalDeviceHandler.createBuffer( bufferInfo );
 }
 
 template < vk::BufferUsageFlagBits bufferUsage, BufferStorageType T >
-void Buffer< bufferUsage, T >::allocateMemory() {
+vk::DeviceMemory Buffer< bufferUsage, T >::allocateMemory( const vk::Buffer buffer,
+                                                           const vk::MemoryPropertyFlags memoryProperties ) const {
     const auto logicalDeviceHandler{ m_logicalDevice.getHandler() };
-    const auto bufferMemoryRequirements{ logicalDeviceHandler.getBufferMemoryRequirements( m_buffer ) };
+    const auto bufferMemoryRequirements{ logicalDeviceHandler.getBufferMemoryRequirements( buffer ) };
 
     vk::MemoryAllocateInfo allocationInfo{};
-    static constexpr auto properties{ vk::MemoryPropertyFlagBits::eHostVisible |
-                                      vk::MemoryPropertyFlagBits::eHostCoherent };
-
     allocationInfo.sType           = vk::StructureType::eMemoryAllocateInfo;
     allocationInfo.allocationSize  = bufferMemoryRequirements.size;
-    allocationInfo.memoryTypeIndex = getMemoryTypeIndex( bufferMemoryRequirements.memoryTypeBits, properties );
+    allocationInfo.memoryTypeIndex = getMemoryTypeIndex( bufferMemoryRequirements.memoryTypeBits, memoryProperties );
 
-    m_bufferMemory = logicalDeviceHandler.allocateMemory( allocationInfo );
+    return logicalDeviceHandler.allocateMemory( allocationInfo );
 }
 
 template < vk::BufferUsageFlagBits bufferUsage, BufferStorageType T >
-void Buffer< bufferUsage, T >::bindBufferMemory() {
-    m_logicalDevice.getHandler().bindBufferMemory( m_buffer, m_bufferMemory, s_bufferOffset );
+void Buffer< bufferUsage, T >::bindBufferMemory( const vk::Buffer buffer, const vk::DeviceMemory memory ) const {
+    m_logicalDevice.getHandler().bindBufferMemory( buffer, memory, s_bufferOffset );
 }
 
 template < vk::BufferUsageFlagBits bufferUsage, BufferStorageType T >
-void Buffer< bufferUsage, T >::setData() {
+void Buffer< bufferUsage, T >::setData( const vk::DeviceMemory memory ) const {
     const auto logicalDeviceHandler{ m_logicalDevice.getHandler() };
 
     const auto bufferSize{ sizeof( T ) * std::size( m_data ) };
-    void *cpuMemory{ logicalDeviceHandler.mapMemory( m_bufferMemory, s_bufferOffset, bufferSize ) };
+    void *cpuMemory{ logicalDeviceHandler.mapMemory( memory, s_bufferOffset, bufferSize ) };
     memcpy( cpuMemory, std::data( m_data ), sizeof( T ) * std::size( m_data ) );
-    logicalDeviceHandler.unmapMemory( m_bufferMemory );
+    logicalDeviceHandler.unmapMemory( memory );
 }
 
 template < vk::BufferUsageFlagBits bufferUsage, BufferStorageType T >
 std::uint32_t Buffer< bufferUsage, T >::getMemoryTypeIndex( const std::uint32_t bufferMemoryTypeBits,
-                                                            vk::MemoryPropertyFlags wantedPropertiesFlag ) const {
+                                                            const vk::MemoryPropertyFlags wantedPropertiesFlag ) const {
     const auto deviceMemoryProperties{ m_logicalDevice.getMemoryProperties() };
 
     const auto isDeviceMemorySuitableForBuffer{ [ bufferMemoryTypeBits ]( auto deviceMemoryTypeBit ) {

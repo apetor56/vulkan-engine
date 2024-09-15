@@ -15,7 +15,7 @@ public:
     BaseCommandBuffer& operator=( const BaseCommandBuffer& other ) = delete;
     BaseCommandBuffer& operator=( BaseCommandBuffer&& other )      = delete;
 
-    void begin() const;
+    void begin( const vk::CommandBufferUsageFlags flags = {} ) const;
     void end() const;
     void reset();
 

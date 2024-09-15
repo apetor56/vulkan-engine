@@ -2,6 +2,7 @@
 
 #include "LogicalDevice.hpp"
 #include "GraphicsCommandBuffer.hpp"
+#include "TransferCommandBuffer.hpp"
 
 namespace ve {
 
@@ -18,6 +19,7 @@ public:
     CommandPool& operator=( CommandPool&& other )      = delete;
 
     auto createCommandBuffers( const std::uint32_t count );
+    void freeCommandBuffer( const vk::CommandBuffer commandBuffer ) const;
 
 private:
     vk::CommandPool m_commandPool;
@@ -58,7 +60,7 @@ inline auto CommandPool< ve::FamilyType::eTransfer >::createCommandBuffers( cons
     const auto logicalDeviceHandler{ m_logicalDevice.getHandler() };
     const auto commandBufferHandlers{ logicalDeviceHandler.allocateCommandBuffers( allocInfo ) };
 
-    std::vector< ve::GraphicsCommandBuffer > m_commandBuffers;
+    std::vector< ve::TransferCommandBuffer > m_commandBuffers;
     for ( std::uint32_t index{ 0 }; index < count; index++ )
         m_commandBuffers.emplace_back( commandBufferHandlers.at( index ) );
 
@@ -74,6 +76,11 @@ vk::CommandBufferAllocateInfo CommandPool< type >::createAllocInfo( const std::u
     allocInfo.commandBufferCount = buffersCount;
 
     return allocInfo;
+}
+
+template < ve::FamilyType type >
+void CommandPool< type >::freeCommandBuffer( const vk::CommandBuffer commandBuffer ) const {
+    m_logicalDevice.getHandler().freeCommandBuffers( m_commandPool, commandBuffer );
 }
 
 } // namespace ve

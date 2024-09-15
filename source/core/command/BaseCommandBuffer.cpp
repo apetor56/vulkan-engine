@@ -5,9 +5,10 @@ namespace ve {
 BaseCommandBuffer::BaseCommandBuffer( const vk::CommandBuffer commandBufferHandler ) noexcept
     : m_commandBuffer{ commandBufferHandler } {}
 
-void BaseCommandBuffer::begin() const {
+void BaseCommandBuffer::begin( const vk::CommandBufferUsageFlags flags ) const {
     static vk::CommandBufferBeginInfo beginInfo;
     beginInfo.sType = vk::StructureType::eCommandBufferBeginInfo;
+    beginInfo.flags = flags;
 
     m_commandBuffer.begin( beginInfo );
 }
