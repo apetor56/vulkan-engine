@@ -1,19 +1,83 @@
 {
   "version": 6,
-  "cmakeMinimumRequired":
-  {
+  "cmakeMinimumRequired": {
     "major": 3,
     "minor": 19,
     "patch": 0
   },
-  
-  "configurePresets":
-  [
+
+  "configurePresets": [
     {
       "name": "visual-studio-2022",
       "generator": "Visual Studio 17 2022",
-	  "toolset": "v143",
-	  "binaryDir": "${sourceDir}/build"
+      "toolset": "v143",
+      "binaryDir": "${sourceDir}/build/msvc"
+    },
+
+    {
+      "name": "clang-debug-base",
+      "cacheVariables": {
+        "CMAKE_BUILD_TYPE": "Debug",
+        "CMAKE_CXX_COMPILER": "clang++",
+        "CMAKE_C_COMPILER": "clang"
+      },
+      "binaryDir": "${sourceDir}/build/clang/debug"
+    },
+
+    {
+      "name": "clang-debug-windows",
+      "inherits": "clang-debug-base",
+      "generator": "MinGW Makefiles"
+    },
+
+    {
+      "name": "clang-debug-linux",
+      "inherits": "clang-debug-base",
+      "generator": "Unix Makefiles"
+    },
+
+    {
+      "name": "clang-release-base",
+      "cacheVariables": {
+        "CMAKE_BUILD_TYPE": "Release",
+        "CMAKE_CXX_COMPILER": "clang++",
+        "CMAKE_C_COMPILER": "clang"
+      },
+      "binaryDir": "${sourceDir}/build/clang/release"
+    },
+
+    {
+      "name": "clang-release-windows",
+      "inherits": "clang-release-base",
+      "generator": "MinGW Makefiles"
+    },
+
+    {
+      "name": "clang-release-linux",
+      "inherits": "clang-release-base",
+      "generator": "Unix Makefiles"
+    }
+  ],
+
+  "buildPresets": [
+    {
+      "name": "clang-debug-windows",
+      "configurePreset": "clang-debug-windows"
+    },
+
+    {
+      "name": "clang-release-windows",
+      "configurePreset": "clang-release-windows"
+    },
+
+    {
+      "name": "clang-debug-linux",
+      "configurePreset": "clang-debug-linux"
+    },
+
+    {
+      "name": "clang-release-linux",
+      "configurePreset": "clang-release-linux"
     }
   ]
 }
