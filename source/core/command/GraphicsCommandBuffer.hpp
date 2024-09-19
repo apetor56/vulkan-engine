@@ -2,6 +2,8 @@
 
 #include "BaseCommandBuffer.hpp"
 
+#include <cstdint>
+
 namespace ve {
 
 class GraphicsCommandBuffer : public BaseCommandBuffer {

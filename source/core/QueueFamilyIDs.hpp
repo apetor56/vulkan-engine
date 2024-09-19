@@ -3,6 +3,7 @@
 #include <vulkan/vulkan.hpp>
 
 #include <unordered_map>
+#include <cstdint>
 
 namespace ve {
 

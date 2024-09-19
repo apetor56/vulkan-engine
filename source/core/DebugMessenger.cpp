@@ -5,6 +5,7 @@
 #include <iostream>
 #include <ranges>
 #include <algorithm>
+#include <cstdint>
 
 namespace ve {
 
@@ -52,9 +53,9 @@ VkDebugUtilsMessengerCreateInfoEXT DebugMessenger::getDebugUtilsCreateInfo() con
 }
 
 VKAPI_ATTR VkBool32 VKAPI_CALL DebugMessenger::debugCallback( VkDebugUtilsMessageSeverityFlagBitsEXT messageSeverity,
-                                                              VkDebugUtilsMessageTypeFlagsEXT messageType,
+                                                              VkDebugUtilsMessageTypeFlagsEXT,
                                                               const VkDebugUtilsMessengerCallbackDataEXT *pCallbackData,
-                                                              void *pUserData ) {
+                                                              void * ) {
     if ( messageSeverity & VK_DEBUG_UTILS_MESSAGE_SEVERITY_ERROR_BIT_EXT )
         SPDLOG_ERROR( "\nmessage name: {}\nmessage: {}", pCallbackData->pMessageIdName, pCallbackData->pMessage );
     else if ( messageSeverity & VK_DEBUG_UTILS_MESSAGE_SEVERITY_WARNING_BIT_EXT )

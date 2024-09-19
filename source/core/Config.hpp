@@ -3,6 +3,7 @@
 // TODO: better config system
 
 #include <filesystem>
+#include <cstdint>
 
 namespace cfg::debug {
 

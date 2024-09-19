@@ -4,6 +4,7 @@
 #include <glm/vec3.hpp>
 
 #include <array>
+#include <cstdint>
 
 namespace ve {
 
