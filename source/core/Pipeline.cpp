@@ -1,6 +1,7 @@
 #include "Pipeline.hpp"
 #include "Vertex.hpp"
 #include "Config.hpp"
+#include "descriptor/DescriptorSetLayout.hpp"
 
 #include <stdexcept>
 
@@ -50,7 +51,7 @@ void Pipeline::createPipeline() {
     pipelineInfo.renderPass = m_swapchain.getRenderpass();
     pipelineInfo.subpass    = 0U;
 
-    const auto [ result, pipeline ]{ m_logicalDevice.getHandler().createGraphicsPipeline( nullptr, pipelineInfo ) };
+    auto [ result, pipeline ]{ m_logicalDevice.getHandler().createGraphicsPipeline( nullptr, pipelineInfo ) };
     if ( result != vk::Result::eSuccess )
         throw std::runtime_error( "failed to create graphics pipeline" );
 
@@ -182,8 +183,15 @@ vk::PipelineColorBlendStateCreateInfo
 }
 
 void Pipeline::createPipelineLayout() {
+    ve::DescriptorSetLayout descriptorSetLayout{ m_logicalDevice };
+    descriptorSetLayout.addBinding( 0U, vk::DescriptorType::eUniformBuffer, vk::ShaderStageFlagBits::eVertex );
+    descriptorSetLayout.create();
+    const auto layoutHandler{ descriptorSetLayout.getHandler() };
+
     vk::PipelineLayoutCreateInfo pipelineLayoutInfo{};
-    pipelineLayoutInfo.sType = vk::StructureType::ePipelineLayoutCreateInfo;
+    pipelineLayoutInfo.sType          = vk::StructureType::ePipelineLayoutCreateInfo;
+    pipelineLayoutInfo.setLayoutCount = 1U;
+    pipelineLayoutInfo.pSetLayouts    = &layoutHandler;
 
     m_pipelineLayout = m_logicalDevice.getHandler().createPipelineLayout( pipelineLayoutInfo );
 }

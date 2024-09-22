@@ -44,12 +44,17 @@ set(COMMAND
     core/command/TransferCommandBuffer.hpp        core/command/TransferCommandBuffer.cpp
 )
 
+set(DESCRIPTOR
+    core/descriptor/DescriptorSetLayout.hpp        core/descriptor/DescriptorSetLayout.cpp
+)
+
 set(SHADER_SOURCE
     "${CMAKE_CURRENT_SOURCE_DIR}/shaders/simple.vert"
     "${CMAKE_CURRENT_SOURCE_DIR}/shaders/simple.frag"
 )
 
 source_group("Command" FILES ${COMMAND})
+source_group("Descriptor" FILES ${DESCRIPTOR})
 
 file(MAKE_DIRECTORY "${CMAKE_BINARY_DIR}/shaders")
 set(COMPILED_SHADERS_OUTPUT)
@@ -63,6 +68,7 @@ target_sources(${PROJECT_NAME} PRIVATE
     Application.cpp Application.hpp
     "${CORE}"
     "${COMMAND}"
+    "${DESCRIPTOR}"
 )
 target_include_directories(${PROJECT_NAME} PRIVATE
     "${CMAKE_CURRENT_SOURCE_DIR}/core"

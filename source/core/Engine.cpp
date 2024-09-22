@@ -1,7 +1,10 @@
 #include "Engine.hpp"
 #include "Config.hpp"
 
+#include <glm/gtc/matrix_transform.hpp>
+
 #include <limits>
+#include <chrono>
 
 namespace ve {
 
@@ -75,7 +78,7 @@ void Engine::createSyncObjects() {
 
 std::optional< std::uint32_t > Engine::acquireNextImage() {
     try {
-        const auto [ result, imageIndex ]{ m_logicalDevice.getHandler().acquireNextImageKHR(
+        auto [ result, imageIndex ]{ m_logicalDevice.getHandler().acquireNextImageKHR(
             m_swapchain.getHandler(), s_timeoutOff, m_imageAvailableSemaphores.at( m_currentFrame ) ) };
 
         if ( result != vk::Result::eSuccess && result != vk::Result::eSuboptimalKHR )
@@ -107,8 +110,9 @@ void Engine::draw( const std::uint32_t imageIndex ) {
     commandBuffer.endRenderPass();
     commandBuffer.end();
 
-    static constexpr vk::PipelineStageFlags waitStage{ vk::PipelineStageFlagBits::eColorAttachmentOutput };
+    updateUniformBuffer();
 
+    static constexpr vk::PipelineStageFlags waitStage{ vk::PipelineStageFlagBits::eColorAttachmentOutput };
     vk::SubmitInfo submitInfo{};
     submitInfo.sType                = vk::StructureType::eSubmitInfo;
     submitInfo.waitSemaphoreCount   = 1U;
@@ -142,6 +146,33 @@ void Engine::present( const std::uint32_t imageIndex ) {
     catch ( const vk::OutOfDateKHRError& ) {
         m_swapchain.recreate();
     }
+}
+
+void Engine::updateUniformBuffer() {
+    using namespace std::chrono;
+    static auto start{ high_resolution_clock::now() };
+    auto now{ high_resolution_clock::now() };
+    milliseconds elapsed{ duration_cast< milliseconds >( now - start ) };
+
+    UniformBufferData data{};
+
+    constexpr glm::vec3 zAxis{ 0.0F, 0.0F, 1.0F };
+    data.model = glm::rotate( glm::mat4( 1.0f ), elapsed.count() * glm::radians( 90.0f ), zAxis );
+
+    constexpr glm::vec3 cameraPos{ 2.0F, 2.0F, 2.0F };
+    constexpr glm::vec3 centerPos{};
+    constexpr glm::vec3 up{ 0.0F, 0.0F, 1.0F };
+    data.view = glm::lookAt( cameraPos, centerPos, up );
+
+    static const auto& extent{ m_swapchain.getExtent() };
+    constexpr float angle{ 45.0F };
+    constexpr float near{ 0.1F };
+    constexpr float far{ 20.0F };
+    data.projection =
+        glm::perspective( glm::radians( angle ), static_cast< float >( extent.width ) / extent.height, near, far );
+    data.projection[ 1 ][ 1 ] *= -1;
+
+    memcpy( m_uniformBuffers.at( m_currentFrame ).getMapperMemory(), &data, sizeof( data ) );
 }
 
 } // namespace ve

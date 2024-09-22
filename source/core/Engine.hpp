@@ -38,6 +38,8 @@ private:
     std::array< vk::Semaphore, s_maxFramesInFlight > m_imageAvailableSemaphores{};
     std::array< vk::Semaphore, s_maxFramesInFlight > m_renderFinishedSemaphores{};
     std::array< vk::Fence, s_maxFramesInFlight > m_inFlightFences{};
+    std::array< ve::UniformBuffer, s_maxFramesInFlight > m_uniformBuffers{ ve::UniformBuffer{ m_logicalDevice, {} },
+                                                                           ve::UniformBuffer{ m_logicalDevice, {} } };
     std::uint32_t m_currentFrame{};
 
     void createSyncObjects();
@@ -45,6 +47,7 @@ private:
     std::optional< std::uint32_t > acquireNextImage();
     void draw( const std::uint32_t imageIndex );
     void present( const std::uint32_t imageIndex );
+    void updateUniformBuffer();
 };
 
 } // namespace ve
