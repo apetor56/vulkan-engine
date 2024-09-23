@@ -50,6 +50,13 @@ void GraphicsCommandBuffer::bindIndexBuffer( const vk::Buffer indexBuffer ) cons
     m_commandBuffer.bindIndexBuffer( indexBuffer, g_offset, vk::IndexType::eUint32 );
 }
 
+void GraphicsCommandBuffer::bindDescriptorSet( const vk::PipelineLayout pipelineLayout,
+                                               const vk::DescriptorSet descriptorSet,
+                                               const std::uint32_t firstSet ) const noexcept {
+    m_commandBuffer.bindDescriptorSets( vk::PipelineBindPoint::eGraphics, pipelineLayout, firstSet, descriptorSet,
+                                        nullptr );
+}
+
 void GraphicsCommandBuffer::draw( const std::uint32_t verticesCount ) const noexcept {
     m_commandBuffer.draw( verticesCount, g_instanceCount, g_firstVertex, g_firstInstance );
 }

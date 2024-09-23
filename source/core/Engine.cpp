@@ -6,6 +6,8 @@
 #include <limits>
 #include <chrono>
 
+static constexpr std::uint64_t s_timeoutOff{ std::numeric_limits< std::uint64_t >::max() };
+
 namespace ve {
 
 Engine::Engine()
@@ -13,12 +15,21 @@ Engine::Engine()
       m_physicalDevice{ m_vulkanInstance, m_window },
       m_logicalDevice{ m_physicalDevice },
       m_swapchain{ m_physicalDevice, m_logicalDevice, m_window },
-      m_pipeline{ m_logicalDevice, m_swapchain },
       m_graphicsCommandPool{ m_logicalDevice },
+      m_commandBuffers{ m_graphicsCommandPool.createCommandBuffers( s_maxFramesInFlight ) },
       m_vertexBuffer{ m_logicalDevice, temporaryVertices },
       m_indexBuffer{ m_logicalDevice, temporaryIndices },
-      m_commandBuffers{ m_graphicsCommandPool.createCommandBuffers( s_maxFramesInFlight ) } {
+      m_descriptorSetLayout{ m_logicalDevice },
+      m_descriptorPool{ m_logicalDevice, vk::DescriptorType::eUniformBuffer, s_maxFramesInFlight,
+                        s_maxFramesInFlight } {
     createSyncObjects();
+
+    m_descriptorSetLayout.addBinding( 0U, vk::DescriptorType::eUniformBuffer, vk::ShaderStageFlagBits::eVertex );
+    m_descriptorSetLayout.create();
+    m_descriptorSets = m_descriptorPool.createDescriptorSets( s_maxFramesInFlight, m_descriptorSetLayout );
+    configureDescriptorSets();
+
+    m_pipeline.emplace( m_logicalDevice, m_swapchain, m_descriptorSetLayout );
 }
 
 Engine::~Engine() {
@@ -101,11 +112,12 @@ void Engine::draw( const std::uint32_t imageIndex ) {
     commandBuffer.begin();
     commandBuffer.beginRenderPass( m_swapchain.getRenderpass(), m_swapchain.getFrambuffer( imageIndex ),
                                    m_swapchain.getExtent() );
-    commandBuffer.bindPipeline( m_pipeline.getHandler() );
+    commandBuffer.bindPipeline( m_pipeline->getHandler() );
     commandBuffer.setViewport( m_swapchain.getViewport() );
     commandBuffer.setScissor( m_swapchain.getScissor() );
     commandBuffer.bindVertexBuffer( m_vertexBuffer.getHandler() );
     commandBuffer.bindIndexBuffer( m_indexBuffer.getHandler() );
+    commandBuffer.bindDescriptorSet( m_pipeline->getLayout(), m_descriptorSets.at( m_currentFrame ) );
     commandBuffer.drawIndices( m_indexBuffer.getCount() );
     commandBuffer.endRenderPass();
     commandBuffer.end();
@@ -157,7 +169,7 @@ void Engine::updateUniformBuffer() {
     UniformBufferData data{};
 
     constexpr glm::vec3 zAxis{ 0.0F, 0.0F, 1.0F };
-    data.model = glm::rotate( glm::mat4( 1.0f ), elapsed.count() * glm::radians( 90.0f ), zAxis );
+    data.model = glm::rotate( glm::mat4( 1.0f ), elapsed.count() * glm::radians( 90.0f ) / 1000, zAxis );
 
     constexpr glm::vec3 cameraPos{ 2.0F, 2.0F, 2.0F };
     constexpr glm::vec3 centerPos{};
@@ -173,6 +185,26 @@ void Engine::updateUniformBuffer() {
     data.projection[ 1 ][ 1 ] *= -1;
 
     memcpy( m_uniformBuffers.at( m_currentFrame ).getMapperMemory(), &data, sizeof( data ) );
+}
+
+void Engine::configureDescriptorSets() {
+    vk::DescriptorBufferInfo bufferInfo;
+    bufferInfo.offset = 0U;
+    bufferInfo.range  = sizeof( UniformBufferData );
+
+    vk::WriteDescriptorSet descriptorWrite;
+    descriptorWrite.sType           = vk::StructureType::eWriteDescriptorSet;
+    descriptorWrite.dstBinding      = 0U;
+    descriptorWrite.dstArrayElement = 0U;
+    descriptorWrite.descriptorType  = vk::DescriptorType::eUniformBuffer;
+    descriptorWrite.descriptorCount = 1U;
+    descriptorWrite.pBufferInfo     = &bufferInfo;
+
+    for ( std::uint32_t index{ 0U }; index < s_maxFramesInFlight; index++ ) {
+        bufferInfo.buffer      = m_uniformBuffers.at( index ).getHandler();
+        descriptorWrite.dstSet = m_descriptorSets.at( index );
+        m_logicalDevice.getHandler().updateDescriptorSets( descriptorWrite, nullptr );
+    }
 }
 
 } // namespace ve

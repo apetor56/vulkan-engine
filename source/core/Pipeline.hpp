@@ -3,6 +3,7 @@
 #include "LogicalDevice.hpp"
 #include "ShaderModule.hpp"
 #include "Swapchain.hpp"
+#include "descriptor/DescriptorSetLayout.hpp"
 
 #include <array>
 
@@ -22,7 +23,8 @@ struct PipelineConfigInfo {
 
 class Pipeline {
 public:
-    Pipeline( const ve::LogicalDevice& logicalDevice, const ve::Swapchain& swapchain );
+    Pipeline( const ve::LogicalDevice& logicalDevice, const ve::Swapchain& swapchain,
+              const ve::DescriptorSetLayout& descriptorSetLayout );
 
     Pipeline( const Pipeline& other ) = delete;
     Pipeline( Pipeline&& other )      = delete;
@@ -33,6 +35,7 @@ public:
     ~Pipeline();
 
     vk::Pipeline getHandler() const noexcept;
+    vk::PipelineLayout getLayout() const noexcept;
 
 private:
     ve::ShaderModule m_vertexShader;
@@ -42,7 +45,7 @@ private:
     const ve::LogicalDevice& m_logicalDevice;
     const ve::Swapchain& m_swapchain;
 
-    void createPipelineLayout();
+    void createPipelineLayout( const ve::DescriptorSetLayout& descriptorLayout );
     void createPipeline();
 
     vk::PipelineShaderStageCreateInfo pupulateShaderStageInfo( const vk::ShaderStageFlagBits shaderType,

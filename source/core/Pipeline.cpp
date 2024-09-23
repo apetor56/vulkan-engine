@@ -6,12 +6,13 @@
 #include <stdexcept>
 
 namespace ve {
-Pipeline::Pipeline( const ve::LogicalDevice& logicalDevice, const ve::Swapchain& swapchain )
+Pipeline::Pipeline( const ve::LogicalDevice& logicalDevice, const ve::Swapchain& swapchain,
+                    const ve::DescriptorSetLayout& descriptorSetLayout )
     : m_vertexShader{ cfg::shader::vertShaderBinaryPath.string(), logicalDevice },
       m_fragmentShader{ cfg::shader::fragShaderBinaryPath.string(), logicalDevice },
       m_logicalDevice{ logicalDevice },
       m_swapchain{ swapchain } {
-    createPipelineLayout();
+    createPipelineLayout( descriptorSetLayout );
     createPipeline();
 }
 
@@ -131,7 +132,7 @@ vk::PipelineRasterizationStateCreateInfo Pipeline::createRasterizerInfo() const 
     rasterizer.polygonMode             = vk::PolygonMode::eFill;
     rasterizer.lineWidth               = 1.0F;
     rasterizer.cullMode                = vk::CullModeFlagBits::eBack;
-    rasterizer.frontFace               = vk::FrontFace::eClockwise;
+    rasterizer.frontFace               = vk::FrontFace::eCounterClockwise;
     rasterizer.depthBiasEnable         = vk::False;
 
     return rasterizer;
@@ -182,11 +183,8 @@ vk::PipelineColorBlendStateCreateInfo
     return colorBlending;
 }
 
-void Pipeline::createPipelineLayout() {
-    ve::DescriptorSetLayout descriptorSetLayout{ m_logicalDevice };
-    descriptorSetLayout.addBinding( 0U, vk::DescriptorType::eUniformBuffer, vk::ShaderStageFlagBits::eVertex );
-    descriptorSetLayout.create();
-    const auto layoutHandler{ descriptorSetLayout.getHandler() };
+void Pipeline::createPipelineLayout( const ve::DescriptorSetLayout& descriptorLayout ) {
+    const auto layoutHandler{ descriptorLayout.getHandler() };
 
     vk::PipelineLayoutCreateInfo pipelineLayoutInfo{};
     pipelineLayoutInfo.sType          = vk::StructureType::ePipelineLayoutCreateInfo;
@@ -198,6 +196,10 @@ void Pipeline::createPipelineLayout() {
 
 vk::Pipeline Pipeline::getHandler() const noexcept {
     return m_graphicsPipeline;
+}
+
+vk::PipelineLayout Pipeline::getLayout() const noexcept {
+    return m_pipelineLayout;
 }
 
 } // namespace ve

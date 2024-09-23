@@ -18,6 +18,8 @@ public:
     void setScissor( const vk::Rect2D scissor ) const noexcept;
     void bindVertexBuffer( const vk::Buffer vertexBuffer ) const;
     void bindIndexBuffer( const vk::Buffer indexBuffer ) const;
+    void bindDescriptorSet( const vk::PipelineLayout pipelineLayout, const vk::DescriptorSet descriptorSet,
+                            const std::uint32_t firstSet = 0U ) const noexcept;
     void draw( const std::uint32_t verticesCount ) const noexcept;
     void drawIndices( const std::uint32_t indicesCount ) const noexcept;
     void endRenderPass() const noexcept;

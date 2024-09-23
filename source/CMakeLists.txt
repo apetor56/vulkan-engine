@@ -46,6 +46,7 @@ set(COMMAND
 
 set(DESCRIPTOR
     core/descriptor/DescriptorSetLayout.hpp        core/descriptor/DescriptorSetLayout.cpp
+    core/descriptor/DescriptorPool.hpp             core/descriptor/DescriptorPool.cpp
 )
 
 set(SHADER_SOURCE

@@ -11,6 +11,9 @@
 #include "command/CommandPool.hpp"
 #include "command/GraphicsCommandBuffer.hpp"
 
+#include "descriptor/DescriptorSetLayout.hpp"
+#include "descriptor/DescriptorPool.hpp"
+
 namespace ve {
 
 class Engine {
@@ -27,27 +30,33 @@ private:
     ve::PhysicalDevice m_physicalDevice;
     ve::LogicalDevice m_logicalDevice;
     ve::Swapchain m_swapchain;
-    ve::Pipeline m_pipeline;
+    std::optional< ve::Pipeline > m_pipeline;
+
     ve::CommandPool< ve::FamilyType::eGraphics > m_graphicsCommandPool;
-    ve::VertexBuffer m_vertexBuffer;
-    ve::IndexBuffer m_indexBuffer;
+    std::vector< ve::GraphicsCommandBuffer > m_commandBuffers;
 
     inline static constexpr std::uint32_t s_maxFramesInFlight{ 2U };
-    inline static constexpr std::uint64_t s_timeoutOff{ std::numeric_limits< std::uint64_t >::max() };
-    std::vector< ve::GraphicsCommandBuffer > m_commandBuffers;
+    ve::VertexBuffer m_vertexBuffer;
+    ve::IndexBuffer m_indexBuffer;
+    std::array< ve::UniformBuffer, s_maxFramesInFlight > m_uniformBuffers{ ve::UniformBuffer{ m_logicalDevice, {} },
+                                                                           ve::UniformBuffer{ m_logicalDevice, {} } };
+
+    ve::DescriptorSetLayout m_descriptorSetLayout;
+    ve::DescriptorPool m_descriptorPool;
+    std::vector< vk::DescriptorSet > m_descriptorSets;
+
     std::array< vk::Semaphore, s_maxFramesInFlight > m_imageAvailableSemaphores{};
     std::array< vk::Semaphore, s_maxFramesInFlight > m_renderFinishedSemaphores{};
     std::array< vk::Fence, s_maxFramesInFlight > m_inFlightFences{};
-    std::array< ve::UniformBuffer, s_maxFramesInFlight > m_uniformBuffers{ ve::UniformBuffer{ m_logicalDevice, {} },
-                                                                           ve::UniformBuffer{ m_logicalDevice, {} } };
     std::uint32_t m_currentFrame{};
 
     void createSyncObjects();
+    void updateUniformBuffer();
+    void configureDescriptorSets();
 
     std::optional< std::uint32_t > acquireNextImage();
     void draw( const std::uint32_t imageIndex );
     void present( const std::uint32_t imageIndex );
-    void updateUniformBuffer();
 };
 
 } // namespace ve
