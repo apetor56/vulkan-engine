@@ -14,6 +14,7 @@ Engine::Engine()
     : m_window{ WindowInfo{ cfg::window::width, cfg::window::height, "example" }, m_vulkanInstance },
       m_physicalDevice{ m_vulkanInstance, m_window },
       m_logicalDevice{ m_physicalDevice },
+      m_memoryAllocator{ m_vulkanInstance, m_physicalDevice, m_logicalDevice },
       m_swapchain{ m_physicalDevice, m_logicalDevice, m_window },
       m_graphicsCommandPool{ m_logicalDevice },
       m_commandBuffers{ m_graphicsCommandPool.createCommandBuffers( s_maxFramesInFlight ) },

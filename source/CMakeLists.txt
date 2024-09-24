@@ -35,6 +35,7 @@ set(CORE
     core/ShaderModule.hpp          core/ShaderModule.cpp
     core/Vertex.hpp
     core/Buffer.hpp
+    core/MemoryAllocator.hpp       core/MemoryAllocator.cpp
 )
 
 set(COMMAND

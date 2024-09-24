@@ -4,6 +4,7 @@
 #include "Window.hpp"
 #include "PhysicalDevice.hpp"
 #include "LogicalDevice.hpp"
+#include "MemoryAllocator.hpp"
 #include "Swapchain.hpp"
 #include "Pipeline.hpp"
 #include "Buffer.hpp"
@@ -29,6 +30,7 @@ private:
     ve::Window m_window;
     ve::PhysicalDevice m_physicalDevice;
     ve::LogicalDevice m_logicalDevice;
+    ve::MemoryAllocator m_memoryAllocator;
     ve::Swapchain m_swapchain;
     std::optional< ve::Pipeline > m_pipeline;
 

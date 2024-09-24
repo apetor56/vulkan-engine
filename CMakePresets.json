@@ -16,10 +16,7 @@
       "name": "clang-base",
       "cacheVariables": {
         "CMAKE_CXX_COMPILER": "clang++",
-        "CMAKE_C_COMPILER": "clang",
-        "CMAKE_CXX_FLAGS": "-stdlib=libc++ -Wno-unused-command-line-argument",
-        "CMAKE_EXE_LINKER_FLAGS": "-fuse-ld=lld",
-        "CMAKE_SHARED_LINKER_FLAGS": "-fuse-ld=lld"
+        "CMAKE_C_COMPILER": "clang"
       }
     },
     {
