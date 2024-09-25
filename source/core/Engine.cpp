@@ -185,7 +185,7 @@ void Engine::updateUniformBuffer() {
         glm::perspective( glm::radians( angle ), static_cast< float >( extent.width ) / extent.height, near, far );
     data.projection[ 1 ][ 1 ] *= -1;
 
-    memcpy( m_uniformBuffers.at( m_currentFrame ).getMapperMemory(), &data, sizeof( data ) );
+    memcpy( m_uniformBuffers.at( m_currentFrame ).getMappedMemory(), &data, sizeof( data ) );
 }
 
 void Engine::configureDescriptorSets() {
