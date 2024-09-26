@@ -1,5 +1,6 @@
 #include "GraphicsCommandBuffer.hpp"
 #include "QueueFamilyIDs.hpp"
+#include "LogicalDevice.hpp"
 
 namespace {
 constexpr std::uint32_t g_firstVertex{ 0U };
@@ -14,6 +15,10 @@ constexpr vk::ClearValue g_clearColor{ { 0.1F, 0.1F, 0.1F, 1.0F } };
 } // namespace
 
 namespace ve {
+
+std::uint32_t GraphicsCommandBuffer::getQueueFamilyID( const ve::LogicalDevice& logicalDevice ) {
+    return logicalDevice.getQueueFamilyIDs().at( ve::FamilyType::eGraphics );
+}
 
 void GraphicsCommandBuffer::beginRenderPass( const vk::RenderPass renderPass, const vk::Framebuffer framebuffer,
                                              const vk::Extent2D renderArea ) const noexcept {

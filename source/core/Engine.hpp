@@ -34,7 +34,7 @@ private:
     ve::Swapchain m_swapchain;
     std::optional< ve::Pipeline > m_pipeline;
 
-    ve::CommandPool< ve::FamilyType::eGraphics > m_graphicsCommandPool;
+    ve::CommandPool< ve::GraphicsCommandBuffer > m_graphicsCommandPool;
     std::vector< ve::GraphicsCommandBuffer > m_commandBuffers;
 
     inline static constexpr std::uint32_t s_maxFramesInFlight{ 2U };

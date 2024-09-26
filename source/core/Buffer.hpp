@@ -15,13 +15,13 @@ struct UniformBufferData {
     auto data() const { return this; }
 };
 
+namespace ve {
+
 template < typename T >
 concept BufferData = requires( T data ) {
     data.size();
     data.data();
 };
-
-namespace ve {
 
 template < VkBufferUsageFlags bufferUsage, BufferData T >
 class Buffer {

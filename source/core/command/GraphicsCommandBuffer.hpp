@@ -6,10 +6,14 @@
 
 namespace ve {
 
+class LogicalDevice;
+
 class GraphicsCommandBuffer : public BaseCommandBuffer {
 public:
     using BaseCommandBuffer::BaseCommandBuffer;
     using BaseCommandBuffer::operator=;
+
+    static std::uint32_t getQueueFamilyID( const ve::LogicalDevice& logicalDevice );
 
     void beginRenderPass( const vk::RenderPass renderPass, const vk::Framebuffer framebuffer,
                           const vk::Extent2D renderArea ) const noexcept;
