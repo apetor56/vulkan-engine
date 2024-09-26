@@ -50,7 +50,9 @@ public:
     ~Buffer() { vmaDestroyBuffer( m_memoryAllocator, m_buffer, m_allocation ); }
 
     vk::Buffer getHandler() const noexcept { return m_buffer; }
+
     std::uint32_t getCount() const noexcept { return m_dataCount; }
+    
     void *getMappedMemory() const noexcept {
         VmaAllocationInfo allocationInfo{};
         vmaGetAllocationInfo( m_memoryAllocator, m_allocation, &allocationInfo );
