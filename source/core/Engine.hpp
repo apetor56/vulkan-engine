@@ -40,8 +40,8 @@ private:
     inline static constexpr std::uint32_t s_maxFramesInFlight{ 2U };
     ve::VertexBuffer m_vertexBuffer;
     ve::IndexBuffer m_indexBuffer;
-    std::array< ve::UniformBuffer, s_maxFramesInFlight > m_uniformBuffers{ ve::UniformBuffer{ m_logicalDevice, {} },
-                                                                           ve::UniformBuffer{ m_logicalDevice, {} } };
+    std::array< ve::UniformBuffer, s_maxFramesInFlight > m_uniformBuffers{ ve::UniformBuffer{ m_memoryAllocator, {} },
+                                                                           ve::UniformBuffer{ m_memoryAllocator, {} } };
 
     ve::DescriptorSetLayout m_descriptorSetLayout;
     ve::DescriptorPool m_descriptorPool;

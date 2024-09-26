@@ -23,30 +23,39 @@ concept BufferData = requires( T data ) {
 
 namespace ve {
 
-template < VkBufferUsageFlagBits bufferUsage, VmaAllocationCreateFlags allocationFlags, BufferData T >
+template < VkBufferUsageFlags bufferUsage, BufferData T >
 class Buffer {
 public:
     Buffer( const ve::MemoryAllocator& memoryAllocator, T data )
         : m_memoryAllocator{ memoryAllocator }, m_dataCount{ static_cast< std::uint32_t >( std::size( data ) ) } {
+        const auto dataSizeInBytes{ sizeof( T ) * std::size( data ) };
+
         VkBufferCreateInfo bufferCreateInfo{};
-        bufferInfo.sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO;
-        bufferInfo.usage = bufferUsage;
-        bufferInfo.size  = sizeof( T ) * std::size( data );
+        bufferCreateInfo.sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO;
+        bufferCreateInfo.usage = bufferUsage;
+        bufferCreateInfo.size  = dataSizeInBytes;
 
         VmaAllocationCreateInfo allocationCreateInfo{};
-        allocationInfo.usage = VMA_MEMORY_USAGE_AUTO;
-        allocationInfo.flags = allocationFlags;
+        allocationCreateInfo.usage = VMA_MEMORY_USAGE_AUTO;
+        allocationCreateInfo.flags =
+            VMA_ALLOCATION_CREATE_MAPPED_BIT | VMA_ALLOCATION_CREATE_HOST_ACCESS_SEQUENTIAL_WRITE_BIT;
 
         VmaAllocationInfo allocationInfo{};
         vmaCreateBuffer( m_memoryAllocator, &bufferCreateInfo, &allocationCreateInfo, &m_buffer, &m_allocation,
                          &allocationInfo );
+
+        memcpy( allocationInfo.pMappedData, std::data( data ), dataSizeInBytes );
     }
 
     ~Buffer() { vmaDestroyBuffer( m_memoryAllocator, m_buffer, m_allocation ); }
 
     vk::Buffer getHandler() const noexcept { return m_buffer; }
     std::uint32_t getCount() const noexcept { return m_dataCount; }
-    void *getMappedMemory() const noexcept { return m_cpuMemory; }
+    void *getMappedMemory() const noexcept {
+        VmaAllocationInfo allocationInfo{};
+        vmaGetAllocationInfo( m_memoryAllocator, m_allocation, &allocationInfo );
+        return allocationInfo.pMappedData;
+    }
 
 private:
     const ve::MemoryAllocator& m_memoryAllocator;
@@ -55,11 +64,8 @@ private:
     std::uint32_t m_dataCount;
 };
 
-using StagingBuffer = Buffer< VK_BUFFER_USAGE_TRANSFER_SRC_BIT, VMA_ALLOCATION_CREATE_HOST_ACCESS_SEQUENTIAL_WRITE_BIT,
-                              std::vector< Vertex > >;
-using VertexBuffer  = Buffer< VK_BUFFER_USAGE_VERTEX_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT,
-                              VMA_MEMORY_USAGE_GPU_ONLY, std::vector< Vertex > >;
-using IndexBuffer   = Buffer< vk::BufferUsageFlagBits::eIndexBuffer, std::vector< std::uint32_t > >;
-using UniformBuffer = Buffer< vk::BufferUsageFlagBits::eUniformBuffer, UniformBufferData >;
+using VertexBuffer  = Buffer< VK_BUFFER_USAGE_VERTEX_BUFFER_BIT, std::vector< Vertex > >;
+using IndexBuffer   = Buffer< VK_BUFFER_USAGE_INDEX_BUFFER_BIT, std::vector< std::uint32_t > >;
+using UniformBuffer = Buffer< VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, UniformBufferData >;
 
 } // namespace ve

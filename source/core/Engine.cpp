@@ -18,8 +18,8 @@ Engine::Engine()
       m_swapchain{ m_physicalDevice, m_logicalDevice, m_window },
       m_graphicsCommandPool{ m_logicalDevice },
       m_commandBuffers{ m_graphicsCommandPool.createCommandBuffers( s_maxFramesInFlight ) },
-      m_vertexBuffer{ m_logicalDevice, temporaryVertices },
-      m_indexBuffer{ m_logicalDevice, temporaryIndices },
+      m_vertexBuffer{ m_memoryAllocator, temporaryVertices },
+      m_indexBuffer{ m_memoryAllocator, temporaryIndices },
       m_descriptorSetLayout{ m_logicalDevice },
       m_descriptorPool{ m_logicalDevice, vk::DescriptorType::eUniformBuffer, s_maxFramesInFlight,
                         s_maxFramesInFlight } {
