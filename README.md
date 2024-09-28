@@ -7,50 +7,35 @@
 <br>
 
 # Configuration
-### Windows
-**1. Build Visual Studio 2022 solution:**
+```bash
+git clone https://github.com/apetor56/vulkan-engine.git
+cd vulkan-engine
+```
+
+**1. Build Visual Studio 2022 solution**
 
 Navigate to root directory and run `setup.bat` script to generate Visual Studio solution:
 ```bash
-cd vulkan-engine
 ./setup.bat
 ```
 
 Generated solution project is located in `vulkan-engine/build/msvc` directory.
 
-**2. Clang++ with MinGW Makefiles:**
+**2. Clang++ with MinGW Makefiles/Ninja generator:**
 
 Generate **MinGW Makefiles** and build executable with predefined CMake presets (debug version):
 ```bash
-cd vulkan-engine
-cmake --preset clang-debug-windows
-cmake --build --preset clang-debug-windows
+cmake --preset clang-mingw-debug
+cmake --build --preset clang-mingw-debug
 ```
 
-Equivalent version for release:
+Equivalent version for **Ninja** generator:
 ```bash
-cd vulkan-engine
-cmake --preset clang-release-windows
-cmake --build --preset clang-release-windows
+cmake --preset clang-ninja-debug
+cmake --build --preset clang-ninja-debug
 ```
 
----
-
-### Linux (experimental)
-**Clang++ with Unix Makefiles**
-
-Generate **Unix Makefiles** and build executable with predefined CMake presets (debug version):
+Built executable path:
 ```bash
-cd vulkan-engine
-cmake --preset clang-debug-linux
-cmake --build --preset clang-debug-linux
+vulkan-engine/build/clang/debug/source/VulkanEngine.exe
 ```
-
-Equivalent version for release:
-```bash
-cd vulkan-engine
-cmake --preset clang-release-linux
-cmake --build --preset clang-release-linux
-```
----
-For clang++ and Makefile option executable is located in `vulkan-engine\build\clang\debug\source` directory (or in `vulkan-engine\build\clang\release\source` for release version).
