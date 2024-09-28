@@ -37,11 +37,16 @@ private:
     ve::CommandPool< ve::GraphicsCommandBuffer > m_graphicsCommandPool;
     std::vector< ve::GraphicsCommandBuffer > m_commandBuffers;
 
+    vk::Fence m_immediateSubmitFence{};
+    ve::CommandPool< ve::TransferCommandBuffer > m_transferCommandPool;
+    ve::TransferCommandBuffer m_transferCommandBuffer;
+
     inline static constexpr std::uint32_t s_maxFramesInFlight{ 2U };
     ve::VertexBuffer m_vertexBuffer;
     ve::IndexBuffer m_indexBuffer;
-    std::array< ve::UniformBuffer, s_maxFramesInFlight > m_uniformBuffers{ ve::UniformBuffer{ m_memoryAllocator, {} },
-                                                                           ve::UniformBuffer{ m_memoryAllocator, {} } };
+    std::array< ve::UniformBuffer, s_maxFramesInFlight > m_uniformBuffers{
+        ve::UniformBuffer{ m_memoryAllocator, sizeof( UniformBufferData ) },
+        ve::UniformBuffer{ m_memoryAllocator, sizeof( UniformBufferData ) } };
 
     ve::DescriptorSetLayout m_descriptorSetLayout;
     ve::DescriptorPool m_descriptorPool;
@@ -55,6 +60,7 @@ private:
     void createSyncObjects();
     void updateUniformBuffer();
     void configureDescriptorSets();
+    void uploadBuffersData( std::span< Vertex > vertices, std::span< std::uint32_t > indices );
 
     std::optional< std::uint32_t > acquireNextImage();
     void draw( const std::uint32_t imageIndex );

@@ -7,11 +7,14 @@ std::uint32_t TransferCommandBuffer::getQueueFamilyID( const ve::LogicalDevice& 
     return logicalDevice.getQueueFamilyIDs().at( ve::FamilyType::eTransfer );
 }
 
-void TransferCommandBuffer::copyBuffer( const vk::Buffer stagingBuffer, const vk::Buffer actualBuffer,
-                                        const std::size_t size ) const {
+void TransferCommandBuffer::copyBuffer( const vk::DeviceSize srcOffset, const vk::DeviceSize dstOffset,
+                                        const std::size_t size, const vk::Buffer srcBuffer,
+                                        const vk::Buffer dstBuffer ) const {
     vk::BufferCopy copyRegion;
-    copyRegion.size = size;
-    m_commandBuffer.copyBuffer( stagingBuffer, actualBuffer, copyRegion );
+    copyRegion.srcOffset = srcOffset;
+    copyRegion.dstOffset = dstOffset;
+    copyRegion.size      = size;
+    m_commandBuffer.copyBuffer( srcBuffer, dstBuffer, copyRegion );
 }
 
 } // namespace ve

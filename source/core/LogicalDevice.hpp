@@ -21,7 +21,6 @@ public:
     vk::Device getHandler() const noexcept;
     vk::Queue getQueue( const ve::QueueType queueType ) const;
     [[nodiscard]] std::unordered_map< ve::FamilyType, std::uint32_t > getQueueFamilyIDs() const noexcept;
-    [[nodiscard]] vk::PhysicalDeviceMemoryProperties getMemoryProperties() const noexcept;
 
 private:
     vk::Device m_logicalDevice;

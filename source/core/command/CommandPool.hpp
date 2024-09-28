@@ -19,17 +19,21 @@ public:
     CommandPool& operator=( const CommandPool& other ) = delete;
     CommandPool& operator=( CommandPool&& other )      = delete;
 
-    template < vk::CommandBufferLevel level = vk::CommandBufferLevel::ePrimary >
-    std::vector< CommandBuffer_T > createCommandBuffers( const std::uint32_t count ) {
+    template < std::uint32_t count = 1U, vk::CommandBufferLevel level = vk::CommandBufferLevel::ePrimary >
+    auto createCommandBuffers() {
         const auto allocInfo{ createAllocInfo( count, level ) };
         const auto logicalDeviceHandler{ m_logicalDevice.getHandler() };
         const auto commandBufferHandlers{ logicalDeviceHandler.allocateCommandBuffers( allocInfo ) };
 
-        std::vector< CommandBuffer_T > m_commandBuffers;
-        for ( std::uint32_t index{ 0 }; index < count; index++ )
-            m_commandBuffers.emplace_back( commandBufferHandlers.at( index ) );
+        if constexpr ( count == 1U ) {
+            return CommandBuffer_T{ *commandBufferHandlers.begin() };
+        } else {
+            std::vector< CommandBuffer_T > m_commandBuffers;
+            for ( std::uint32_t index{ 0 }; index < count; index++ )
+                m_commandBuffers.emplace_back( commandBufferHandlers.at( index ) );
 
-        return m_commandBuffers;
+            return m_commandBuffers;
+        }
     }
 
     void freeCommandBuffer( const CommandBuffer_T commandBuffer ) const {

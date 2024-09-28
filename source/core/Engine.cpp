@@ -6,7 +6,10 @@
 #include <limits>
 #include <chrono>
 
-static constexpr std::uint64_t s_timeoutOff{ std::numeric_limits< std::uint64_t >::max() };
+namespace {
+constexpr std::uint64_t g_timeoutOff{ std::numeric_limits< std::uint64_t >::max() };
+constexpr auto g_waitForAllFences{ vk::True };
+} // namespace
 
 namespace ve {
 
@@ -17,9 +20,11 @@ Engine::Engine()
       m_memoryAllocator{ m_vulkanInstance, m_physicalDevice, m_logicalDevice },
       m_swapchain{ m_physicalDevice, m_logicalDevice, m_window },
       m_graphicsCommandPool{ m_logicalDevice },
-      m_commandBuffers{ m_graphicsCommandPool.createCommandBuffers( s_maxFramesInFlight ) },
-      m_vertexBuffer{ m_memoryAllocator, temporaryVertices },
-      m_indexBuffer{ m_memoryAllocator, temporaryIndices },
+      m_commandBuffers{ m_graphicsCommandPool.createCommandBuffers< s_maxFramesInFlight >() },
+      m_transferCommandPool{ m_logicalDevice },
+      m_transferCommandBuffer{ m_transferCommandPool.createCommandBuffers() },
+      m_vertexBuffer{ m_memoryAllocator, sizeof( Vertex ) * std::size( temporaryVertices ) },
+      m_indexBuffer{ m_memoryAllocator, sizeof( std::uint32_t ) * std::size( temporaryIndices ) },
       m_descriptorSetLayout{ m_logicalDevice },
       m_descriptorPool{ m_logicalDevice, vk::DescriptorType::eUniformBuffer, s_maxFramesInFlight,
                         s_maxFramesInFlight } {
@@ -29,6 +34,8 @@ Engine::Engine()
     m_descriptorSetLayout.create();
     m_descriptorSets = m_descriptorPool.createDescriptorSets( s_maxFramesInFlight, m_descriptorSetLayout );
     configureDescriptorSets();
+
+    uploadBuffersData( temporaryVertices, temporaryIndices );
 
     m_pipeline.emplace( m_logicalDevice, m_swapchain, m_descriptorSetLayout );
 }
@@ -45,6 +52,8 @@ Engine::~Engine() {
     std::ranges::for_each( m_inFlightFences, [ logicalDeviceHandler ]( const auto& semaphore ) {
         logicalDeviceHandler.destroyFence( semaphore );
     } );
+
+    logicalDeviceHandler.destroyFence( m_immediateSubmitFence );
 }
 
 void Engine::run() {
@@ -56,9 +65,8 @@ void Engine::run() {
 }
 
 void Engine::render() {
-    static constexpr auto waitForAllFences{ vk::True };
     [[maybe_unused]] const auto result{ m_logicalDevice.getHandler().waitForFences(
-        m_inFlightFences.at( m_currentFrame ), waitForAllFences, s_timeoutOff ) };
+        m_inFlightFences.at( m_currentFrame ), g_waitForAllFences, g_timeoutOff ) };
 
     const auto imageIndex{ acquireNextImage() };
     if ( !imageIndex.has_value() )
@@ -86,12 +94,14 @@ void Engine::createSyncObjects() {
         m_renderFinishedSemaphores.at( index ) = logicalDeviceHandler.createSemaphore( semaphoreInfo );
         m_inFlightFences.at( index )           = logicalDeviceHandler.createFence( fenceInfo );
     }
+
+    m_immediateSubmitFence = logicalDeviceHandler.createFence( fenceInfo );
 }
 
 std::optional< std::uint32_t > Engine::acquireNextImage() {
     try {
         auto [ result, imageIndex ]{ m_logicalDevice.getHandler().acquireNextImageKHR(
-            m_swapchain.getHandler(), s_timeoutOff, m_imageAvailableSemaphores.at( m_currentFrame ) ) };
+            m_swapchain.getHandler(), g_timeoutOff, m_imageAvailableSemaphores.at( m_currentFrame ) ) };
 
         if ( result != vk::Result::eSuccess && result != vk::Result::eSuboptimalKHR )
             throw std::runtime_error( "failed to acquire swapchain image" );
@@ -119,7 +129,7 @@ void Engine::draw( const std::uint32_t imageIndex ) {
     commandBuffer.bindVertexBuffer( m_vertexBuffer.getHandler() );
     commandBuffer.bindIndexBuffer( m_indexBuffer.getHandler() );
     commandBuffer.bindDescriptorSet( m_pipeline->getLayout(), m_descriptorSets.at( m_currentFrame ) );
-    commandBuffer.drawIndices( m_indexBuffer.getCount() );
+    commandBuffer.drawIndices( m_indexBuffer.size() / sizeof( std::uint32_t ) );
     commandBuffer.endRenderPass();
     commandBuffer.end();
 
@@ -206,6 +216,45 @@ void Engine::configureDescriptorSets() {
         descriptorWrite.dstSet = m_descriptorSets.at( index );
         m_logicalDevice.getHandler().updateDescriptorSets( descriptorWrite, nullptr );
     }
+}
+
+void Engine::uploadBuffersData( std::span< Vertex > vertices, std::span< std::uint32_t > indices ) {
+    const vk::DeviceSize vertexBufferSize{ std::size( vertices ) * sizeof( Vertex ) };
+    const vk::DeviceSize indexBufferSize{ std::size( indices ) * sizeof( std::uint32_t ) };
+
+    StagingBuffer stagingBuffer{ m_memoryAllocator, vertexBufferSize + indexBufferSize };
+    void *mappedMemory{ stagingBuffer.getMappedMemory() };
+    memcpy( mappedMemory, std::data( vertices ), vertexBufferSize );
+    memcpy( static_cast< char * >( mappedMemory ) + vertexBufferSize, std::data( indices ), indexBufferSize );
+
+    const auto logicalDeviceHandler{ m_logicalDevice.getHandler() };
+    const auto commandBufferHandler{ m_transferCommandBuffer.getHandler() };
+    logicalDeviceHandler.resetFences( m_immediateSubmitFence );
+    m_transferCommandBuffer.reset();
+
+    m_transferCommandBuffer.begin();
+
+    constexpr vk::DeviceSize vertexSrcOffset{ 0U };
+    constexpr vk::DeviceSize vertexDstOffset{ 0U };
+    m_transferCommandBuffer.copyBuffer( vertexSrcOffset, vertexDstOffset, vertexBufferSize, stagingBuffer.getHandler(),
+                                        m_vertexBuffer.getHandler() );
+
+    const vk::DeviceSize indexSrcOffset{ vertexBufferSize };
+    constexpr vk::DeviceSize indexDstOffset{ 0U };
+    m_transferCommandBuffer.copyBuffer( indexSrcOffset, indexDstOffset, indexBufferSize, stagingBuffer.getHandler(),
+                                        m_indexBuffer.getHandler() );
+
+    m_transferCommandBuffer.end();
+
+    vk::SubmitInfo submitInfo{};
+    submitInfo.sType              = vk::StructureType::eSubmitInfo;
+    submitInfo.commandBufferCount = 1U;
+    submitInfo.pCommandBuffers    = &commandBufferHandler;
+
+    const auto transferQueue{ m_logicalDevice.getQueue( ve::QueueType::eTransfer ) };
+    transferQueue.submit( submitInfo, m_immediateSubmitFence );
+    [[maybe_unused]] const auto result{
+        logicalDeviceHandler.waitForFences( m_immediateSubmitFence, g_waitForAllFences, g_timeoutOff ) };
 }
 
 } // namespace ve
