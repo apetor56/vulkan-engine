@@ -2,17 +2,19 @@
 
 namespace ve {
 
-DescriptorPool::DescriptorPool( const ve::LogicalDevice& logicalDevice, const vk::DescriptorType type,
+DescriptorPool::DescriptorPool( const ve::LogicalDevice& logicalDevice, std::span< vk::DescriptorType > types,
                                 const std::uint32_t descriptorCount, const std::uint32_t maxSetsCount )
     : m_logicalDevice{ logicalDevice } {
-    vk::DescriptorPoolSize poolSize;
-    poolSize.type            = type;
-    poolSize.descriptorCount = descriptorCount;
+    std::vector< vk::DescriptorPoolSize > poolSizes( std::size( types ) );
+    for ( std::size_t index{}; index < std::size( types ); index++ ) {
+        poolSizes.at( index ).type            = types[ index ];
+        poolSizes.at( index ).descriptorCount = descriptorCount;
+    }
 
     vk::DescriptorPoolCreateInfo poolInfo{};
     poolInfo.sType         = vk::StructureType::eDescriptorPoolCreateInfo;
-    poolInfo.poolSizeCount = 1U;
-    poolInfo.pPoolSizes    = &poolSize;
+    poolInfo.poolSizeCount = static_cast< std::uint32_t >( std::size( poolSizes ) );
+    poolInfo.pPoolSizes    = std::data( poolSizes );
     poolInfo.maxSets       = maxSetsCount;
 
     m_descriptorPool = m_logicalDevice.getHandler().createDescriptorPool( poolInfo );

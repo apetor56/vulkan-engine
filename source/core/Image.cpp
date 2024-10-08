@@ -2,27 +2,31 @@
 
 namespace ve {
 
-Image::Image( const ve::MemoryAllocator& allocator, const vk::Extent2D extent, const vk::Format format,
-              const vk::ImageUsageFlags usage, const vk::ImageTiling tiling )
-    : m_memoryAllocator{ allocator }, m_imageExtent{ extent }, m_imageFormat{ format } {
-    createImage( extent, format, usage, tiling );
+Image::Image( const ve::MemoryAllocator& allocator, const ve::LogicalDevice& logicalDevice, const vk::Extent2D extent,
+              const vk::Format format, const vk::ImageUsageFlags usage, const vk::ImageTiling tiling )
+    : m_memoryAllocator{ allocator },
+      m_logicalDevice{ logicalDevice },
+      m_imageExtent{ extent },
+      m_imageFormat{ format } {
+    createImage( usage, tiling );
+    createImageView();
 }
 
 Image::~Image() {
+    m_logicalDevice.getHandler().destroyImageView( m_imageView );
     vmaDestroyImage( m_memoryAllocator, m_image, m_allocation );
 }
 
-void Image::createImage( const vk::Extent2D extent, const vk::Format format, const vk::ImageUsageFlags usage,
-                         const vk::ImageTiling tiling ) {
+void Image::createImage( const vk::ImageUsageFlags usage, const vk::ImageTiling tiling ) {
     vk::ImageCreateInfo imageInfo{};
     imageInfo.sType         = vk::StructureType::eImageCreateInfo;
     imageInfo.imageType     = vk::ImageType::e2D;
-    imageInfo.extent.width  = extent.width;
-    imageInfo.extent.height = extent.height;
+    imageInfo.extent.width  = m_imageExtent.width;
+    imageInfo.extent.height = m_imageExtent.height;
     imageInfo.extent.depth  = 1U;
     imageInfo.mipLevels     = 1U;
     imageInfo.arrayLayers   = 1U;
-    imageInfo.format        = format;
+    imageInfo.format        = m_imageFormat;
     imageInfo.tiling        = tiling;
     imageInfo.initialLayout = vk::ImageLayout::eUndefined;
     imageInfo.usage         = usage;
@@ -35,6 +39,20 @@ void Image::createImage( const vk::Extent2D extent, const vk::Format format, con
 
     vmaCreateImage( m_memoryAllocator, reinterpret_cast< VkImageCreateInfo * >( &imageInfo ), &allocationCreateInfo,
                     reinterpret_cast< VkImage * >( &m_image ), &m_allocation, nullptr );
+}
+
+void Image::createImageView() {
+    vk::ImageViewCreateInfo viewInfo{};
+    viewInfo.image                           = m_image;
+    viewInfo.viewType                        = vk::ImageViewType::e2D;
+    viewInfo.format                          = m_imageFormat;
+    viewInfo.subresourceRange.aspectMask     = vk::ImageAspectFlagBits::eColor;
+    viewInfo.subresourceRange.baseMipLevel   = 0U;
+    viewInfo.subresourceRange.levelCount     = 1U;
+    viewInfo.subresourceRange.baseArrayLayer = 0U;
+    viewInfo.subresourceRange.layerCount     = 1U;
+
+    m_imageView = m_logicalDevice.getHandler().createImageView( viewInfo );
 }
 
 } // namespace ve

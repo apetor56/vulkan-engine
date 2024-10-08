@@ -3,13 +3,15 @@
 #include "LogicalDevice.hpp"
 #include "DescriptorSetLayout.hpp"
 
+#include <span>
+
 namespace ve {
 
 // TODO: management system for created sets count
 
 class DescriptorPool {
 public:
-    DescriptorPool( const ve::LogicalDevice& logicalDevice, const vk::DescriptorType type,
+    DescriptorPool( const ve::LogicalDevice& logicalDevice, std::span< vk::DescriptorType > types,
                     const std::uint32_t descriptorCount, const std::uint32_t maxSetsCount );
 
     ~DescriptorPool();

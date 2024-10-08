@@ -23,20 +23,25 @@ Engine::Engine()
       m_transferCommandBuffer{ m_transferCommandPool.createCommandBuffers() },
       m_vertexBuffer{ m_memoryAllocator, sizeof( Vertex ) * std::size( temporaryVertices ) },
       m_indexBuffer{ m_memoryAllocator, sizeof( std::uint32_t ) * std::size( temporaryIndices ) },
-      m_descriptorSetLayout{ m_logicalDevice },
-      m_descriptorPool{ m_logicalDevice, vk::DescriptorType::eUniformBuffer, s_maxFramesInFlight,
-                        s_maxFramesInFlight } {
+      m_descriptorSetLayout{ m_logicalDevice } {
     createSyncObjects();
 
+    std::vector< vk::DescriptorType > descriptorTypes{ vk::DescriptorType::eUniformBuffer,
+                                                       vk::DescriptorType::eCombinedImageSampler };
+    m_descriptorPool.emplace( m_logicalDevice, descriptorTypes, s_maxFramesInFlight, s_maxFramesInFlight );
     m_descriptorSetLayout.addBinding( 0U, vk::DescriptorType::eUniformBuffer, vk::ShaderStageFlagBits::eVertex );
+    m_descriptorSetLayout.addBinding( 1U, vk::DescriptorType::eCombinedImageSampler,
+                                      vk::ShaderStageFlagBits::eFragment );
+    prepareTexture();
+    createTextureSampler();
+
     m_descriptorSetLayout.create();
-    m_descriptorSets = m_descriptorPool.createDescriptorSets( s_maxFramesInFlight, m_descriptorSetLayout );
+    m_descriptorSets = m_descriptorPool->createDescriptorSets( s_maxFramesInFlight, m_descriptorSetLayout );
     configureDescriptorSets();
 
     uploadBuffersData( temporaryVertices, temporaryIndices );
 
     m_pipeline.emplace( m_logicalDevice, m_swapchain, m_descriptorSetLayout );
-    prepareTexture();
 }
 
 Engine::~Engine() {
@@ -53,6 +58,7 @@ Engine::~Engine() {
     } );
 
     logicalDeviceHandler.destroyFence( m_immediateSubmitFence );
+    logicalDeviceHandler.destroySampler( m_sampler );
 }
 
 void Engine::run() {
@@ -198,22 +204,36 @@ void Engine::updateUniformBuffer() {
 }
 
 void Engine::configureDescriptorSets() {
-    vk::DescriptorBufferInfo bufferInfo;
-    bufferInfo.offset = 0U;
-    bufferInfo.range  = sizeof( UniformBufferData );
-
-    vk::WriteDescriptorSet descriptorWrite;
-    descriptorWrite.sType           = vk::StructureType::eWriteDescriptorSet;
-    descriptorWrite.dstBinding      = 0U;
-    descriptorWrite.dstArrayElement = 0U;
-    descriptorWrite.descriptorType  = vk::DescriptorType::eUniformBuffer;
-    descriptorWrite.descriptorCount = 1U;
-    descriptorWrite.pBufferInfo     = &bufferInfo;
 
     for ( std::uint32_t index{ 0U }; index < s_maxFramesInFlight; index++ ) {
-        bufferInfo.buffer      = m_uniformBuffers.at( index ).getHandler();
-        descriptorWrite.dstSet = m_descriptorSets.at( index );
-        m_logicalDevice.getHandler().updateDescriptorSets( descriptorWrite, nullptr );
+        vk::DescriptorBufferInfo bufferInfo;
+        bufferInfo.buffer = m_uniformBuffers.at( index ).getHandler();
+        bufferInfo.offset = 0U;
+        bufferInfo.range  = sizeof( UniformBufferData );
+
+        vk::DescriptorImageInfo imageInfo{};
+        imageInfo.imageLayout = vk::ImageLayout::eShaderReadOnlyOptimal;
+        imageInfo.imageView   = m_textureImage->getImageView();
+        imageInfo.sampler     = m_sampler;
+
+        std::array< vk::WriteDescriptorSet, 2U > descriptorWrites{};
+        descriptorWrites.at( 0 ).sType           = vk::StructureType::eWriteDescriptorSet;
+        descriptorWrites.at( 0 ).dstSet          = m_descriptorSets.at( index );
+        descriptorWrites.at( 0 ).dstBinding      = 0U;
+        descriptorWrites.at( 0 ).dstArrayElement = 0U;
+        descriptorWrites.at( 0 ).descriptorType  = vk::DescriptorType::eUniformBuffer;
+        descriptorWrites.at( 0 ).descriptorCount = 1U;
+        descriptorWrites.at( 0 ).pBufferInfo     = &bufferInfo;
+
+        descriptorWrites.at( 1 ).sType           = vk::StructureType::eWriteDescriptorSet;
+        descriptorWrites.at( 1 ).dstSet          = m_descriptorSets.at( index );
+        descriptorWrites.at( 1 ).dstBinding      = 1U;
+        descriptorWrites.at( 1 ).dstArrayElement = 0U;
+        descriptorWrites.at( 1 ).descriptorType  = vk::DescriptorType::eCombinedImageSampler;
+        descriptorWrites.at( 1 ).descriptorCount = 1U;
+        descriptorWrites.at( 1 ).pImageInfo      = &imageInfo;
+
+        m_logicalDevice.getHandler().updateDescriptorSets( descriptorWrites, nullptr );
     }
 }
 
@@ -272,7 +292,7 @@ void Engine::prepareTexture() {
     memcpy( stagingBuffer.getMappedMemory(), pixels, bufferSize );
 
     const vk::Extent2D imageExtent{ static_cast< std::uint32_t >( width ), static_cast< std::uint32_t >( height ) };
-    m_textureImage.emplace( m_memoryAllocator, imageExtent, vk::Format::eR8G8B8A8Srgb,
+    m_textureImage.emplace( m_memoryAllocator, m_logicalDevice, imageExtent, vk::Format::eR8G8B8A8Srgb,
                             vk::ImageUsageFlagBits::eTransferDst | vk::ImageUsageFlagBits::eSampled );
 
     immediateSubmit< ve::GraphicsCommandBuffer >( [ &stagingBuffer, this ]( ve::GraphicsCommandBuffer cmd ) {
@@ -282,6 +302,29 @@ void Engine::prepareTexture() {
         cmd.transitionImageBuffer( m_textureImage->get(), vk::Format::eR8G8B8A8Srgb,
                                    vk::ImageLayout::eTransferDstOptimal, vk::ImageLayout::eShaderReadOnlyOptimal );
     } );
+}
+
+void Engine::createTextureSampler() {
+    vk::SamplerCreateInfo samplerInfo{};
+    samplerInfo.magFilter               = vk::Filter::eLinear;
+    samplerInfo.minFilter               = vk::Filter::eLinear;
+    samplerInfo.addressModeU            = vk::SamplerAddressMode::eRepeat;
+    samplerInfo.addressModeV            = vk::SamplerAddressMode::eRepeat;
+    samplerInfo.addressModeW            = vk::SamplerAddressMode::eRepeat;
+    samplerInfo.anisotropyEnable        = VK_TRUE;
+    samplerInfo.borderColor             = vk::BorderColor::eIntOpaqueBlack;
+    samplerInfo.unnormalizedCoordinates = vk::False;
+    samplerInfo.compareEnable           = vk::False;
+    samplerInfo.compareOp               = vk::CompareOp::eAlways;
+    samplerInfo.mipmapMode              = vk::SamplerMipmapMode::eLinear;
+    samplerInfo.mipLodBias              = 0.0F;
+    samplerInfo.minLod                  = 0.0F;
+    samplerInfo.maxLod                  = 0.0F;
+
+    const auto physicalDeviceProperties{ m_physicalDevice.getHandler().getProperties() };
+    samplerInfo.maxAnisotropy = physicalDeviceProperties.limits.maxSamplerAnisotropy;
+
+    m_sampler = m_logicalDevice.getHandler().createSampler( samplerInfo );
 }
 
 } // namespace ve

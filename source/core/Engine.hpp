@@ -58,7 +58,7 @@ private:
         ve::UniformBuffer{ m_memoryAllocator, sizeof( UniformBufferData ) } };
 
     ve::DescriptorSetLayout m_descriptorSetLayout;
-    ve::DescriptorPool m_descriptorPool;
+    std::optional< ve::DescriptorPool > m_descriptorPool;
     std::vector< vk::DescriptorSet > m_descriptorSets;
 
     std::array< vk::Semaphore, s_maxFramesInFlight > m_imageAvailableSemaphores{};
@@ -67,12 +67,14 @@ private:
     std::uint32_t m_currentFrame{};
 
     std::optional< ve::Image > m_textureImage{};
+    vk::Sampler m_sampler;
 
     void createSyncObjects();
     void updateUniformBuffer();
     void configureDescriptorSets();
     void uploadBuffersData( std::span< Vertex > vertices, std::span< std::uint32_t > indices );
     void prepareTexture();
+    void createTextureSampler();
 
     std::optional< std::uint32_t > acquireNextImage();
     void draw( const std::uint32_t imageIndex );

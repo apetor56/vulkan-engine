@@ -51,7 +51,7 @@ std::uint32_t PhysicalDevice::rate( const vk::PhysicalDevice physicalDevice ) co
     }
 
     if ( !isExtensionSupportAvailable || !isSwapchainAdequate || !deviceFeatures.geometryShader ||
-         !queueFamilyIndices.hasRequiredFamilies() )
+         !queueFamilyIndices.hasRequiredFamilies() || !deviceFeatures.samplerAnisotropy )
         return 0U;
 
     std::uint32_t score{};

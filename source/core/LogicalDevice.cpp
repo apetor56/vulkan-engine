@@ -39,6 +39,9 @@ void LogicalDevice::createLogicalDevice() {
         queueCreateInfos.emplace_back( queueCreateInfo );
     } );
 
+    vk::PhysicalDeviceFeatures deviceFeatures{};
+    deviceFeatures.samplerAnisotropy = vk::True;
+
     vk::DeviceCreateInfo deviceCreateInfo{};
     deviceCreateInfo.sType                   = vk::StructureType::eDeviceCreateInfo;
     deviceCreateInfo.pQueueCreateInfos       = std::data( queueCreateInfos );
@@ -46,6 +49,7 @@ void LogicalDevice::createLogicalDevice() {
     deviceCreateInfo.pEnabledFeatures        = nullptr;
     deviceCreateInfo.enabledExtensionCount   = static_cast< std::uint32_t >( std::size( physicalDeviceExtensions ) );
     deviceCreateInfo.ppEnabledExtensionNames = std::data( physicalDeviceExtensions );
+    deviceCreateInfo.pEnabledFeatures        = &deviceFeatures;
 
     m_logicalDevice = physicalDeviceHandler.createDevice( deviceCreateInfo, nullptr );
 
