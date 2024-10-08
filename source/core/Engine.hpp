@@ -8,6 +8,7 @@
 #include "Swapchain.hpp"
 #include "Pipeline.hpp"
 #include "Buffer.hpp"
+#include "Image.hpp"
 
 #include "command/CommandPool.hpp"
 #include "command/GraphicsCommandBuffer.hpp"
@@ -57,10 +58,13 @@ private:
     std::array< vk::Fence, s_maxFramesInFlight > m_inFlightFences{};
     std::uint32_t m_currentFrame{};
 
+    std::optional< ve::Image > m_textureImage{};
+
     void createSyncObjects();
     void updateUniformBuffer();
     void configureDescriptorSets();
     void uploadBuffersData( std::span< Vertex > vertices, std::span< std::uint32_t > indices );
+    void prepareTexture();
 
     std::optional< std::uint32_t > acquireNextImage();
     void draw( const std::uint32_t imageIndex );

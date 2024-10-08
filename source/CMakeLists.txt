@@ -19,7 +19,10 @@ else()
 	)
 endif()
 
-target_compile_definitions(${PROJECT_NAME} PRIVATE SHADER_BINARIES_DIR="${CMAKE_BINARY_DIR}/shaders")
+target_compile_definitions(${PROJECT_NAME} PRIVATE 
+    SHADER_BINARIES_DIR="${CMAKE_BINARY_DIR}/shaders"
+    TEXTURE_DIR="${CMAKE_SOURCE_DIR}/source/textures"  
+)
 
 set(CORE
     core/Config.hpp             
@@ -36,6 +39,7 @@ set(CORE
     core/Vertex.hpp
     core/Buffer.hpp
     core/MemoryAllocator.hpp       core/MemoryAllocator.cpp
+    core/Image.hpp                 core/Image.cpp
 )
 
 set(COMMAND

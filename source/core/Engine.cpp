@@ -1,6 +1,8 @@
 #include "Engine.hpp"
 #include "Config.hpp"
 
+#define STB_IMAGE_IMPLEMENTATION
+#include <stb_image.h>
 #include <glm/gtc/matrix_transform.hpp>
 
 #include <limits>
@@ -38,6 +40,7 @@ Engine::Engine()
     uploadBuffersData( temporaryVertices, temporaryIndices );
 
     m_pipeline.emplace( m_logicalDevice, m_swapchain, m_descriptorSetLayout );
+    prepareTexture();
 }
 
 Engine::~Engine() {
@@ -255,6 +258,34 @@ void Engine::uploadBuffersData( std::span< Vertex > vertices, std::span< std::ui
     transferQueue.submit( submitInfo, m_immediateSubmitFence );
     [[maybe_unused]] const auto result{
         logicalDeviceHandler.waitForFences( m_immediateSubmitFence, g_waitForAllFences, g_timeoutOff ) };
+}
+
+void Engine::prepareTexture() {
+    int width;
+    int height;
+    int channels;
+    const auto fullTexturePath{ cfg::texture::directory / "sample.png" };
+
+    stbi_uc *pixels{ stbi_load( fullTexturePath.string().c_str(), &width, &height, &channels, STBI_rgb_alpha ) };
+
+    if ( !pixels )
+        throw std::runtime_error( "failed to load texture image" );
+
+    const vk::DeviceSize bufferSize{ static_cast< vk::DeviceSize >( width ) * height * 4 };
+    ve::StagingBuffer stagingBuffer{ m_memoryAllocator, bufferSize };
+    memcpy( stagingBuffer.getMappedMemory(), pixels, bufferSize );
+
+    const vk::Extent2D imageExtent{ static_cast< std::uint32_t >( width ), static_cast< std::uint32_t >( height ) };
+    m_textureImage.emplace( m_memoryAllocator, imageExtent, vk::Format::eR8G8B8A8Srgb,
+                            vk::ImageUsageFlagBits::eTransferDst | vk::ImageUsageFlagBits::eSampled );
+
+    auto cmdBuffer{ m_transferCommandPool.createCommandBuffers() };
+    cmdBuffer.begin();
+    cmdBuffer.transitionImageBuffer( m_textureImage->get(), vk::Format::eR8G8B8A8Srgb, vk::ImageLayout::eUndefined,
+                                     vk::ImageLayout::eTransferDstOptimal );
+    cmdBuffer.copyBufferToImage( stagingBuffer.getHandler(), m_textureImage->get(), m_textureImage->getExtent() );
+    cmdBuffer.transitionImageBuffer( m_textureImage->get(), vk::Format::eR8G8B8A8Srgb,
+                                     vk::ImageLayout::eTransferDstOptimal, vk::ImageLayout::eShaderReadOnlyOptimal );
 }
 
 } // namespace ve

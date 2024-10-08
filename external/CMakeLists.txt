@@ -27,15 +27,22 @@ FetchContent_Declare(
     GIT_REPOSITORY https://github.com/GPUOpen-LibrariesAndSDKs/VulkanMemoryAllocator.git
     GIT_TAG        v3.1.0
 )
+FetchContent_Declare(
+    stb
+    GIT_REPOSITORY https://github.com/nothings/stb.git
+    GIT_TAG        master
+)
 
 FetchContent_MakeAvailable(glfw)
 FetchContent_MakeAvailable(spdlog)
 FetchContent_MakeAvailable(glm)
 FetchContent_MakeAvailable(GPUOpen)
+FetchContent_MakeAvailable(stb)
 
 target_include_directories(${PROJECT_NAME} PRIVATE
     Vulkan::Headers
     ${glfw_SOURCE_DIR}/include
+    ${CMAKE_BINARY_DIR}/_deps/stb-src
 )
 
 target_link_libraries(${PROJECT_NAME} PRIVATE

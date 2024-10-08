@@ -30,6 +30,12 @@ inline const std::filesystem::path fragShaderBinaryPath{ std::filesystem::path{ 
                                                          "simple.frag.spv" };
 } // namespace cfg::shader
 
+namespace cfg::texture {
+
+inline const std::filesystem::path directory{ std::filesystem::path{ TEXTURE_DIR } };
+
+}
+
 namespace cfg::gpu {
 
 inline constexpr std::uint32_t discreteGpuValue{ 1000U };
