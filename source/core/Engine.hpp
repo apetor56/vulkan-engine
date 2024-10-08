@@ -16,6 +16,13 @@
 #include "descriptor/DescriptorSetLayout.hpp"
 #include "descriptor/DescriptorPool.hpp"
 
+#include <functional>
+
+namespace {
+constexpr std::uint64_t g_timeoutOff{ std::numeric_limits< std::uint64_t >::max() };
+constexpr auto g_waitForAllFences{ vk::True };
+} // namespace
+
 namespace ve {
 
 class Engine {
@@ -39,6 +46,7 @@ private:
     std::vector< ve::GraphicsCommandBuffer > m_commandBuffers;
 
     vk::Fence m_immediateSubmitFence{};
+    ve::GraphicsCommandBuffer m_immediateBuffer;
     ve::CommandPool< ve::TransferCommandBuffer > m_transferCommandPool;
     ve::TransferCommandBuffer m_transferCommandBuffer;
 
@@ -69,6 +77,28 @@ private:
     std::optional< std::uint32_t > acquireNextImage();
     void draw( const std::uint32_t imageIndex );
     void present( const std::uint32_t imageIndex );
+
+    template < std::derived_from< ve::BaseCommandBuffer > CommandBuffer_T >
+    void immediateSubmit( const std::function< void( CommandBuffer_T command ) >& function ) {
+        const auto logicalDeviceHandler{ m_logicalDevice.getHandler() };
+        logicalDeviceHandler.resetFences( m_immediateSubmitFence );
+        m_immediateBuffer.reset();
+
+        CommandBuffer_T command{ m_immediateBuffer };
+        command.begin( vk::CommandBufferUsageFlagBits::eOneTimeSubmit );
+        function( command );
+        command.end();
+
+        const auto commandHanlder{ command.getHandler() };
+        vk::SubmitInfo submitInfo{};
+        submitInfo.sType              = vk::StructureType::eSubmitInfo;
+        submitInfo.commandBufferCount = 1U;
+        submitInfo.pCommandBuffers    = &commandHanlder;
+
+        m_logicalDevice.getQueue( ve::QueueType::eGraphics ).submit( submitInfo, m_immediateSubmitFence );
+        [[maybe_unused]] const auto waitForFencesResult{
+            logicalDeviceHandler.waitForFences( m_immediateSubmitFence, g_waitForAllFences, g_timeoutOff ) };
+    }
 };
 
 } // namespace ve

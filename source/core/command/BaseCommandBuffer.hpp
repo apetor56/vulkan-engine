@@ -9,7 +9,7 @@ public:
     BaseCommandBuffer( const vk::CommandBuffer commandBufferHandler ) noexcept;
     ~BaseCommandBuffer() = default;
 
-    BaseCommandBuffer( const BaseCommandBuffer& other ) = delete;
+    BaseCommandBuffer( const BaseCommandBuffer& other ) = default;
     BaseCommandBuffer( BaseCommandBuffer&& other )      = default;
 
     BaseCommandBuffer& operator=( const BaseCommandBuffer& other ) = delete;

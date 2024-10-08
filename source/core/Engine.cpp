@@ -8,11 +8,6 @@
 #include <limits>
 #include <chrono>
 
-namespace {
-constexpr std::uint64_t g_timeoutOff{ std::numeric_limits< std::uint64_t >::max() };
-constexpr auto g_waitForAllFences{ vk::True };
-} // namespace
-
 namespace ve {
 
 Engine::Engine()
@@ -23,6 +18,7 @@ Engine::Engine()
       m_swapchain{ m_physicalDevice, m_logicalDevice, m_window },
       m_graphicsCommandPool{ m_logicalDevice },
       m_commandBuffers{ m_graphicsCommandPool.createCommandBuffers< s_maxFramesInFlight >() },
+      m_immediateBuffer{ m_graphicsCommandPool.createCommandBuffers() },
       m_transferCommandPool{ m_logicalDevice },
       m_transferCommandBuffer{ m_transferCommandPool.createCommandBuffers() },
       m_vertexBuffer{ m_memoryAllocator, sizeof( Vertex ) * std::size( temporaryVertices ) },
@@ -68,7 +64,7 @@ void Engine::run() {
 }
 
 void Engine::render() {
-    [[maybe_unused]] const auto result{ m_logicalDevice.getHandler().waitForFences(
+    [[maybe_unused]] const auto waitForFencesResult{ m_logicalDevice.getHandler().waitForFences(
         m_inFlightFences.at( m_currentFrame ), g_waitForAllFences, g_timeoutOff ) };
 
     const auto imageIndex{ acquireNextImage() };
@@ -279,13 +275,13 @@ void Engine::prepareTexture() {
     m_textureImage.emplace( m_memoryAllocator, imageExtent, vk::Format::eR8G8B8A8Srgb,
                             vk::ImageUsageFlagBits::eTransferDst | vk::ImageUsageFlagBits::eSampled );
 
-    auto cmdBuffer{ m_transferCommandPool.createCommandBuffers() };
-    cmdBuffer.begin();
-    cmdBuffer.transitionImageBuffer( m_textureImage->get(), vk::Format::eR8G8B8A8Srgb, vk::ImageLayout::eUndefined,
-                                     vk::ImageLayout::eTransferDstOptimal );
-    cmdBuffer.copyBufferToImage( stagingBuffer.getHandler(), m_textureImage->get(), m_textureImage->getExtent() );
-    cmdBuffer.transitionImageBuffer( m_textureImage->get(), vk::Format::eR8G8B8A8Srgb,
-                                     vk::ImageLayout::eTransferDstOptimal, vk::ImageLayout::eShaderReadOnlyOptimal );
+    immediateSubmit< ve::GraphicsCommandBuffer >( [ &stagingBuffer, this ]( ve::GraphicsCommandBuffer cmd ) {
+        cmd.transitionImageBuffer( m_textureImage->get(), vk::Format::eR8G8B8A8Srgb, vk::ImageLayout::eUndefined,
+                                   vk::ImageLayout::eTransferDstOptimal );
+        cmd.copyBufferToImage( stagingBuffer.getHandler(), m_textureImage->get(), m_textureImage->getExtent() );
+        cmd.transitionImageBuffer( m_textureImage->get(), vk::Format::eR8G8B8A8Srgb,
+                                   vk::ImageLayout::eTransferDstOptimal, vk::ImageLayout::eShaderReadOnlyOptimal );
+    } );
 }
 
 } // namespace ve

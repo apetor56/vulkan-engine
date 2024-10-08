@@ -27,6 +27,9 @@ public:
     void draw( const std::uint32_t verticesCount ) const noexcept;
     void drawIndices( const std::uint32_t indicesCount ) const noexcept;
     void endRenderPass() const noexcept;
+    void transitionImageBuffer( const vk::Image image, const vk::Format format, const vk::ImageLayout oldLayout,
+                                const vk::ImageLayout newLayout );
+    void copyBufferToImage( const vk::Buffer buffer, const vk::Image image, const vk::Extent2D extent );
 };
 
 } // namespace ve
