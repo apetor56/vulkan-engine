@@ -17,6 +17,13 @@ struct Frame {
           renderFence{ _logicalDevice },
           graphicsCommandBuffer{ _commandBuffer },
           descriptorSet{ _descriptorSet } {}
+
+    Frame( const Frame& other ) = delete;
+    Frame( Frame&& other )      = delete;
+
+    Frame& operator=( const Frame& other ) = delete;
+    Frame& operator=( Frame&& other )      = delete;
+
     ve::UniformBuffer uniformBuffer;
     ve::Semaphore swapchainSemaphore;
     ve::Semaphore renderSemaphore;

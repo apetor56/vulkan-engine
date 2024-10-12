@@ -24,6 +24,7 @@ Engine::Engine()
       m_vertexBuffer{ m_memoryAllocator, sizeof( Vertex ) * std::size( temporaryVertices ) },
       m_indexBuffer{ m_memoryAllocator, sizeof( std::uint32_t ) * std::size( temporaryIndices ) },
       m_descriptorSetLayout{ m_logicalDevice } {
+    prepareDescriptorSetLayout();
     createFramesResoures();
     prepareTexture();
     createTextureSampler();
@@ -42,7 +43,7 @@ void Engine::run() {
     while ( m_window.shouldClose() == GLFW_FALSE ) {
         glfwPollEvents();
 
-        const auto currentFrame{ m_currentFrameIt->value() };
+        const auto& currentFrame{ m_currentFrameIt->value() };
         [[maybe_unused]] const auto waitForFencesResult{ m_logicalDevice.getHandler().waitForFences(
             currentFrame.renderFence.get(), g_waitForAllFences, g_timeoutOff ) };
 
@@ -64,7 +65,7 @@ void Engine::run() {
 
 std::optional< std::uint32_t > Engine::acquireNextImage() {
     try {
-        const auto currentFrame{ m_currentFrameIt->value() };
+        const auto& currentFrame{ m_currentFrameIt->value() };
         auto [ result, imageIndex ]{ m_logicalDevice.getHandler().acquireNextImageKHR(
             m_swapchain.getHandler(), g_timeoutOff, currentFrame.swapchainSemaphore.get() ) };
 
@@ -80,7 +81,7 @@ std::optional< std::uint32_t > Engine::acquireNextImage() {
 }
 
 void Engine::draw( const std::uint32_t imageIndex ) {
-    const auto currentFrame{ m_currentFrameIt->value() };
+    const auto& currentFrame{ m_currentFrameIt->value() };
 
     const auto& commandBuffer{ currentFrame.graphicsCommandBuffer };
     const auto commandBufferHandler{ commandBuffer.getHandler() };
@@ -120,7 +121,7 @@ void Engine::draw( const std::uint32_t imageIndex ) {
 
 void Engine::present( const std::uint32_t imageIndex ) {
     const auto swapchainHandler{ m_swapchain.getHandler() };
-    const auto currentFrame{ m_currentFrameIt->value() };
+    const auto& currentFrame{ m_currentFrameIt->value() };
     const auto renderSemaphore{ currentFrame.renderSemaphore.get() };
 
     vk::PresentInfoKHR presentInfo{};
@@ -142,7 +143,7 @@ void Engine::present( const std::uint32_t imageIndex ) {
     }
 }
 
-void Engine::createFramesResoures() {
+void Engine::prepareDescriptorSetLayout() {
     std::vector< vk::DescriptorType > descriptorTypes{ vk::DescriptorType::eUniformBuffer,
                                                        vk::DescriptorType::eCombinedImageSampler };
     m_descriptorPool.emplace( m_logicalDevice, descriptorTypes );
@@ -150,7 +151,9 @@ void Engine::createFramesResoures() {
     m_descriptorSetLayout.addBinding( 1U, vk::DescriptorType::eCombinedImageSampler,
                                       vk::ShaderStageFlagBits::eFragment );
     m_descriptorSetLayout.create();
+}
 
+void Engine::createFramesResoures() {
     const auto descriptorSets{ m_descriptorPool->createDescriptorSets( g_maxFramesInFlight, m_descriptorSetLayout ) };
     const auto graphicsCommandBuffers{ m_graphicsCommandPool.createCommandBuffers< g_maxFramesInFlight >() };
 
@@ -159,9 +162,7 @@ void Engine::createFramesResoures() {
                                         descriptorSets.at( frameID ) );
     }
 
-    m_currentFrameIt++;
-    if ( m_currentFrameIt == std::end( m_frames ) )
-        m_currentFrameIt = std::begin( m_frames );
+    m_currentFrameIt = std::begin( m_frames );
 }
 
 void Engine::updateUniformBuffer() {
@@ -188,7 +189,7 @@ void Engine::updateUniformBuffer() {
         glm::perspective( glm::radians( angle ), static_cast< float >( extent.width ) / extent.height, near, far );
     data.projection[ 1 ][ 1 ] *= -1;
 
-    const auto currentFrame{ m_currentFrameIt->value() };
+    const auto& currentFrame{ m_currentFrameIt->value() };
     memcpy( currentFrame.uniformBuffer.getMappedMemory(), &data, sizeof( data ) );
 }
 

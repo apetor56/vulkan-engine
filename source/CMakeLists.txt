@@ -40,6 +40,9 @@ set(CORE
     core/Buffer.hpp
     core/MemoryAllocator.hpp       core/MemoryAllocator.cpp
     core/Image.hpp                 core/Image.cpp
+    core/Frame.hpp
+    core/SyncObjects.hpp           core/SyncObjects.cpp
+    core/Constants.hpp
 )
 
 set(COMMAND

@@ -51,6 +51,7 @@ private:
     std::optional< ve::Image > m_textureImage{};
     vk::Sampler m_sampler;
 
+    void prepareDescriptorSetLayout();
     void createFramesResoures();
     void updateUniformBuffer();
     void configureDescriptorSets();
