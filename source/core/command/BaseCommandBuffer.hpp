@@ -17,7 +17,7 @@ public:
 
     void begin( const vk::CommandBufferUsageFlags flags = {} ) const;
     void end() const;
-    void reset();
+    void reset() const;
 
     vk::CommandBuffer getHandler() const noexcept;
 

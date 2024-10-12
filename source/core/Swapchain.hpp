@@ -1,8 +1,11 @@
 #pragma once
 
 #include "LogicalDevice.hpp"
+#include "MemoryAllocator.hpp"
+#include "Image.hpp"
 
 #include <vector>
+#include <optional>
 
 namespace ve {
 
@@ -14,7 +17,8 @@ public:
         std::vector< vk::PresentModeKHR > presentationModes;
     };
 
-    Swapchain( const ve::PhysicalDevice& physicalDevice, const ve::LogicalDevice& logicalDevice, ve::Window& window );
+    Swapchain( const ve::PhysicalDevice& physicalDevice, const ve::LogicalDevice& logicalDevice, ve::Window& window,
+               const ve::MemoryAllocator& allocator );
 
     ~Swapchain();
 
@@ -46,6 +50,8 @@ private:
     const ve::PhysicalDevice& m_physicalDevice;
     const ve::LogicalDevice& m_logicalDevice;
     ve::Window& m_window;
+    const ve::MemoryAllocator& m_memoryAllocator;
+    std::optional< ve::Image > m_depthImage;
 
     vk::SwapchainKHR m_swapchain;
     vk::Extent2D m_swapchainImageExtent;

@@ -10,7 +10,7 @@ namespace ve {
 class Image {
 public:
     Image( const ve::MemoryAllocator& allocator, const ve::LogicalDevice& logicalDevice, const vk::Extent2D extent,
-           const vk::Format format, const vk::ImageUsageFlags usage,
+           const vk::Format format, const vk::ImageUsageFlags usage, const vk::ImageAspectFlagBits imageAspect,
            const vk::ImageTiling tiling = vk::ImageTiling::eOptimal );
 
     ~Image();
@@ -18,6 +18,7 @@ public:
     vk::Image get() const noexcept { return m_image; }
     vk::Extent2D getExtent() const noexcept { return m_imageExtent; }
     vk::ImageView getImageView() const noexcept { return m_imageView; }
+    vk::Format getFormat() const noexcept { return m_imageFormat; }
 
 private:
     vk::Image m_image{};
@@ -29,7 +30,7 @@ private:
     const vk::Format m_imageFormat{};
 
     void createImage( const vk::ImageUsageFlags usage, const vk::ImageTiling tiling );
-    void createImageView();
+    void createImageView( const vk::ImageAspectFlagBits imageAspect );
 };
 
 } // namespace ve

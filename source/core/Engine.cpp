@@ -15,30 +15,19 @@ Engine::Engine()
       m_physicalDevice{ m_vulkanInstance, m_window },
       m_logicalDevice{ m_physicalDevice },
       m_memoryAllocator{ m_vulkanInstance, m_physicalDevice, m_logicalDevice },
-      m_swapchain{ m_physicalDevice, m_logicalDevice, m_window },
+      m_swapchain{ m_physicalDevice, m_logicalDevice, m_window, m_memoryAllocator },
       m_graphicsCommandPool{ m_logicalDevice },
-      m_commandBuffers{ m_graphicsCommandPool.createCommandBuffers< s_maxFramesInFlight >() },
+      m_immediateSubmitFence{ m_logicalDevice },
       m_immediateBuffer{ m_graphicsCommandPool.createCommandBuffers() },
       m_transferCommandPool{ m_logicalDevice },
       m_transferCommandBuffer{ m_transferCommandPool.createCommandBuffers() },
       m_vertexBuffer{ m_memoryAllocator, sizeof( Vertex ) * std::size( temporaryVertices ) },
       m_indexBuffer{ m_memoryAllocator, sizeof( std::uint32_t ) * std::size( temporaryIndices ) },
       m_descriptorSetLayout{ m_logicalDevice } {
-    createSyncObjects();
-
-    std::vector< vk::DescriptorType > descriptorTypes{ vk::DescriptorType::eUniformBuffer,
-                                                       vk::DescriptorType::eCombinedImageSampler };
-    m_descriptorPool.emplace( m_logicalDevice, descriptorTypes, s_maxFramesInFlight, s_maxFramesInFlight );
-    m_descriptorSetLayout.addBinding( 0U, vk::DescriptorType::eUniformBuffer, vk::ShaderStageFlagBits::eVertex );
-    m_descriptorSetLayout.addBinding( 1U, vk::DescriptorType::eCombinedImageSampler,
-                                      vk::ShaderStageFlagBits::eFragment );
+    createFramesResoures();
     prepareTexture();
     createTextureSampler();
-
-    m_descriptorSetLayout.create();
-    m_descriptorSets = m_descriptorPool->createDescriptorSets( s_maxFramesInFlight, m_descriptorSetLayout );
     configureDescriptorSets();
-
     uploadBuffersData( temporaryVertices, temporaryIndices );
 
     m_pipeline.emplace( m_logicalDevice, m_swapchain, m_descriptorSetLayout );
@@ -46,67 +35,38 @@ Engine::Engine()
 
 Engine::~Engine() {
     const auto logicalDeviceHandler{ m_logicalDevice.getHandler() };
-
-    std::ranges::for_each( m_imageAvailableSemaphores, [ logicalDeviceHandler ]( const auto& semaphore ) {
-        logicalDeviceHandler.destroySemaphore( semaphore );
-    } );
-    std::ranges::for_each( m_renderFinishedSemaphores, [ logicalDeviceHandler ]( const auto& semaphore ) {
-        logicalDeviceHandler.destroySemaphore( semaphore );
-    } );
-    std::ranges::for_each( m_inFlightFences, [ logicalDeviceHandler ]( const auto& semaphore ) {
-        logicalDeviceHandler.destroyFence( semaphore );
-    } );
-
-    logicalDeviceHandler.destroyFence( m_immediateSubmitFence );
     logicalDeviceHandler.destroySampler( m_sampler );
 }
 
 void Engine::run() {
     while ( m_window.shouldClose() == GLFW_FALSE ) {
         glfwPollEvents();
-        render();
+
+        const auto currentFrame{ m_currentFrameIt->value() };
+        [[maybe_unused]] const auto waitForFencesResult{ m_logicalDevice.getHandler().waitForFences(
+            currentFrame.renderFence.get(), g_waitForAllFences, g_timeoutOff ) };
+
+        const auto imageIndex{ acquireNextImage() };
+        if ( !imageIndex.has_value() )
+            return;
+
+        m_logicalDevice.getHandler().resetFences( currentFrame.renderFence.get() );
+
+        draw( imageIndex.value() );
+        present( imageIndex.value() );
+
+        m_currentFrameIt++;
+        if ( m_currentFrameIt == std::end( m_frames ) )
+            m_currentFrameIt = std::begin( m_frames );
     }
     m_logicalDevice.getHandler().waitIdle();
 }
 
-void Engine::render() {
-    [[maybe_unused]] const auto waitForFencesResult{ m_logicalDevice.getHandler().waitForFences(
-        m_inFlightFences.at( m_currentFrame ), g_waitForAllFences, g_timeoutOff ) };
-
-    const auto imageIndex{ acquireNextImage() };
-    if ( !imageIndex.has_value() )
-        return;
-
-    m_logicalDevice.getHandler().resetFences( m_inFlightFences.at( m_currentFrame ) );
-
-    draw( imageIndex.value() );
-    present( imageIndex.value() );
-
-    m_currentFrame = ( m_currentFrame + 1U ) % s_maxFramesInFlight;
-}
-
-void Engine::createSyncObjects() {
-    vk::SemaphoreCreateInfo semaphoreInfo{};
-    semaphoreInfo.sType = vk::StructureType::eSemaphoreCreateInfo;
-
-    vk::FenceCreateInfo fenceInfo{};
-    fenceInfo.sType = vk::StructureType::eFenceCreateInfo;
-    fenceInfo.flags = vk::FenceCreateFlagBits::eSignaled;
-
-    const auto logicalDeviceHandler{ m_logicalDevice.getHandler() };
-    for ( std::uint32_t index{ 0 }; index < s_maxFramesInFlight; index++ ) {
-        m_imageAvailableSemaphores.at( index ) = logicalDeviceHandler.createSemaphore( semaphoreInfo );
-        m_renderFinishedSemaphores.at( index ) = logicalDeviceHandler.createSemaphore( semaphoreInfo );
-        m_inFlightFences.at( index )           = logicalDeviceHandler.createFence( fenceInfo );
-    }
-
-    m_immediateSubmitFence = logicalDeviceHandler.createFence( fenceInfo );
-}
-
 std::optional< std::uint32_t > Engine::acquireNextImage() {
     try {
+        const auto currentFrame{ m_currentFrameIt->value() };
         auto [ result, imageIndex ]{ m_logicalDevice.getHandler().acquireNextImageKHR(
-            m_swapchain.getHandler(), g_timeoutOff, m_imageAvailableSemaphores.at( m_currentFrame ) ) };
+            m_swapchain.getHandler(), g_timeoutOff, currentFrame.swapchainSemaphore.get() ) };
 
         if ( result != vk::Result::eSuccess && result != vk::Result::eSuboptimalKHR )
             throw std::runtime_error( "failed to acquire swapchain image" );
@@ -120,9 +80,12 @@ std::optional< std::uint32_t > Engine::acquireNextImage() {
 }
 
 void Engine::draw( const std::uint32_t imageIndex ) {
-    auto& commandBuffer{ m_commandBuffers.at( m_currentFrame ) };
+    const auto currentFrame{ m_currentFrameIt->value() };
+
+    const auto& commandBuffer{ currentFrame.graphicsCommandBuffer };
     const auto commandBufferHandler{ commandBuffer.getHandler() };
-    const auto renderFinishedSemaphore{ m_renderFinishedSemaphores.at( m_currentFrame ) };
+    const auto renderFinishedSemaphore{ currentFrame.renderSemaphore.get() };
+    const auto swapchainSemaphore{ currentFrame.swapchainSemaphore.get() };
 
     commandBuffer.reset();
     commandBuffer.begin();
@@ -133,7 +96,7 @@ void Engine::draw( const std::uint32_t imageIndex ) {
     commandBuffer.setScissor( m_swapchain.getScissor() );
     commandBuffer.bindVertexBuffer( m_vertexBuffer.getHandler() );
     commandBuffer.bindIndexBuffer( m_indexBuffer.getHandler() );
-    commandBuffer.bindDescriptorSet( m_pipeline->getLayout(), m_descriptorSets.at( m_currentFrame ) );
+    commandBuffer.bindDescriptorSet( m_pipeline->getLayout(), currentFrame.descriptorSet );
     commandBuffer.drawIndices( m_indexBuffer.size() / sizeof( std::uint32_t ) );
     commandBuffer.endRenderPass();
     commandBuffer.end();
@@ -144,7 +107,7 @@ void Engine::draw( const std::uint32_t imageIndex ) {
     vk::SubmitInfo submitInfo{};
     submitInfo.sType                = vk::StructureType::eSubmitInfo;
     submitInfo.waitSemaphoreCount   = 1U;
-    submitInfo.pWaitSemaphores      = &m_imageAvailableSemaphores.at( m_currentFrame );
+    submitInfo.pWaitSemaphores      = &swapchainSemaphore;
     submitInfo.pWaitDstStageMask    = &waitStage;
     submitInfo.commandBufferCount   = 1U;
     submitInfo.pCommandBuffers      = &commandBufferHandler;
@@ -152,15 +115,18 @@ void Engine::draw( const std::uint32_t imageIndex ) {
     submitInfo.pSignalSemaphores    = &renderFinishedSemaphore;
 
     const auto graphicsQueue{ m_logicalDevice.getQueue( ve::QueueType::eGraphics ) };
-    graphicsQueue.submit( submitInfo, m_inFlightFences.at( m_currentFrame ) );
+    graphicsQueue.submit( submitInfo, currentFrame.renderFence.get() );
 }
 
 void Engine::present( const std::uint32_t imageIndex ) {
     const auto swapchainHandler{ m_swapchain.getHandler() };
+    const auto currentFrame{ m_currentFrameIt->value() };
+    const auto renderSemaphore{ currentFrame.renderSemaphore.get() };
+
     vk::PresentInfoKHR presentInfo{};
     presentInfo.sType              = vk::StructureType::ePresentInfoKHR;
     presentInfo.waitSemaphoreCount = 1U;
-    presentInfo.pWaitSemaphores    = &m_renderFinishedSemaphores.at( m_currentFrame );
+    presentInfo.pWaitSemaphores    = &renderSemaphore;
     presentInfo.swapchainCount     = 1U;
     presentInfo.pSwapchains        = &swapchainHandler;
     presentInfo.pImageIndices      = &imageIndex;
@@ -174,6 +140,28 @@ void Engine::present( const std::uint32_t imageIndex ) {
     catch ( const vk::OutOfDateKHRError& ) {
         m_swapchain.recreate();
     }
+}
+
+void Engine::createFramesResoures() {
+    std::vector< vk::DescriptorType > descriptorTypes{ vk::DescriptorType::eUniformBuffer,
+                                                       vk::DescriptorType::eCombinedImageSampler };
+    m_descriptorPool.emplace( m_logicalDevice, descriptorTypes );
+    m_descriptorSetLayout.addBinding( 0U, vk::DescriptorType::eUniformBuffer, vk::ShaderStageFlagBits::eVertex );
+    m_descriptorSetLayout.addBinding( 1U, vk::DescriptorType::eCombinedImageSampler,
+                                      vk::ShaderStageFlagBits::eFragment );
+    m_descriptorSetLayout.create();
+
+    const auto descriptorSets{ m_descriptorPool->createDescriptorSets( g_maxFramesInFlight, m_descriptorSetLayout ) };
+    const auto graphicsCommandBuffers{ m_graphicsCommandPool.createCommandBuffers< g_maxFramesInFlight >() };
+
+    for ( std::uint32_t frameID{ 0U }; frameID < g_maxFramesInFlight; frameID++ ) {
+        m_frames.at( frameID ).emplace( m_logicalDevice, m_memoryAllocator, graphicsCommandBuffers.at( frameID ),
+                                        descriptorSets.at( frameID ) );
+    }
+
+    m_currentFrameIt++;
+    if ( m_currentFrameIt == std::end( m_frames ) )
+        m_currentFrameIt = std::begin( m_frames );
 }
 
 void Engine::updateUniformBuffer() {
@@ -200,14 +188,14 @@ void Engine::updateUniformBuffer() {
         glm::perspective( glm::radians( angle ), static_cast< float >( extent.width ) / extent.height, near, far );
     data.projection[ 1 ][ 1 ] *= -1;
 
-    memcpy( m_uniformBuffers.at( m_currentFrame ).getMappedMemory(), &data, sizeof( data ) );
+    const auto currentFrame{ m_currentFrameIt->value() };
+    memcpy( currentFrame.uniformBuffer.getMappedMemory(), &data, sizeof( data ) );
 }
 
 void Engine::configureDescriptorSets() {
-
-    for ( std::uint32_t index{ 0U }; index < s_maxFramesInFlight; index++ ) {
+    std::ranges::for_each( m_frames, [ this ]( auto& frame ) {
         vk::DescriptorBufferInfo bufferInfo;
-        bufferInfo.buffer = m_uniformBuffers.at( index ).getHandler();
+        bufferInfo.buffer = frame.value().uniformBuffer.getHandler();
         bufferInfo.offset = 0U;
         bufferInfo.range  = sizeof( UniformBufferData );
 
@@ -218,7 +206,7 @@ void Engine::configureDescriptorSets() {
 
         std::array< vk::WriteDescriptorSet, 2U > descriptorWrites{};
         descriptorWrites.at( 0 ).sType           = vk::StructureType::eWriteDescriptorSet;
-        descriptorWrites.at( 0 ).dstSet          = m_descriptorSets.at( index );
+        descriptorWrites.at( 0 ).dstSet          = frame.value().descriptorSet;
         descriptorWrites.at( 0 ).dstBinding      = 0U;
         descriptorWrites.at( 0 ).dstArrayElement = 0U;
         descriptorWrites.at( 0 ).descriptorType  = vk::DescriptorType::eUniformBuffer;
@@ -226,7 +214,7 @@ void Engine::configureDescriptorSets() {
         descriptorWrites.at( 0 ).pBufferInfo     = &bufferInfo;
 
         descriptorWrites.at( 1 ).sType           = vk::StructureType::eWriteDescriptorSet;
-        descriptorWrites.at( 1 ).dstSet          = m_descriptorSets.at( index );
+        descriptorWrites.at( 1 ).dstSet          = frame.value().descriptorSet;
         descriptorWrites.at( 1 ).dstBinding      = 1U;
         descriptorWrites.at( 1 ).dstArrayElement = 0U;
         descriptorWrites.at( 1 ).descriptorType  = vk::DescriptorType::eCombinedImageSampler;
@@ -234,7 +222,7 @@ void Engine::configureDescriptorSets() {
         descriptorWrites.at( 1 ).pImageInfo      = &imageInfo;
 
         m_logicalDevice.getHandler().updateDescriptorSets( descriptorWrites, nullptr );
-    }
+    } );
 }
 
 void Engine::uploadBuffersData( std::span< Vertex > vertices, std::span< std::uint32_t > indices ) {
@@ -248,7 +236,7 @@ void Engine::uploadBuffersData( std::span< Vertex > vertices, std::span< std::ui
 
     const auto logicalDeviceHandler{ m_logicalDevice.getHandler() };
     const auto commandBufferHandler{ m_transferCommandBuffer.getHandler() };
-    logicalDeviceHandler.resetFences( m_immediateSubmitFence );
+    logicalDeviceHandler.resetFences( m_immediateSubmitFence.get() );
     m_transferCommandBuffer.reset();
 
     m_transferCommandBuffer.begin();
@@ -271,9 +259,9 @@ void Engine::uploadBuffersData( std::span< Vertex > vertices, std::span< std::ui
     submitInfo.pCommandBuffers    = &commandBufferHandler;
 
     const auto transferQueue{ m_logicalDevice.getQueue( ve::QueueType::eTransfer ) };
-    transferQueue.submit( submitInfo, m_immediateSubmitFence );
+    transferQueue.submit( submitInfo, m_immediateSubmitFence.get() );
     [[maybe_unused]] const auto result{
-        logicalDeviceHandler.waitForFences( m_immediateSubmitFence, g_waitForAllFences, g_timeoutOff ) };
+        logicalDeviceHandler.waitForFences( m_immediateSubmitFence.get(), g_waitForAllFences, g_timeoutOff ) };
 }
 
 void Engine::prepareTexture() {
@@ -293,7 +281,8 @@ void Engine::prepareTexture() {
 
     const vk::Extent2D imageExtent{ static_cast< std::uint32_t >( width ), static_cast< std::uint32_t >( height ) };
     m_textureImage.emplace( m_memoryAllocator, m_logicalDevice, imageExtent, vk::Format::eR8G8B8A8Srgb,
-                            vk::ImageUsageFlagBits::eTransferDst | vk::ImageUsageFlagBits::eSampled );
+                            vk::ImageUsageFlagBits::eTransferDst | vk::ImageUsageFlagBits::eSampled,
+                            vk::ImageAspectFlagBits::eColor );
 
     immediateSubmit< ve::GraphicsCommandBuffer >( [ &stagingBuffer, this ]( ve::GraphicsCommandBuffer cmd ) {
         cmd.transitionImageBuffer( m_textureImage->get(), vk::Format::eR8G8B8A8Srgb, vk::ImageLayout::eUndefined,

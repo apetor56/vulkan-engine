@@ -3,13 +3,14 @@
 namespace ve {
 
 Image::Image( const ve::MemoryAllocator& allocator, const ve::LogicalDevice& logicalDevice, const vk::Extent2D extent,
-              const vk::Format format, const vk::ImageUsageFlags usage, const vk::ImageTiling tiling )
+              const vk::Format format, const vk::ImageUsageFlags usage, const vk::ImageAspectFlagBits imageAspect,
+              const vk::ImageTiling tiling )
     : m_memoryAllocator{ allocator },
       m_logicalDevice{ logicalDevice },
       m_imageExtent{ extent },
       m_imageFormat{ format } {
     createImage( usage, tiling );
-    createImageView();
+    createImageView( imageAspect );
 }
 
 Image::~Image() {
@@ -41,12 +42,12 @@ void Image::createImage( const vk::ImageUsageFlags usage, const vk::ImageTiling 
                     reinterpret_cast< VkImage * >( &m_image ), &m_allocation, nullptr );
 }
 
-void Image::createImageView() {
+void Image::createImageView( const vk::ImageAspectFlagBits imageAspect ) {
     vk::ImageViewCreateInfo viewInfo{};
     viewInfo.image                           = m_image;
     viewInfo.viewType                        = vk::ImageViewType::e2D;
     viewInfo.format                          = m_imageFormat;
-    viewInfo.subresourceRange.aspectMask     = vk::ImageAspectFlagBits::eColor;
+    viewInfo.subresourceRange.aspectMask     = imageAspect;
     viewInfo.subresourceRange.baseMipLevel   = 0U;
     viewInfo.subresourceRange.levelCount     = 1U;
     viewInfo.subresourceRange.baseArrayLayer = 0U;

@@ -30,7 +30,8 @@ void Pipeline::createPipeline() {
         .inputAsemblyState{ createInputAsemblyInfo() },
         .rasterizerState{ createRasterizerInfo() },
         .multisamplingState{ createMultisamplingInfo() },
-        .colorBlendsState{ createColorBlendAttachmentInfo( createColorBlendAttachmentState() ) } };
+        .colorBlendsState{ createColorBlendStateInfo( createColorBlendAttachmentState() ) },
+        .depthStencilState{ createDepthStencilInfo() } };
 
     vk::GraphicsPipelineCreateInfo pipelineInfo{};
     pipelineInfo.sType = vk::StructureType::eGraphicsPipelineCreateInfo;
@@ -46,7 +47,7 @@ void Pipeline::createPipeline() {
     pipelineInfo.pRasterizationState = &pipelineConfig.rasterizerState;
     pipelineInfo.pMultisampleState   = &pipelineConfig.multisamplingState;
     pipelineInfo.pColorBlendState    = &pipelineConfig.colorBlendsState;
-    pipelineInfo.pDepthStencilState  = nullptr;
+    pipelineInfo.pDepthStencilState  = &pipelineConfig.depthStencilState;
 
     pipelineInfo.layout     = m_pipelineLayout;
     pipelineInfo.renderPass = m_swapchain.getRenderpass();
@@ -167,7 +168,7 @@ vk::PipelineColorBlendAttachmentState Pipeline::createColorBlendAttachmentState(
 }
 
 vk::PipelineColorBlendStateCreateInfo
-    Pipeline::createColorBlendAttachmentInfo( const vk::PipelineColorBlendAttachmentState state ) const noexcept {
+    Pipeline::createColorBlendStateInfo( const vk::PipelineColorBlendAttachmentState state ) const noexcept {
 
     vk::PipelineColorBlendStateCreateInfo colorBlending{};
     colorBlending.sType               = vk::StructureType::ePipelineColorBlendStateCreateInfo;
@@ -181,6 +182,19 @@ vk::PipelineColorBlendStateCreateInfo
     colorBlending.blendConstants[ 3 ] = 0.0F;
 
     return colorBlending;
+}
+
+vk::PipelineDepthStencilStateCreateInfo Pipeline::createDepthStencilInfo() const noexcept {
+    vk::PipelineDepthStencilStateCreateInfo depthStencil{};
+    depthStencil.depthTestEnable       = vk::True;
+    depthStencil.depthWriteEnable      = vk::True;
+    depthStencil.depthCompareOp        = vk::CompareOp::eLess;
+    depthStencil.depthBoundsTestEnable = vk::False;
+    depthStencil.minDepthBounds        = 0.0F;
+    depthStencil.maxDepthBounds        = 1.0F;
+    depthStencil.stencilTestEnable     = vk::False;
+
+    return depthStencil;
 }
 
 void Pipeline::createPipelineLayout( const ve::DescriptorSetLayout& descriptorLayout ) {

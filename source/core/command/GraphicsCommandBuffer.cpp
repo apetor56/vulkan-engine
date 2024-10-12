@@ -11,7 +11,10 @@ constexpr vk::DeviceSize g_offset{ 0UL };
 constexpr std::uint32_t g_firstBinding{ 0U };
 constexpr std::uint32_t g_firstScissor{ 0U };
 constexpr std::uint32_t g_firstViewport{ 0U };
-constexpr vk::ClearValue g_clearColor{ { 0.1F, 0.1F, 0.1F, 1.0F } };
+constexpr vk::ClearColorValue g_clearColor{ 0.1F, 0.1F, 0.1F, 1.0F };
+constexpr vk::ClearDepthStencilValue g_clearDepthStencil{ 1.0F, 0U };
+constexpr std::array< vk::ClearValue, 2U > g_clearValues{ g_clearColor, g_clearDepthStencil };
+
 } // namespace
 
 namespace ve {
@@ -29,8 +32,8 @@ void GraphicsCommandBuffer::beginRenderPass( const vk::RenderPass renderPass, co
     renderPassBeginInfo.renderArea.offset = vk::Offset2D{ 0, 0 };
     renderPassBeginInfo.renderArea.extent = renderArea;
 
-    renderPassBeginInfo.clearValueCount = 1U;
-    renderPassBeginInfo.pClearValues    = &g_clearColor;
+    renderPassBeginInfo.clearValueCount = static_cast< std::uint32_t >( std::size( g_clearValues ) );
+    renderPassBeginInfo.pClearValues    = std::data( g_clearValues );
 
     m_commandBuffer.beginRenderPass( renderPassBeginInfo, vk::SubpassContents::eInline );
 }

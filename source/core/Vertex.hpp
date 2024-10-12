@@ -37,11 +37,17 @@ struct Vertex {
     }
 };
 
-static std::vector< Vertex > temporaryVertices{ Vertex{ { -0.5F, -0.5F, 0.0F }, { 1.0F, 0.0F, 0.0F }, { 1.0F, 0.0F } },
-                                                { { 0.5F, -0.5F, 0.0F }, { 0.0F, 1.0F, 0.0F }, { 0.0F, 0.0F } },
-                                                { { 0.5F, 0.5F, 0.0F }, { 0.0F, 0.0F, 1.0F }, { 0.0F, 1.0F } },
-                                                { { -0.5F, 0.5F, 0.0F }, { 1.0F, 1.0F, 1.0F }, { 1.0F, 1.0F } } };
+inline static std::vector< Vertex > temporaryVertices{
+    Vertex{ { -0.5F, -0.5F, 0.0F }, { 1.0F, 0.0F, 0.0F }, { 1.0F, 0.0F } },
+    { { 0.5F, -0.5F, 0.0F }, { 0.0F, 1.0F, 0.0F }, { 0.0F, 0.0F } },
+    { { 0.5F, 0.5F, 0.0F }, { 0.0F, 0.0F, 1.0F }, { 0.0F, 1.0F } },
+    { { -0.5F, 0.5F, 0.0F }, { 1.0F, 1.0F, 1.0F }, { 1.0F, 1.0F } },
 
-static std::vector< std::uint32_t > temporaryIndices{ 0, 1, 2, 2, 3, 0 };
+    { { -0.5f, -0.5f, -0.5f }, { 1.0f, 0.0f, 0.0f }, { 0.0f, 0.0f } },
+    { { 0.5f, -0.5f, -0.5f }, { 0.0f, 1.0f, 0.0f }, { 1.0f, 0.0f } },
+    { { 0.5f, 0.5f, -0.5f }, { 0.0f, 0.0f, 1.0f }, { 1.0f, 1.0f } },
+    { { -0.5f, 0.5f, -0.5f }, { 1.0f, 1.0f, 1.0f }, { 0.0f, 1.0f } } };
+
+inline static std::vector< std::uint32_t > temporaryIndices{ 0, 1, 2, 2, 3, 0, 4, 5, 6, 6, 7, 4 };
 
 } // namespace ve

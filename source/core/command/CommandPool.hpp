@@ -7,7 +7,6 @@
 namespace ve {
 
 template < std::derived_from< BaseCommandBuffer > CommandBuffer_T >
-
 class CommandPool {
 public:
     CommandPool( const ve::LogicalDevice& logicalDevice ) : m_logicalDevice{ logicalDevice } { createCommandPool(); }
@@ -20,7 +19,7 @@ public:
     CommandPool& operator=( CommandPool&& other )      = delete;
 
     template < std::uint32_t count = 1U, vk::CommandBufferLevel level = vk::CommandBufferLevel::ePrimary >
-    auto createCommandBuffers() {
+    auto createCommandBuffers() const {
         const auto allocInfo{ createAllocInfo( count, level ) };
         const auto logicalDeviceHandler{ m_logicalDevice.getHandler() };
         const auto commandBufferHandlers{ logicalDeviceHandler.allocateCommandBuffers( allocInfo ) };

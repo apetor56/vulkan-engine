@@ -2,6 +2,7 @@
 
 #include "LogicalDevice.hpp"
 #include "DescriptorSetLayout.hpp"
+#include "Constants.hpp"
 
 #include <span>
 
@@ -12,7 +13,8 @@ namespace ve {
 class DescriptorPool {
 public:
     DescriptorPool( const ve::LogicalDevice& logicalDevice, std::span< vk::DescriptorType > types,
-                    const std::uint32_t descriptorCount, const std::uint32_t maxSetsCount );
+                    const std::uint32_t descriptorCount = g_maxFramesInFlight,
+                    const std::uint32_t maxSetsCount    = g_maxFramesInFlight );
 
     ~DescriptorPool();
 

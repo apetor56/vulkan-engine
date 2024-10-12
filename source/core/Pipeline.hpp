@@ -19,6 +19,7 @@ struct PipelineConfigInfo {
     const vk::PipelineRasterizationStateCreateInfo rasterizerState{};
     const vk::PipelineMultisampleStateCreateInfo multisamplingState{};
     const vk::PipelineColorBlendStateCreateInfo colorBlendsState{};
+    const vk::PipelineDepthStencilStateCreateInfo depthStencilState{};
 };
 
 class Pipeline {
@@ -59,7 +60,8 @@ private:
     vk::PipelineMultisampleStateCreateInfo createMultisamplingInfo() const noexcept;
     vk::PipelineColorBlendAttachmentState createColorBlendAttachmentState() const noexcept;
     vk::PipelineColorBlendStateCreateInfo
-        createColorBlendAttachmentInfo( const vk::PipelineColorBlendAttachmentState state ) const noexcept;
+        createColorBlendStateInfo( const vk::PipelineColorBlendAttachmentState state ) const noexcept;
+    vk::PipelineDepthStencilStateCreateInfo createDepthStencilInfo() const noexcept;
 };
 
 }; // namespace ve

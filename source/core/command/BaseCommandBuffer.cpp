@@ -17,7 +17,7 @@ void BaseCommandBuffer::end() const {
     m_commandBuffer.end();
 }
 
-void BaseCommandBuffer::reset() {
+void BaseCommandBuffer::reset() const {
     m_commandBuffer.reset();
 }
 
