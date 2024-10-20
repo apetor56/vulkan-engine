@@ -21,17 +21,17 @@ Engine::Engine()
       m_immediateBuffer{ m_graphicsCommandPool.createCommandBuffers() },
       m_transferCommandPool{ m_logicalDevice },
       m_transferCommandBuffer{ m_transferCommandPool.createCommandBuffers() },
-      m_vertexBuffer{ m_memoryAllocator, sizeof( Vertex ) * std::size( temporaryVertices ) },
-      m_indexBuffer{ m_memoryAllocator, sizeof( std::uint32_t ) * std::size( temporaryIndices ) },
-      m_descriptorSetLayout{ m_logicalDevice } {
+      m_descriptorSetLayout{ m_logicalDevice },
+      m_loader{ *this, m_memoryAllocator } {
     prepareDescriptorSetLayout();
     createFramesResoures();
     prepareTexture();
     createTextureSampler();
     configureDescriptorSets();
-    uploadBuffersData( temporaryVertices, temporaryIndices );
 
     m_pipeline.emplace( m_logicalDevice, m_swapchain, m_descriptorSetLayout );
+
+    m_modelMeshes = m_loader.loadMeshes( "D:/gitsource/vulkan-engine/assets/scene.gltf" );
 }
 
 Engine::~Engine() {
@@ -95,10 +95,12 @@ void Engine::draw( const std::uint32_t imageIndex ) {
     commandBuffer.bindPipeline( m_pipeline->getHandler() );
     commandBuffer.setViewport( m_swapchain.getViewport() );
     commandBuffer.setScissor( m_swapchain.getScissor() );
-    commandBuffer.bindVertexBuffer( m_vertexBuffer.getHandler() );
-    commandBuffer.bindIndexBuffer( m_indexBuffer.getHandler() );
     commandBuffer.bindDescriptorSet( m_pipeline->getLayout(), currentFrame.descriptorSet );
-    commandBuffer.drawIndices( m_indexBuffer.size() / sizeof( std::uint32_t ) );
+    std::ranges::for_each( m_modelMeshes, [ &commandBuffer ]( const auto& meshAsset ) {
+        commandBuffer.bindVertexBuffer( meshAsset.buffers.vertexBuffer->getHandler() );
+        commandBuffer.bindIndexBuffer( meshAsset.buffers.indexBuffer->getHandler() );
+        commandBuffer.drawIndices( meshAsset.buffers.indexBuffer->size() / sizeof( std::uint32_t ) );
+    } );
     commandBuffer.endRenderPass();
     commandBuffer.end();
 
@@ -174,7 +176,8 @@ void Engine::updateUniformBuffer() {
     UniformBufferData data{};
 
     constexpr glm::vec3 zAxis{ 0.0F, 0.0F, 1.0F };
-    data.model = glm::rotate( glm::mat4( 1.0f ), elapsed.count() * glm::radians( 90.0f ) / 1000, zAxis );
+    data.model = glm::scale( glm::mat4{ 1.0F }, glm::vec3{ 0.3F, 0.3F, 0.3F } ) *
+                 glm::rotate( glm::mat4( 1.0F ), elapsed.count() * glm::radians( 90.0F ) / 1000, zAxis );
 
     constexpr glm::vec3 cameraPos{ 2.0F, 2.0F, 2.0F };
     constexpr glm::vec3 centerPos{};
@@ -226,7 +229,11 @@ void Engine::configureDescriptorSets() {
     } );
 }
 
-void Engine::uploadBuffersData( std::span< Vertex > vertices, std::span< std::uint32_t > indices ) {
+MeshBuffers Engine::uploadMeshBuffers( std::span< Vertex > vertices, std::span< std::uint32_t > indices ) const {
+    MeshBuffers newMeshBuffers;
+    newMeshBuffers.vertexBuffer.emplace( m_memoryAllocator, std::size( vertices ) * sizeof( Vertex ) );
+    newMeshBuffers.indexBuffer.emplace( m_memoryAllocator, std::size( indices ) * sizeof( std::uint32_t ) );
+
     const vk::DeviceSize vertexBufferSize{ std::size( vertices ) * sizeof( Vertex ) };
     const vk::DeviceSize indexBufferSize{ std::size( indices ) * sizeof( std::uint32_t ) };
 
@@ -245,12 +252,12 @@ void Engine::uploadBuffersData( std::span< Vertex > vertices, std::span< std::ui
     constexpr vk::DeviceSize vertexSrcOffset{ 0U };
     constexpr vk::DeviceSize vertexDstOffset{ 0U };
     m_transferCommandBuffer.copyBuffer( vertexSrcOffset, vertexDstOffset, vertexBufferSize, stagingBuffer.getHandler(),
-                                        m_vertexBuffer.getHandler() );
+                                        newMeshBuffers.vertexBuffer->getHandler() );
 
     const vk::DeviceSize indexSrcOffset{ vertexBufferSize };
     constexpr vk::DeviceSize indexDstOffset{ 0U };
     m_transferCommandBuffer.copyBuffer( indexSrcOffset, indexDstOffset, indexBufferSize, stagingBuffer.getHandler(),
-                                        m_indexBuffer.getHandler() );
+                                        newMeshBuffers.indexBuffer->getHandler() );
 
     m_transferCommandBuffer.end();
 
@@ -263,13 +270,15 @@ void Engine::uploadBuffersData( std::span< Vertex > vertices, std::span< std::ui
     transferQueue.submit( submitInfo, m_immediateSubmitFence.get() );
     [[maybe_unused]] const auto result{
         logicalDeviceHandler.waitForFences( m_immediateSubmitFence.get(), g_waitForAllFences, g_timeoutOff ) };
+
+    return newMeshBuffers;
 }
 
 void Engine::prepareTexture() {
     int width;
     int height;
     int channels;
-    const auto fullTexturePath{ cfg::texture::directory / "sample.png" };
+    const auto fullTexturePath{ cfg::texture::directory / "Scene_-_Root_baseColor.jpeg" };
 
     stbi_uc *pixels{ stbi_load( fullTexturePath.string().c_str(), &width, &height, &channels, STBI_rgb_alpha ) };
 

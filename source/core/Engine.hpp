@@ -15,6 +15,7 @@
 #include "command/GraphicsCommandBuffer.hpp"
 #include "descriptor/DescriptorSetLayout.hpp"
 #include "descriptor/DescriptorPool.hpp"
+#include "Loader.hpp"
 
 #include <functional>
 
@@ -26,6 +27,8 @@ public:
     ~Engine();
 
     void run();
+
+    MeshBuffers uploadMeshBuffers( std::span< Vertex > vertices, std::span< std::uint32_t > indices ) const;
 
 private:
     using Frames = std::array< std::optional< ve::Frame >, g_maxFramesInFlight >;
@@ -42,20 +45,20 @@ private:
     ve::GraphicsCommandBuffer m_immediateBuffer;
     ve::CommandPool< ve::TransferCommandBuffer > m_transferCommandPool;
     ve::TransferCommandBuffer m_transferCommandBuffer;
-    ve::VertexBuffer m_vertexBuffer;
-    ve::IndexBuffer m_indexBuffer;
+    ve::MeshBuffers m_meshBuffers{};
     ve::DescriptorSetLayout m_descriptorSetLayout;
     std::optional< ve::DescriptorPool > m_descriptorPool;
     Frames m_frames;
     Frames::iterator m_currentFrameIt{ nullptr };
     std::optional< ve::Image > m_textureImage{};
     vk::Sampler m_sampler;
+    ve::Loader m_loader;
+    std::vector< ve::MeshAsset > m_modelMeshes;
 
     void prepareDescriptorSetLayout();
     void createFramesResoures();
     void updateUniformBuffer();
     void configureDescriptorSets();
-    void uploadBuffersData( std::span< Vertex > vertices, std::span< std::uint32_t > indices );
     void prepareTexture();
     void createTextureSampler();
 

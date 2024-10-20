@@ -21,7 +21,7 @@ endif()
 
 target_compile_definitions(${PROJECT_NAME} PRIVATE 
     SHADER_BINARIES_DIR="${CMAKE_BINARY_DIR}/shaders"
-    TEXTURE_DIR="${CMAKE_SOURCE_DIR}/source/textures"  
+    TEXTURE_DIR="${CMAKE_SOURCE_DIR}/assets/textures"
 )
 
 set(CORE
@@ -43,6 +43,7 @@ set(CORE
     core/Frame.hpp
     core/SyncObjects.hpp           core/SyncObjects.cpp
     core/Constants.hpp
+    core/Loader.hpp                core/Loader.cpp
 )
 
 set(COMMAND

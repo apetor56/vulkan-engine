@@ -37,6 +37,27 @@ public:
 
     ~Buffer() { vmaDestroyBuffer( m_memoryAllocator, m_buffer, m_allocation ); }
 
+    Buffer( const Buffer& other ) = delete;
+    Buffer( Buffer&& other ) : m_memoryAllocator{ other.m_memoryAllocator } {
+        m_allocation = other.m_allocation;
+        m_buffer     = other.m_buffer;
+        m_size       = other.m_size;
+
+        other.m_allocation = {};
+        other.m_buffer     = {};
+    }
+
+    Buffer& operator=( const Buffer& other ) = delete;
+    Buffer& operator=( Buffer&& other ) {
+        m_allocation = other.m_allocation;
+        m_buffer     = other.m_buffer;
+        m_size       = other.m_size;
+
+        other.m_buffer = {};
+
+        return *this;
+    }
+
     vk::Buffer getHandler() const noexcept { return m_buffer; }
 
     VkDeviceSize size() const noexcept { return m_size; }
@@ -60,5 +81,4 @@ using VertexBuffer  = Buffer< VK_BUFFER_USAGE_VERTEX_BUFFER_BIT | VK_BUFFER_USAG
 using IndexBuffer   = Buffer< VK_BUFFER_USAGE_INDEX_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT >;
 using UniformBuffer = Buffer< VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT,
                               VMA_ALLOCATION_CREATE_MAPPED_BIT | VMA_ALLOCATION_CREATE_HOST_ACCESS_RANDOM_BIT >;
-
 } // namespace ve
