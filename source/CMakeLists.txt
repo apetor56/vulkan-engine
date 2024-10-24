@@ -21,7 +21,7 @@ endif()
 
 target_compile_definitions(${PROJECT_NAME} PRIVATE 
     SHADER_BINARIES_DIR="${CMAKE_BINARY_DIR}/shaders"
-    TEXTURE_DIR="${CMAKE_SOURCE_DIR}/assets/textures"
+    ASSETS_DIR="${CMAKE_SOURCE_DIR}/assets"
 )
 
 set(CORE
@@ -40,7 +40,7 @@ set(CORE
     core/Buffer.hpp
     core/MemoryAllocator.hpp       core/MemoryAllocator.cpp
     core/Image.hpp                 core/Image.cpp
-    core/Frame.hpp
+    core/Frame.hpp                 core/Frame.cpp
     core/SyncObjects.hpp           core/SyncObjects.cpp
     core/Constants.hpp
     core/Loader.hpp                core/Loader.cpp
@@ -55,7 +55,8 @@ set(COMMAND
 
 set(DESCRIPTOR
     core/descriptor/DescriptorSetLayout.hpp        core/descriptor/DescriptorSetLayout.cpp
-    core/descriptor/DescriptorPool.hpp             core/descriptor/DescriptorPool.cpp
+    core/descriptor/DescriptorAllocator.hpp        core/descriptor/DescriptorAllocator.cpp
+    core/descriptor/DescriptorWriter.hpp           core/descriptor/DescriptorWriter.cpp
 )
 
 set(SHADER_SOURCE

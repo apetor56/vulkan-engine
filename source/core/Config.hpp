@@ -30,9 +30,9 @@ inline const std::filesystem::path fragShaderBinaryPath{ std::filesystem::path{ 
                                                          "simple.frag.spv" };
 } // namespace cfg::shader
 
-namespace cfg::texture {
+namespace cfg::assets {
 
-inline const std::filesystem::path directory{ std::filesystem::path{ TEXTURE_DIR } };
+inline const std::filesystem::path directory{ std::filesystem::path{ ASSETS_DIR } };
 
 }
 

@@ -14,7 +14,7 @@
 #include "command/CommandPool.hpp"
 #include "command/GraphicsCommandBuffer.hpp"
 #include "descriptor/DescriptorSetLayout.hpp"
-#include "descriptor/DescriptorPool.hpp"
+#include "descriptor/DescriptorWriter.hpp"
 #include "Loader.hpp"
 
 #include <functional>
@@ -47,13 +47,13 @@ private:
     ve::TransferCommandBuffer m_transferCommandBuffer;
     ve::MeshBuffers m_meshBuffers{};
     ve::DescriptorSetLayout m_descriptorSetLayout;
-    std::optional< ve::DescriptorPool > m_descriptorPool;
     Frames m_frames;
     Frames::iterator m_currentFrameIt{ nullptr };
     std::optional< ve::Image > m_textureImage{};
     vk::Sampler m_sampler;
     ve::Loader m_loader;
     std::vector< ve::MeshAsset > m_modelMeshes;
+    ve::DescriptorWriter m_descriptorWriter;
 
     void prepareDescriptorSetLayout();
     void createFramesResoures();

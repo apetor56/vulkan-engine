@@ -22,7 +22,8 @@ Engine::Engine()
       m_transferCommandPool{ m_logicalDevice },
       m_transferCommandBuffer{ m_transferCommandPool.createCommandBuffers() },
       m_descriptorSetLayout{ m_logicalDevice },
-      m_loader{ *this, m_memoryAllocator } {
+      m_loader{ *this, m_memoryAllocator },
+      m_descriptorWriter{ m_logicalDevice } {
     prepareDescriptorSetLayout();
     createFramesResoures();
     prepareTexture();
@@ -31,7 +32,7 @@ Engine::Engine()
 
     m_pipeline.emplace( m_logicalDevice, m_swapchain, m_descriptorSetLayout );
 
-    m_modelMeshes = m_loader.loadMeshes( "D:/gitsource/vulkan-engine/assets/scene.gltf" );
+    m_modelMeshes = m_loader.loadMeshes( cfg::assets::directory / "viking_room.obj" );
 }
 
 Engine::~Engine() {
@@ -81,7 +82,9 @@ std::optional< std::uint32_t > Engine::acquireNextImage() {
 }
 
 void Engine::draw( const std::uint32_t imageIndex ) {
-    const auto& currentFrame{ m_currentFrameIt->value() };
+    auto& currentFrame{ m_currentFrameIt->value() };
+
+    updateUniformBuffer();
 
     const auto& commandBuffer{ currentFrame.graphicsCommandBuffer };
     const auto commandBufferHandler{ commandBuffer.getHandler() };
@@ -103,8 +106,6 @@ void Engine::draw( const std::uint32_t imageIndex ) {
     } );
     commandBuffer.endRenderPass();
     commandBuffer.end();
-
-    updateUniformBuffer();
 
     static constexpr vk::PipelineStageFlags waitStage{ vk::PipelineStageFlagBits::eColorAttachmentOutput };
     vk::SubmitInfo submitInfo{};
@@ -148,7 +149,6 @@ void Engine::present( const std::uint32_t imageIndex ) {
 void Engine::prepareDescriptorSetLayout() {
     std::vector< vk::DescriptorType > descriptorTypes{ vk::DescriptorType::eUniformBuffer,
                                                        vk::DescriptorType::eCombinedImageSampler };
-    m_descriptorPool.emplace( m_logicalDevice, descriptorTypes );
     m_descriptorSetLayout.addBinding( 0U, vk::DescriptorType::eUniformBuffer, vk::ShaderStageFlagBits::eVertex );
     m_descriptorSetLayout.addBinding( 1U, vk::DescriptorType::eCombinedImageSampler,
                                       vk::ShaderStageFlagBits::eFragment );
@@ -156,13 +156,11 @@ void Engine::prepareDescriptorSetLayout() {
 }
 
 void Engine::createFramesResoures() {
-    const auto descriptorSets{ m_descriptorPool->createDescriptorSets( g_maxFramesInFlight, m_descriptorSetLayout ) };
     const auto graphicsCommandBuffers{ m_graphicsCommandPool.createCommandBuffers< g_maxFramesInFlight >() };
 
-    for ( std::uint32_t frameID{ 0U }; frameID < g_maxFramesInFlight; frameID++ ) {
+    for ( std::uint32_t frameID{ 0U }; frameID < g_maxFramesInFlight; frameID++ )
         m_frames.at( frameID ).emplace( m_logicalDevice, m_memoryAllocator, graphicsCommandBuffers.at( frameID ),
-                                        descriptorSets.at( frameID ) );
-    }
+                                        m_descriptorSetLayout );
 
     m_currentFrameIt = std::begin( m_frames );
 }
@@ -176,7 +174,7 @@ void Engine::updateUniformBuffer() {
     UniformBufferData data{};
 
     constexpr glm::vec3 zAxis{ 0.0F, 0.0F, 1.0F };
-    data.model = glm::scale( glm::mat4{ 1.0F }, glm::vec3{ 0.3F, 0.3F, 0.3F } ) *
+    data.model = glm::scale( glm::mat4{ 1.0F }, glm::vec3{ 1.0F, 1.0F, 1.0F } ) *
                  glm::rotate( glm::mat4( 1.0F ), elapsed.count() * glm::radians( 90.0F ) / 1000, zAxis );
 
     constexpr glm::vec3 cameraPos{ 2.0F, 2.0F, 2.0F };
@@ -198,34 +196,16 @@ void Engine::updateUniformBuffer() {
 
 void Engine::configureDescriptorSets() {
     std::ranges::for_each( m_frames, [ this ]( auto& frame ) {
-        vk::DescriptorBufferInfo bufferInfo;
-        bufferInfo.buffer = frame.value().uniformBuffer.getHandler();
-        bufferInfo.offset = 0U;
-        bufferInfo.range  = sizeof( UniformBufferData );
+        static constexpr std::uint32_t uniformBufferBinding{ 0U };
+        m_descriptorWriter.writeBuffer( uniformBufferBinding, frame.value().uniformBuffer.getHandler(),
+                                        sizeof( UniformBufferData ), 0U, vk::DescriptorType::eUniformBuffer );
 
-        vk::DescriptorImageInfo imageInfo{};
-        imageInfo.imageLayout = vk::ImageLayout::eShaderReadOnlyOptimal;
-        imageInfo.imageView   = m_textureImage->getImageView();
-        imageInfo.sampler     = m_sampler;
+        static constexpr std::uint32_t textureImageBinding{ 1U };
+        m_descriptorWriter.writeImage( textureImageBinding, m_textureImage->getImageView(),
+                                       vk::ImageLayout::eShaderReadOnlyOptimal, m_sampler,
+                                       vk::DescriptorType::eCombinedImageSampler );
 
-        std::array< vk::WriteDescriptorSet, 2U > descriptorWrites{};
-        descriptorWrites.at( 0 ).sType           = vk::StructureType::eWriteDescriptorSet;
-        descriptorWrites.at( 0 ).dstSet          = frame.value().descriptorSet;
-        descriptorWrites.at( 0 ).dstBinding      = 0U;
-        descriptorWrites.at( 0 ).dstArrayElement = 0U;
-        descriptorWrites.at( 0 ).descriptorType  = vk::DescriptorType::eUniformBuffer;
-        descriptorWrites.at( 0 ).descriptorCount = 1U;
-        descriptorWrites.at( 0 ).pBufferInfo     = &bufferInfo;
-
-        descriptorWrites.at( 1 ).sType           = vk::StructureType::eWriteDescriptorSet;
-        descriptorWrites.at( 1 ).dstSet          = frame.value().descriptorSet;
-        descriptorWrites.at( 1 ).dstBinding      = 1U;
-        descriptorWrites.at( 1 ).dstArrayElement = 0U;
-        descriptorWrites.at( 1 ).descriptorType  = vk::DescriptorType::eCombinedImageSampler;
-        descriptorWrites.at( 1 ).descriptorCount = 1U;
-        descriptorWrites.at( 1 ).pImageInfo      = &imageInfo;
-
-        m_logicalDevice.getHandler().updateDescriptorSets( descriptorWrites, nullptr );
+        m_descriptorWriter.updateSet( frame.value().descriptorSet );
     } );
 }
 
@@ -278,7 +258,7 @@ void Engine::prepareTexture() {
     int width;
     int height;
     int channels;
-    const auto fullTexturePath{ cfg::texture::directory / "Scene_-_Root_baseColor.jpeg" };
+    const auto fullTexturePath{ cfg::assets::directory / "viking_room.png" };
 
     stbi_uc *pixels{ stbi_load( fullTexturePath.string().c_str(), &width, &height, &channels, STBI_rgb_alpha ) };
 
