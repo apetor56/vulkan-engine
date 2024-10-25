@@ -2,10 +2,18 @@ include(FetchContent)
 
 find_package(Vulkan REQUIRED COMPONENTS glslc)
 
-set(GLFW_BUILD_DOCS OFF CACHE BOOL "" FORCE)
-set(GLFW_BUILD_TESTS OFF CACHE BOOL "" FORCE)
-set(GLFW_BUILD_EXAMPLES OFF CACHE BOOL "" FORCE)
-set(VMA_BUILD_EXAMPLES OFF CACHE BOOL "" FORCE)
+option(GLFW_BUILD_DOCS "Build GLFW documentation" OFF)
+option(GLFW_BUILD_TESTS "Build GLFW tests" OFF)
+option(GLFW_BUILD_EXAMPLES "Build GLFW examples" OFF)
+
+option(BUILD_SHARED_LIBS "Build shared libraries" OFF)
+option(ASSIMP_BUILD_ALL_IMPORTERS_BY_DEFAULT "" OFF)
+option(ASSIMP_BUILD_OBJ_IMPORTER "Enable OBJ importer" ON)
+option(ASSIMP_BUILD_GLTF_IMPORTER "Enable GLTF importer" ON)
+option(ASSIMP_NO_EXPORT "Disable assimp exporter" ON)
+option(ASSIMP_BUILD_SAMPLES "Build Assimp sample applications" OFF)
+option(ASSIMP_BUILD_TESTS "Build Assimp unit tests" OFF)
+option(ASSIMP_BUILD_ASSIMP_TOOLS "Build Assimp tools" OFF)
 
 FetchContent_Declare(
     glfw
@@ -16,16 +24,6 @@ FetchContent_Declare(
     spdlog
     GIT_REPOSITORY https://github.com/gabime/spdlog.git
     GIT_TAG        v1.14.1
-)
-FetchContent_Declare(
-    glm
-    GIT_REPOSITORY https://github.com/g-truc/glm.git
-    GIT_TAG        1.0.1
-)
-FetchContent_Declare(
-    GPUOpen
-    GIT_REPOSITORY https://github.com/GPUOpen-LibrariesAndSDKs/VulkanMemoryAllocator.git
-    GIT_TAG        v3.1.0
 )
 FetchContent_Declare(
     stb
@@ -40,22 +38,18 @@ FetchContent_Declare(
 
 FetchContent_MakeAvailable(glfw)
 FetchContent_MakeAvailable(spdlog)
-FetchContent_MakeAvailable(glm)
-FetchContent_MakeAvailable(GPUOpen)
 FetchContent_MakeAvailable(stb)
 FetchContent_MakeAvailable(assimp)
 
 target_include_directories(${PROJECT_NAME} PRIVATE
-    Vulkan::Headers
+    ${Vulkan_INCLUDE_DIR}
     ${glfw_SOURCE_DIR}/include
+    ${spdlog_SOURCE_DIR}/include
     ${CMAKE_BINARY_DIR}/_deps/stb-src
 )
 
 target_link_libraries(${PROJECT_NAME} PRIVATE
     Vulkan::Vulkan
     glfw
-	spdlog::spdlog
-    glm::glm
-    GPUOpen::VulkanMemoryAllocator
     assimp
 )

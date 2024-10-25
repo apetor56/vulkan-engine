@@ -53,7 +53,8 @@ void VulkanInstance::createVulkanInstance() {
         instanceInfo.ppEnabledLayerNames = nullptr;
     }
 
-    vk::resultCheck( vk::createInstance( &instanceInfo, nullptr, &m_instance ), "failed to create vulkan instance" );
+    vk::detail::resultCheck( vk::createInstance( &instanceInfo, nullptr, &m_instance ),
+                             "failed to create vulkan instance" );
 }
 
 ve::extentions VulkanInstance::getRequiredInstanceExtensions() const {
