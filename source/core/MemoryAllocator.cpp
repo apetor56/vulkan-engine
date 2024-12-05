@@ -11,8 +11,8 @@ MemoryAllocator::MemoryAllocator( const VulkanInstance& instance, const Physical
                                   const LogicalDevice& logicalDevice ) {
     VmaAllocatorCreateInfo allocatorCreateInfo{};
     allocatorCreateInfo.instance       = instance.get();
-    allocatorCreateInfo.physicalDevice = physicalDevice.getHandler();
-    allocatorCreateInfo.device         = logicalDevice.getHandler();
+    allocatorCreateInfo.physicalDevice = physicalDevice.get();
+    allocatorCreateInfo.device         = logicalDevice.get();
 
     vmaCreateAllocator( &allocatorCreateInfo, &m_allocator );
 }

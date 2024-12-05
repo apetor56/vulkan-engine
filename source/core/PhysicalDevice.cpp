@@ -1,5 +1,7 @@
 #include "PhysicalDevice.hpp"
-#include "QueueFamilyIDs.hpp"
+#include "LogicalDevice.hpp"
+#include "VulkanInstance.hpp"
+#include "Window.hpp"
 #include "Swapchain.hpp"
 #include "Config.hpp"
 
@@ -11,19 +13,18 @@
 
 namespace ve {
 
-PhysicalDevice::PhysicalDevice( const ve::VulkanInstance& instance, const ve::Window& window )
-    : m_instance{ instance }, m_window{ window } {
-    pickPhysicalDevice();
+PhysicalDevice::PhysicalDevice( const ve::VulkanInstance& instance, const ve::Window& window ) {
+    pickPhysicalDevice( instance, window );
 }
 
-void PhysicalDevice::pickPhysicalDevice() {
-    const auto devices{ m_instance.get().enumeratePhysicalDevices() };
+void PhysicalDevice::pickPhysicalDevice( const ve::VulkanInstance& instance, const ve::Window& window ) {
+    const auto devices{ instance.get().enumeratePhysicalDevices() };
     if ( std::size( devices ) == 0U )
         throw std::runtime_error( "failed to find GPU with Vulkan support" );
 
     std::map< std::uint32_t, vk::PhysicalDevice > deviceCandidates{};
-    std::ranges::for_each( devices, [ this, &deviceCandidates ]( const auto& device ) {
-        deviceCandidates.insert( { rate( device ), device } );
+    std::ranges::for_each( devices, [ this, &window, &deviceCandidates ]( const auto device ) {
+        deviceCandidates.insert( { rate( device, window.getSurface() ), device } );
     } );
 
     const auto [ bestRate, bestDevice ]{ *std::rbegin( deviceCandidates ) };
@@ -31,22 +32,22 @@ void PhysicalDevice::pickPhysicalDevice() {
         throw std::runtime_error( "failed to find suitable device" );
 
     m_physicalDevice = bestDevice;
-    m_queueFamilies  = ve::QueueFamilyIDs::findQueueFamilies( m_physicalDevice, m_window.getSurface() );
+    m_queueFamilies  = ve::QueueFamilyIDs::findQueueFamilies( m_physicalDevice, window.getSurface() );
 
     const auto deviceProperties{ m_physicalDevice.getProperties() };
     SPDLOG_INFO( "Picked GPU: {}", deviceProperties.deviceName.data() );
 }
 
-std::uint32_t PhysicalDevice::rate( const vk::PhysicalDevice physicalDevice ) const {
-    const auto queueFamilyIndices{ ve::QueueFamilyIDs::findQueueFamilies( physicalDevice, m_window.getSurface() ) };
+std::uint32_t PhysicalDevice::rate( const vk::PhysicalDevice physicalDevice,
+                                    const VkSurfaceKHR surface ) const noexcept {
+    const auto queueFamilyIndices{ ve::QueueFamilyIDs::findQueueFamilies( physicalDevice, surface ) };
     const auto deviceProperties{ physicalDevice.getProperties() };
     const auto deviceFeatures{ physicalDevice.getFeatures() };
 
     const bool isExtensionSupportAvailable{ areRequiredExtensionsSupported( physicalDevice ) };
     bool isSwapchainAdequate{};
     if ( isExtensionSupportAvailable ) {
-        const Swapchain::Details swapchainDetails{
-            Swapchain::getSwapchainDetails( physicalDevice, m_window.getSurface() ) };
+        const Swapchain::Details swapchainDetails{ Swapchain::getSwapchainDetails( physicalDevice, surface ) };
         isSwapchainAdequate = !swapchainDetails.formats.empty() && !swapchainDetails.presentationModes.empty();
     }
 
@@ -75,18 +76,6 @@ bool PhysicalDevice::areRequiredExtensionsSupported( const vk::PhysicalDevice ph
     } };
 
     return std::ranges::all_of( m_deviceExtensions, isRequiredExtensionSupported );
-}
-
-vk::PhysicalDevice PhysicalDevice::getHandler() const noexcept {
-    return m_physicalDevice;
-}
-
-const ve::extentions& PhysicalDevice::getExtensions() const noexcept {
-    return m_deviceExtensions;
-}
-
-[[nodiscard]] std::unordered_map< ve::FamilyType, std::uint32_t > PhysicalDevice::getQueueFamilyIDs() const noexcept {
-    return m_queueFamilies.getAll();
 }
 
 } // namespace ve

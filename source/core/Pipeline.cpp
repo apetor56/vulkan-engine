@@ -17,7 +17,7 @@ Pipeline::Pipeline( const ve::LogicalDevice& logicalDevice, const ve::Swapchain&
 }
 
 Pipeline::~Pipeline() {
-    const auto logicalDeviceHandler{ m_logicalDevice.getHandler() };
+    const auto logicalDeviceHandler{ m_logicalDevice.get() };
     logicalDeviceHandler.destroyPipeline( m_graphicsPipeline );
     logicalDeviceHandler.destroyPipelineLayout( m_pipelineLayout );
 }
@@ -53,7 +53,7 @@ void Pipeline::createPipeline() {
     pipelineInfo.renderPass = m_swapchain.getRenderpass();
     pipelineInfo.subpass    = 0U;
 
-    auto [ result, pipeline ]{ m_logicalDevice.getHandler().createGraphicsPipeline( nullptr, pipelineInfo ) };
+    auto [ result, pipeline ]{ m_logicalDevice.get().createGraphicsPipeline( nullptr, pipelineInfo ) };
     if ( result != vk::Result::eSuccess )
         throw std::runtime_error( "failed to create graphics pipeline" );
 
@@ -65,7 +65,7 @@ vk::PipelineShaderStageCreateInfo Pipeline::pupulateShaderStageInfo( const vk::S
     vk::PipelineShaderStageCreateInfo shaderStageCreateInfo{};
     shaderStageCreateInfo.sType  = vk::StructureType::ePipelineShaderStageCreateInfo;
     shaderStageCreateInfo.stage  = shaderType;
-    shaderStageCreateInfo.module = shaderModule.getHandler();
+    shaderStageCreateInfo.module = shaderModule.get();
     shaderStageCreateInfo.pName  = "main";
 
     return shaderStageCreateInfo;
@@ -198,17 +198,17 @@ vk::PipelineDepthStencilStateCreateInfo Pipeline::createDepthStencilInfo() const
 }
 
 void Pipeline::createPipelineLayout( const ve::DescriptorSetLayout& descriptorLayout ) {
-    const auto layoutHandler{ descriptorLayout.getHandler() };
+    const auto layoutHandler{ descriptorLayout.get() };
 
     vk::PipelineLayoutCreateInfo pipelineLayoutInfo{};
     pipelineLayoutInfo.sType          = vk::StructureType::ePipelineLayoutCreateInfo;
     pipelineLayoutInfo.setLayoutCount = 1U;
     pipelineLayoutInfo.pSetLayouts    = &layoutHandler;
 
-    m_pipelineLayout = m_logicalDevice.getHandler().createPipelineLayout( pipelineLayoutInfo );
+    m_pipelineLayout = m_logicalDevice.get().createPipelineLayout( pipelineLayoutInfo );
 }
 
-vk::Pipeline Pipeline::getHandler() const noexcept {
+vk::Pipeline Pipeline::get() const noexcept {
     return m_graphicsPipeline;
 }
 

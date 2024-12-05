@@ -1,35 +1,32 @@
 #pragma once
 
-#include "VulkanInstance.hpp"
-#include "Window.hpp"
 #include "QueueFamilyIDs.hpp"
+
+#include "utils/NonCopyable.hpp"
+#include "utils/NonMovable.hpp"
 
 namespace ve {
 
-class PhysicalDevice {
+class VulkanInstance;
+class Window;
+class LogicalDevice;
+
+class PhysicalDevice : public utils::NonCopyable,
+                       public utils::NonMovable {
 public:
     PhysicalDevice( const ve::VulkanInstance& instance, const ve::Window& window );
 
-    PhysicalDevice( const PhysicalDevice& other ) = delete;
-    PhysicalDevice( PhysicalDevice&& other )      = delete;
-
-    PhysicalDevice& operator=( const PhysicalDevice& other ) = delete;
-    PhysicalDevice& operator=( PhysicalDevice&& other )      = delete;
-
-    vk::PhysicalDevice getHandler() const noexcept;
-    const ve::extentions& getExtensions() const noexcept;
-    [[nodiscard]] std::unordered_map< ve::FamilyType, std::uint32_t > getQueueFamilyIDs() const noexcept;
+    vk::PhysicalDevice get() const noexcept { return m_physicalDevice; }
+    const std::vector< const char * >& getExtensions() const noexcept { return m_deviceExtensions; }
+    [[nodiscard]] ve::QueueFamilyMap getQueueFamilyIDs() const noexcept { return m_queueFamilies.getAll(); }
 
 private:
-    vk::PhysicalDevice m_physicalDevice{};
     ve::QueueFamilyIDs m_queueFamilies{};
-    const ve::extentions m_deviceExtensions{ vk::KHRSwapchainExtensionName };
+    const std::vector< const char * > m_deviceExtensions{ vk::KHRSwapchainExtensionName };
+    vk::PhysicalDevice m_physicalDevice{};
 
-    const ve::VulkanInstance& m_instance;
-    const ve::Window& m_window;
-
-    void pickPhysicalDevice();
-    std::uint32_t rate( const vk::PhysicalDevice device ) const;
+    void pickPhysicalDevice( const ve::VulkanInstance& instance, const ve::Window& window );
+    std::uint32_t rate( const vk::PhysicalDevice device, const VkSurfaceKHR surface ) const noexcept;
     bool areRequiredExtensionsSupported( const vk::PhysicalDevice physicalDevice ) const;
 };
 

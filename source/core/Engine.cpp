@@ -15,7 +15,7 @@ Engine::Engine()
       m_physicalDevice{ m_vulkanInstance, m_window },
       m_logicalDevice{ m_physicalDevice },
       m_memoryAllocator{ m_vulkanInstance, m_physicalDevice, m_logicalDevice },
-      m_swapchain{ m_physicalDevice, m_logicalDevice, m_window, m_memoryAllocator },
+      m_swapchain{ m_logicalDevice, m_window, m_memoryAllocator },
       m_graphicsCommandPool{ m_logicalDevice },
       m_immediateSubmitFence{ m_logicalDevice },
       m_immediateBuffer{ m_graphicsCommandPool.createCommandBuffers() },
@@ -36,23 +36,27 @@ Engine::Engine()
 }
 
 Engine::~Engine() {
-    const auto logicalDeviceHandler{ m_logicalDevice.getHandler() };
+    const auto logicalDeviceHandler{ m_logicalDevice.get() };
     logicalDeviceHandler.destroySampler( m_sampler );
 }
+
+void Engine::init() {}
+
+void Engine::cleanup() {}
 
 void Engine::run() {
     while ( m_window.shouldClose() == GLFW_FALSE ) {
         glfwPollEvents();
 
         const auto& currentFrame{ m_currentFrameIt->value() };
-        [[maybe_unused]] const auto waitForFencesResult{ m_logicalDevice.getHandler().waitForFences(
-            currentFrame.renderFence.get(), g_waitForAllFences, g_timeoutOff ) };
+        [[maybe_unused]] const auto waitForFencesResult{
+            m_logicalDevice.get().waitForFences( currentFrame.renderFence.get(), g_waitForAllFences, g_timeoutOff ) };
 
         const auto imageIndex{ acquireNextImage() };
         if ( !imageIndex.has_value() )
             return;
 
-        m_logicalDevice.getHandler().resetFences( currentFrame.renderFence.get() );
+        m_logicalDevice.get().resetFences( currentFrame.renderFence.get() );
 
         draw( imageIndex.value() );
         present( imageIndex.value() );
@@ -61,14 +65,14 @@ void Engine::run() {
         if ( m_currentFrameIt == std::end( m_frames ) )
             m_currentFrameIt = std::begin( m_frames );
     }
-    m_logicalDevice.getHandler().waitIdle();
+    m_logicalDevice.get().waitIdle();
 }
 
 std::optional< std::uint32_t > Engine::acquireNextImage() {
     try {
         const auto& currentFrame{ m_currentFrameIt->value() };
-        auto [ result, imageIndex ]{ m_logicalDevice.getHandler().acquireNextImageKHR(
-            m_swapchain.getHandler(), g_timeoutOff, currentFrame.swapchainSemaphore.get() ) };
+        auto [ result, imageIndex ]{ m_logicalDevice.get().acquireNextImageKHR(
+            m_swapchain.get(), g_timeoutOff, currentFrame.swapchainSemaphore.get() ) };
 
         if ( result != vk::Result::eSuccess && result != vk::Result::eSuboptimalKHR )
             throw std::runtime_error( "failed to acquire swapchain image" );
@@ -87,7 +91,7 @@ void Engine::draw( const std::uint32_t imageIndex ) {
     updateUniformBuffer();
 
     const auto& commandBuffer{ currentFrame.graphicsCommandBuffer };
-    const auto commandBufferHandler{ commandBuffer.getHandler() };
+    const auto commandBufferHandler{ commandBuffer.get() };
     const auto renderFinishedSemaphore{ currentFrame.renderSemaphore.get() };
     const auto swapchainSemaphore{ currentFrame.swapchainSemaphore.get() };
 
@@ -95,13 +99,13 @@ void Engine::draw( const std::uint32_t imageIndex ) {
     commandBuffer.begin();
     commandBuffer.beginRenderPass( m_swapchain.getRenderpass(), m_swapchain.getFrambuffer( imageIndex ),
                                    m_swapchain.getExtent() );
-    commandBuffer.bindPipeline( m_pipeline->getHandler() );
+    commandBuffer.bindPipeline( m_pipeline->get() );
     commandBuffer.setViewport( m_swapchain.getViewport() );
     commandBuffer.setScissor( m_swapchain.getScissor() );
     commandBuffer.bindDescriptorSet( m_pipeline->getLayout(), currentFrame.descriptorSet );
     std::ranges::for_each( m_modelMeshes, [ &commandBuffer ]( const auto& meshAsset ) {
-        commandBuffer.bindVertexBuffer( meshAsset.buffers.vertexBuffer->getHandler() );
-        commandBuffer.bindIndexBuffer( meshAsset.buffers.indexBuffer->getHandler() );
+        commandBuffer.bindVertexBuffer( meshAsset.buffers.vertexBuffer->get() );
+        commandBuffer.bindIndexBuffer( meshAsset.buffers.indexBuffer->get() );
         commandBuffer.drawIndices( meshAsset.buffers.indexBuffer->size() / sizeof( std::uint32_t ) );
     } );
     commandBuffer.endRenderPass();
@@ -123,7 +127,7 @@ void Engine::draw( const std::uint32_t imageIndex ) {
 }
 
 void Engine::present( const std::uint32_t imageIndex ) {
-    const auto swapchainHandler{ m_swapchain.getHandler() };
+    const auto swapchainHandler{ m_swapchain.get() };
     const auto& currentFrame{ m_currentFrameIt->value() };
     const auto renderSemaphore{ currentFrame.renderSemaphore.get() };
 
@@ -197,7 +201,7 @@ void Engine::updateUniformBuffer() {
 void Engine::configureDescriptorSets() {
     std::ranges::for_each( m_frames, [ this ]( auto& frame ) {
         static constexpr std::uint32_t uniformBufferBinding{ 0U };
-        m_descriptorWriter.writeBuffer( uniformBufferBinding, frame.value().uniformBuffer.getHandler(),
+        m_descriptorWriter.writeBuffer( uniformBufferBinding, frame.value().uniformBuffer.get(),
                                         sizeof( UniformBufferData ), 0U, vk::DescriptorType::eUniformBuffer );
 
         static constexpr std::uint32_t textureImageBinding{ 1U };
@@ -222,8 +226,8 @@ MeshBuffers Engine::uploadMeshBuffers( std::span< Vertex > vertices, std::span< 
     memcpy( mappedMemory, std::data( vertices ), vertexBufferSize );
     memcpy( static_cast< char * >( mappedMemory ) + vertexBufferSize, std::data( indices ), indexBufferSize );
 
-    const auto logicalDeviceHandler{ m_logicalDevice.getHandler() };
-    const auto commandBufferHandler{ m_transferCommandBuffer.getHandler() };
+    const auto logicalDeviceHandler{ m_logicalDevice.get() };
+    const auto commandBufferHandler{ m_transferCommandBuffer.get() };
     logicalDeviceHandler.resetFences( m_immediateSubmitFence.get() );
     m_transferCommandBuffer.reset();
 
@@ -231,13 +235,13 @@ MeshBuffers Engine::uploadMeshBuffers( std::span< Vertex > vertices, std::span< 
 
     constexpr vk::DeviceSize vertexSrcOffset{ 0U };
     constexpr vk::DeviceSize vertexDstOffset{ 0U };
-    m_transferCommandBuffer.copyBuffer( vertexSrcOffset, vertexDstOffset, vertexBufferSize, stagingBuffer.getHandler(),
-                                        newMeshBuffers.vertexBuffer->getHandler() );
+    m_transferCommandBuffer.copyBuffer( vertexSrcOffset, vertexDstOffset, vertexBufferSize, stagingBuffer.get(),
+                                        newMeshBuffers.vertexBuffer->get() );
 
     const vk::DeviceSize indexSrcOffset{ vertexBufferSize };
     constexpr vk::DeviceSize indexDstOffset{ 0U };
-    m_transferCommandBuffer.copyBuffer( indexSrcOffset, indexDstOffset, indexBufferSize, stagingBuffer.getHandler(),
-                                        newMeshBuffers.indexBuffer->getHandler() );
+    m_transferCommandBuffer.copyBuffer( indexSrcOffset, indexDstOffset, indexBufferSize, stagingBuffer.get(),
+                                        newMeshBuffers.indexBuffer->get() );
 
     m_transferCommandBuffer.end();
 
@@ -277,7 +281,7 @@ void Engine::prepareTexture() {
     immediateSubmit< ve::GraphicsCommandBuffer >( [ &stagingBuffer, this ]( ve::GraphicsCommandBuffer cmd ) {
         cmd.transitionImageBuffer( m_textureImage->get(), vk::Format::eR8G8B8A8Srgb, vk::ImageLayout::eUndefined,
                                    vk::ImageLayout::eTransferDstOptimal );
-        cmd.copyBufferToImage( stagingBuffer.getHandler(), m_textureImage->get(), m_textureImage->getExtent() );
+        cmd.copyBufferToImage( stagingBuffer.get(), m_textureImage->get(), m_textureImage->getExtent() );
         cmd.transitionImageBuffer( m_textureImage->get(), vk::Format::eR8G8B8A8Srgb,
                                    vk::ImageLayout::eTransferDstOptimal, vk::ImageLayout::eShaderReadOnlyOptimal );
     } );
@@ -300,10 +304,10 @@ void Engine::createTextureSampler() {
     samplerInfo.minLod                  = 0.0F;
     samplerInfo.maxLod                  = 0.0F;
 
-    const auto physicalDeviceProperties{ m_physicalDevice.getHandler().getProperties() };
+    const auto physicalDeviceProperties{ m_physicalDevice.get().getProperties() };
     samplerInfo.maxAnisotropy = physicalDeviceProperties.limits.maxSamplerAnisotropy;
 
-    m_sampler = m_logicalDevice.getHandler().createSampler( samplerInfo );
+    m_sampler = m_logicalDevice.get().createSampler( samplerInfo );
 }
 
 } // namespace ve

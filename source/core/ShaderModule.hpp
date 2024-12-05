@@ -15,7 +15,7 @@ public:
     ShaderModule& operator=( const ShaderModule& other ) = delete;
     ShaderModule& operator=( ShaderModule&& other )      = delete;
 
-    vk::ShaderModule getHandler() const noexcept;
+    vk::ShaderModule get() const noexcept;
 
 private:
     vk::ShaderModule m_shaderModule{};

@@ -26,7 +26,9 @@ public:
     Engine();
     ~Engine();
 
+    void init();
     void run();
+    void cleanup();
 
     MeshBuffers uploadMeshBuffers( std::span< Vertex > vertices, std::span< std::uint32_t > indices ) const;
 
@@ -68,7 +70,7 @@ private:
 
     template < std::derived_from< ve::BaseCommandBuffer > CommandBuffer_T >
     void immediateSubmit( const std::function< void( CommandBuffer_T command ) >& function ) {
-        const auto logicalDeviceHandler{ m_logicalDevice.getHandler() };
+        const auto logicalDeviceHandler{ m_logicalDevice.get() };
         logicalDeviceHandler.resetFences( m_immediateSubmitFence.get() );
         m_immediateBuffer.reset();
 
@@ -77,7 +79,7 @@ private:
         function( command );
         command.end();
 
-        const auto commandHanlder{ command.getHandler() };
+        const auto commandHanlder{ command.get() };
         vk::SubmitInfo submitInfo{};
         submitInfo.sType              = vk::StructureType::eSubmitInfo;
         submitInfo.commandBufferCount = 1U;

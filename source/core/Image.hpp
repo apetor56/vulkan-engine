@@ -7,7 +7,8 @@
 
 namespace ve {
 
-class Image {
+class Image : public utils::NonCopyable,
+              public utils::NonMovable {
 public:
     Image( const ve::MemoryAllocator& allocator, const ve::LogicalDevice& logicalDevice, const vk::Extent2D extent,
            const vk::Format format, const vk::ImageUsageFlags usage, const vk::ImageAspectFlagBits imageAspect,

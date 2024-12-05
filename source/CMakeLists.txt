@@ -34,6 +34,8 @@ set(CORE
     core/QueueFamilyIDs.hpp        core/QueueFamilyIDs.cpp
     core/LogicalDevice.hpp         core/LogicalDevice.cpp
     core/Swapchain.hpp             core/Swapchain.cpp
+    core/RenderPass.hpp            core/RenderPass.cpp
+    core/Framebuffer.hpp           core/Framebuffer.cpp
     core/Pipeline.hpp              core/Pipeline.cpp
     core/ShaderModule.hpp          core/ShaderModule.cpp
     core/Vertex.hpp
@@ -44,6 +46,12 @@ set(CORE
     core/SyncObjects.hpp           core/SyncObjects.cpp
     core/Constants.hpp
     core/Loader.hpp                core/Loader.cpp
+)
+
+set(UTILS
+    utils/NonCopyable.hpp
+    utils/NonMovable.hpp
+    utils/Common.hpp
 )
 
 set(COMMAND
@@ -66,6 +74,7 @@ set(SHADER_SOURCE
 
 source_group("Command" FILES ${COMMAND})
 source_group("Descriptor" FILES ${DESCRIPTOR})
+source_group("Utilities" FILES ${UTILS})
 
 file(MAKE_DIRECTORY "${CMAKE_BINARY_DIR}/shaders")
 set(COMPILED_SHADERS_OUTPUT)
@@ -82,6 +91,7 @@ target_sources(${PROJECT_NAME} PRIVATE
     "${DESCRIPTOR}"
 )
 target_include_directories(${PROJECT_NAME} PRIVATE
+    "${CMAKE_CURRENT_SOURCE_DIR}"
     "${CMAKE_CURRENT_SOURCE_DIR}/core"
 )
 add_dependencies(${PROJECT_NAME} Shaders)

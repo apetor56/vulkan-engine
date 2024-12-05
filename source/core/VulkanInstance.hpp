@@ -2,35 +2,29 @@
 
 #include "DebugMessenger.hpp"
 
+#include "utils/NonCopyable.hpp"
+#include "utils/NonMovable.hpp"
+
 #include <vulkan/vulkan.hpp>
-#include <GLFW/glfw3.h>
 
 #include <optional>
-#include <cstdint>
 
 namespace ve {
 
-using extentions = std::vector< const char * >;
-
-class VulkanInstance {
+class VulkanInstance : public utils::NonCopyable,
+                       public utils::NonMovable {
 public:
     VulkanInstance();
     ~VulkanInstance();
 
-    VulkanInstance( const VulkanInstance& other ) = delete;
-    VulkanInstance( VulkanInstance&& other )      = delete;
-
-    VulkanInstance& operator=( const VulkanInstance& other ) = delete;
-    VulkanInstance& operator=( VulkanInstance&& other )      = delete;
-
-    vk::Instance get() const noexcept;
+    vk::Instance get() const noexcept { return m_instance; }
 
 private:
     vk::Instance m_instance;
     std::optional< ve::DebugMessenger > m_debugMessenger;
 
     void createVulkanInstance();
-    ve::extentions getRequiredInstanceExtensions() const;
+    std::vector< const char * > getRequiredInstanceExtensions() const;
 };
 
 } // namespace ve

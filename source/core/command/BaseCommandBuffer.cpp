@@ -21,7 +21,7 @@ void BaseCommandBuffer::reset() const {
     m_commandBuffer.reset();
 }
 
-vk::CommandBuffer BaseCommandBuffer::getHandler() const noexcept {
+vk::CommandBuffer BaseCommandBuffer::get() const noexcept {
     return m_commandBuffer;
 }
 

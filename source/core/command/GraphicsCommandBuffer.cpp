@@ -14,7 +14,6 @@ constexpr std::uint32_t g_firstViewport{ 0U };
 constexpr vk::ClearColorValue g_clearColor{ 0.1F, 0.1F, 0.1F, 1.0F };
 constexpr vk::ClearDepthStencilValue g_clearDepthStencil{ 1.0F, 0U };
 constexpr std::array< vk::ClearValue, 2U > g_clearValues{ g_clearColor, g_clearDepthStencil };
-
 } // namespace
 
 namespace ve {

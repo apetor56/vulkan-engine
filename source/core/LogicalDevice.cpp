@@ -1,5 +1,6 @@
 #include "LogicalDevice.hpp"
 #include "QueueFamilyIDs.hpp"
+#include "utils/Common.hpp"
 
 #include <set>
 #include <stdexcept>
@@ -17,10 +18,8 @@ LogicalDevice::~LogicalDevice() {
 }
 
 void LogicalDevice::createLogicalDevice() {
-    const auto physicalDeviceHandler{ m_physicalDevice.getHandler() };
     const auto& physicalDeviceExtensions{ m_physicalDevice.getExtensions() };
-
-    const auto queueFamilyIndices{ getQueueFamilyIDs() };
+    const auto queueFamilyIndices{ m_physicalDevice.getQueueFamilyIDs() };
     static constexpr std::uint32_t queueCount{ 1U };
     static constexpr float queuePriority{ 1.0F };
 
@@ -45,13 +44,13 @@ void LogicalDevice::createLogicalDevice() {
     vk::DeviceCreateInfo deviceCreateInfo{};
     deviceCreateInfo.sType                   = vk::StructureType::eDeviceCreateInfo;
     deviceCreateInfo.pQueueCreateInfos       = std::data( queueCreateInfos );
-    deviceCreateInfo.queueCreateInfoCount    = static_cast< std::uint32_t >( std::size( queueCreateInfos ) );
+    deviceCreateInfo.queueCreateInfoCount    = utils::size( queueCreateInfos );
     deviceCreateInfo.pEnabledFeatures        = nullptr;
-    deviceCreateInfo.enabledExtensionCount   = static_cast< std::uint32_t >( std::size( physicalDeviceExtensions ) );
+    deviceCreateInfo.enabledExtensionCount   = utils::size( physicalDeviceExtensions );
     deviceCreateInfo.ppEnabledExtensionNames = std::data( physicalDeviceExtensions );
     deviceCreateInfo.pEnabledFeatures        = &deviceFeatures;
 
-    m_logicalDevice = physicalDeviceHandler.createDevice( deviceCreateInfo, nullptr );
+    m_logicalDevice = m_physicalDevice.get().createDevice( deviceCreateInfo, nullptr );
 
     constexpr std::uint32_t queueIndex{ 0U };
     m_queues.emplace( ve::QueueType::eGraphics,
@@ -60,18 +59,6 @@ void LogicalDevice::createLogicalDevice() {
                       m_logicalDevice.getQueue( queueFamilyIndices.at( FamilyType::ePresentation ), queueIndex ) );
     m_queues.emplace( ve::QueueType::eTransfer,
                       m_logicalDevice.getQueue( queueFamilyIndices.at( FamilyType::eTransfer ), queueIndex ) );
-}
-
-vk::Device LogicalDevice::getHandler() const noexcept {
-    return m_logicalDevice;
-}
-
-vk::Queue LogicalDevice::getQueue( ve::QueueType queueType ) const {
-    return m_queues.at( queueType );
-}
-
-[[nodiscard]] std::unordered_map< ve::FamilyType, std::uint32_t > LogicalDevice::getQueueFamilyIDs() const noexcept {
-    return m_physicalDevice.getQueueFamilyIDs();
 }
 
 } // namespace ve

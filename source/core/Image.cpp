@@ -14,7 +14,7 @@ Image::Image( const ve::MemoryAllocator& allocator, const ve::LogicalDevice& log
 }
 
 Image::~Image() {
-    m_logicalDevice.getHandler().destroyImageView( m_imageView );
+    m_logicalDevice.get().destroyImageView( m_imageView );
     vmaDestroyImage( m_memoryAllocator, m_image, m_allocation );
 }
 
@@ -53,7 +53,7 @@ void Image::createImageView( const vk::ImageAspectFlagBits imageAspect ) {
     viewInfo.subresourceRange.baseArrayLayer = 0U;
     viewInfo.subresourceRange.layerCount     = 1U;
 
-    m_imageView = m_logicalDevice.getHandler().createImageView( viewInfo );
+    m_imageView = m_logicalDevice.get().createImageView( viewInfo );
 }
 
 } // namespace ve

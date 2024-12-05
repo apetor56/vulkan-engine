@@ -15,7 +15,7 @@ DescriptorAllocator::~DescriptorAllocator() {
 
 vk::DescriptorSet DescriptorAllocator::allocate( const ve::DescriptorSetLayout& layout, void *pNext ) {
     vk::DescriptorPool poolToUse{ getPool() };
-    const auto layoutHandler{ layout.getHandler() };
+    const auto layoutHandler{ layout.get() };
 
     vk::DescriptorSetAllocateInfo allocInfo{};
     allocInfo.sType              = vk::StructureType::eDescriptorSetAllocateInfo;
@@ -26,19 +26,19 @@ vk::DescriptorSet DescriptorAllocator::allocate( const ve::DescriptorSetLayout& 
 
     std::optional< vk::DescriptorSet > descriptorSet{};
     try {
-        descriptorSet = m_logicalDevice.getHandler().allocateDescriptorSets( allocInfo ).at( 0 );
+        descriptorSet = m_logicalDevice.get().allocateDescriptorSets( allocInfo ).at( 0 );
     }
     catch ( const vk::OutOfPoolMemoryError& ) {
         m_fullPools.emplace_back( poolToUse );
         poolToUse                = getPool();
         allocInfo.descriptorPool = poolToUse;
-        descriptorSet            = m_logicalDevice.getHandler().allocateDescriptorSets( allocInfo ).at( 0 );
+        descriptorSet            = m_logicalDevice.get().allocateDescriptorSets( allocInfo ).at( 0 );
     }
     catch ( const vk::FragmentedPoolError& ) {
         m_fullPools.emplace_back( poolToUse );
         poolToUse                = getPool();
         allocInfo.descriptorPool = poolToUse;
-        descriptorSet            = m_logicalDevice.getHandler().allocateDescriptorSets( allocInfo ).at( 0 );
+        descriptorSet            = m_logicalDevice.get().allocateDescriptorSets( allocInfo ).at( 0 );
     }
 
     if ( !descriptorSet.has_value() )
@@ -50,12 +50,12 @@ vk::DescriptorSet DescriptorAllocator::allocate( const ve::DescriptorSetLayout& 
 
 void DescriptorAllocator::clearPools() {
     std::ranges::for_each( m_availablePools,
-                           [ this ]( auto& pool ) { m_logicalDevice.getHandler().resetDescriptorPool( pool ); } );
+                           [ this ]( auto& pool ) { m_logicalDevice.get().resetDescriptorPool( pool ); } );
 
     m_availablePools.reserve( std::size( m_availablePools ) + std::size( m_fullPools ) );
 
     std::ranges::for_each( m_fullPools, [ this ]( auto& pool ) {
-        m_logicalDevice.getHandler().resetDescriptorPool( pool );
+        m_logicalDevice.get().resetDescriptorPool( pool );
         m_availablePools.emplace_back( pool );
     } );
     m_fullPools.clear();
@@ -64,7 +64,7 @@ void DescriptorAllocator::clearPools() {
 void DescriptorAllocator::destroyPools() {
     auto destroyPool{ [ this ]( auto& poolContainer ) {
         std::ranges::for_each( poolContainer,
-                               [ this ]( auto& pool ) { m_logicalDevice.getHandler().destroyDescriptorPool( pool ); } );
+                               [ this ]( auto& pool ) { m_logicalDevice.get().destroyDescriptorPool( pool ); } );
         poolContainer.clear();
     } };
 
@@ -100,7 +100,7 @@ vk::DescriptorPool DescriptorAllocator::createNewPool() {
     poolInfo.pPoolSizes    = std::data( poolSizes );
     poolInfo.poolSizeCount = std::size( poolSizes );
 
-    return m_logicalDevice.getHandler().createDescriptorPool( poolInfo );
+    return m_logicalDevice.get().createDescriptorPool( poolInfo );
 }
 
 } // namespace ve

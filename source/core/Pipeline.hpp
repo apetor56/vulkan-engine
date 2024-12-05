@@ -35,7 +35,7 @@ public:
 
     ~Pipeline();
 
-    vk::Pipeline getHandler() const noexcept;
+    vk::Pipeline get() const noexcept;
     vk::PipelineLayout getLayout() const noexcept;
 
 private:

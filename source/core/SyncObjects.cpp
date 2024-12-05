@@ -9,11 +9,11 @@ Fence::Fence( const ve::LogicalDevice& logicalDevice, const vk::FenceCreateFlagB
     fenceInfo.pNext = nullptr;
     fenceInfo.flags = createFlags;
 
-    m_fence = m_logicalDevice.getHandler().createFence( fenceInfo );
+    m_fence = m_logicalDevice.get().createFence( fenceInfo );
 }
 
 Fence::~Fence() {
-    m_logicalDevice.getHandler().destroyFence( m_fence );
+    m_logicalDevice.get().destroyFence( m_fence );
 }
 
 Semaphore::Semaphore( const ve::LogicalDevice& logicalDevice, const vk::SemaphoreCreateFlagBits createFlags )
@@ -23,11 +23,11 @@ Semaphore::Semaphore( const ve::LogicalDevice& logicalDevice, const vk::Semaphor
     semaphoreInfo.pNext = nullptr;
     semaphoreInfo.flags = createFlags;
 
-    m_semaphore = m_logicalDevice.getHandler().createSemaphore( semaphoreInfo );
+    m_semaphore = m_logicalDevice.get().createSemaphore( semaphoreInfo );
 }
 
 Semaphore::~Semaphore() {
-    m_logicalDevice.getHandler().destroySemaphore( m_semaphore );
+    m_logicalDevice.get().destroySemaphore( m_semaphore );
 }
 
 } // namespace ve

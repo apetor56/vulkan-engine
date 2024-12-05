@@ -6,26 +6,21 @@
 
 namespace ve {
 
-class LogicalDevice {
+class LogicalDevice : public utils::NonCopyable,
+                      public utils::NonMovable {
 public:
     LogicalDevice( const ve::PhysicalDevice& physicalDevice );
-
-    LogicalDevice( const LogicalDevice& other ) = delete;
-    LogicalDevice( LogicalDevice&& other )      = delete;
-
-    LogicalDevice& operator=( const LogicalDevice& other ) = delete;
-    LogicalDevice& operator=( LogicalDevice&& other )      = delete;
-
     ~LogicalDevice();
 
-    vk::Device getHandler() const noexcept;
-    vk::Queue getQueue( const ve::QueueType queueType ) const;
-    [[nodiscard]] std::unordered_map< ve::FamilyType, std::uint32_t > getQueueFamilyIDs() const noexcept;
+    vk::Device get() const noexcept { return m_logicalDevice; }
+    vk::Queue getQueue( const ve::QueueType queueType ) const { return m_queues.at( queueType ); }
+    [[nodiscard]] ve::QueueFamilyMap getQueueFamilyIDs() const noexcept { return m_physicalDevice.getQueueFamilyIDs(); }
+
+    const ve::PhysicalDevice& getParentPhysicalDevice() const noexcept { return m_physicalDevice; }
 
 private:
-    vk::Device m_logicalDevice;
     std::unordered_map< ve::QueueType, vk::Queue > m_queues;
-
+    vk::Device m_logicalDevice;
     const ve::PhysicalDevice& m_physicalDevice;
 
     void createLogicalDevice();

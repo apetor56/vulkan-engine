@@ -45,7 +45,7 @@ void DescriptorWriter::clear() {
 
 void DescriptorWriter::updateSet( const vk::DescriptorSet set ) {
     std::ranges::for_each( m_descriptorWrites, [ &set ]( auto& write ) { write.dstSet = set; } );
-    m_logicalDevice.getHandler().updateDescriptorSets( m_descriptorWrites, nullptr );
+    m_logicalDevice.get().updateDescriptorSets( m_descriptorWrites, nullptr );
 }
 
 } // namespace ve

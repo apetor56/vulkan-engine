@@ -9,12 +9,8 @@
 
 namespace ve {
 
-Swapchain::Swapchain( const ve::PhysicalDevice& physicalDevice, const ve::LogicalDevice& logicalDevice,
-                      ve::Window& window, const ve::MemoryAllocator& allocator )
-    : m_physicalDevice{ physicalDevice },
-      m_logicalDevice{ logicalDevice },
-      m_window{ window },
-      m_memoryAllocator{ allocator } {
+Swapchain::Swapchain( const ve::LogicalDevice& logicalDevice, ve::Window& window, const ve::MemoryAllocator& allocator )
+    : m_logicalDevice{ logicalDevice }, m_window{ window }, m_memoryAllocator{ allocator } {
     createSwapchain();
     m_depthImage.emplace( m_memoryAllocator, m_logicalDevice, m_swapchainImageExtent, vk::Format::eD32Sfloat,
                           vk::ImageUsageFlagBits::eDepthStencilAttachment, vk::ImageAspectFlagBits::eDepth );
@@ -27,15 +23,15 @@ Swapchain::Swapchain( const ve::PhysicalDevice& physicalDevice, const ve::Logica
 
 Swapchain::~Swapchain() {
     cleanup();
-    m_logicalDevice.getHandler().destroyRenderPass( m_renderPass );
+    m_logicalDevice.get().destroyRenderPass( m_renderPass );
 }
 
 void Swapchain::createSwapchain() {
-    const auto physicalDeviceHandler{ m_physicalDevice.getHandler() };
-    const auto logicalDeviceHandler{ m_logicalDevice.getHandler() };
-    auto *const surface{ m_window.getSurface() };
+    const ve::PhysicalDevice& physicalDevice{ m_logicalDevice.getParentPhysicalDevice() };
+    vk::Device logicalDeviceHandler{ m_logicalDevice.get() };
+    VkSurfaceKHR surface{ m_window.getSurface() };
 
-    const Swapchain::Details swapchainDetails{ getSwapchainDetails( physicalDeviceHandler, surface ) };
+    const Swapchain::Details swapchainDetails{ getSwapchainDetails( physicalDevice.get(), surface ) };
     const vk::SurfaceFormatKHR surfaceFormat{ chooseSurfaceFormat( swapchainDetails.formats ) };
     const vk::PresentModeKHR presentationMode{ choosePresentationMode( swapchainDetails.presentationModes ) };
     const vk::Extent2D extent{ chooseExtent( swapchainDetails.capabilities ) };
@@ -54,7 +50,7 @@ void Swapchain::createSwapchain() {
     createInfo.imageArrayLayers = 1U;
     createInfo.imageUsage       = vk::ImageUsageFlagBits::eColorAttachment;
 
-    const auto queueFamilyIDs{ m_logicalDevice.getQueueFamilyIDs() };
+    const auto queueFamilyIDs{ physicalDevice.getQueueFamilyIDs() };
 
     if ( queueFamilyIDs.at( ve::FamilyType::eGraphics ) != queueFamilyIDs.at( ve::FamilyType::ePresentation ) ) {
         const auto valuesView{ queueFamilyIDs | std::views::values };
@@ -84,16 +80,16 @@ void Swapchain::createSwapchain() {
 void Swapchain::recreate() {
     int width{};
     int height{};
-    glfwGetFramebufferSize( m_window.getHandler(), &width, &height );
+    glfwGetFramebufferSize( m_window.get(), &width, &height );
     while ( width == 0 || height == 0 ) {
         if ( m_window.shouldClose() )
             return;
 
-        glfwGetFramebufferSize( m_window.getHandler(), &width, &height );
+        glfwGetFramebufferSize( m_window.get(), &width, &height );
         glfwWaitEvents();
     }
 
-    m_logicalDevice.getHandler().waitIdle();
+    m_logicalDevice.get().waitIdle();
 
     cleanup();
 
@@ -104,12 +100,11 @@ void Swapchain::recreate() {
     m_depthImage.emplace( m_memoryAllocator, m_logicalDevice, m_swapchainImageExtent, vk::Format::eD32Sfloat,
                           vk::ImageUsageFlagBits::eDepthStencilAttachment, vk::ImageAspectFlagBits::eDepth );
     createFramebuffers();
-
-    m_window.setResizedFlag( false );
+    m_window.setResizeFlag( false );
 }
 
 void Swapchain::cleanup() {
-    const auto logicalDeviceHandler{ m_logicalDevice.getHandler() };
+    const auto logicalDeviceHandler{ m_logicalDevice.get() };
 
     std::ranges::for_each( m_framebuffers, [ &logicalDeviceHandler ]( const auto& framebuffer ) {
         logicalDeviceHandler.destroyFramebuffer( framebuffer );
@@ -161,7 +156,7 @@ vk::Extent2D Swapchain::chooseExtent( const vk::SurfaceCapabilitiesKHR& capabili
 
     int width{};
     int height{};
-    glfwGetFramebufferSize( m_window.getHandler(), &width, &height );
+    glfwGetFramebufferSize( m_window.get(), &width, &height );
 
     return { std::clamp( static_cast< uint32_t >( width ), capabilities.minImageExtent.width,
                          capabilities.maxImageExtent.width ),
@@ -170,7 +165,7 @@ vk::Extent2D Swapchain::chooseExtent( const vk::SurfaceCapabilitiesKHR& capabili
 }
 
 void Swapchain::createImageViews() {
-    const auto logicalDeviceHandler{ m_logicalDevice.getHandler() };
+    const auto logicalDeviceHandler{ m_logicalDevice.get() };
 
     vk::ImageViewCreateInfo createInfo{};
     createInfo.sType                           = vk::StructureType::eImageViewCreateInfo;
@@ -251,11 +246,11 @@ void Swapchain::createRenderPass() {
     renderPassInfo.dependencyCount = 1U;
     renderPassInfo.pDependencies   = &dependency;
 
-    m_renderPass = m_logicalDevice.getHandler().createRenderPass( renderPassInfo );
+    m_renderPass = m_logicalDevice.get().createRenderPass( renderPassInfo );
 }
 
 void Swapchain::createFramebuffers() {
-    const auto logicalDeviceHandler{ m_logicalDevice.getHandler() };
+    const auto logicalDeviceHandler{ m_logicalDevice.get() };
 
     std::ranges::for_each( m_swapchainImageViews, [ logicalDeviceHandler, this ]( const auto swapchainImageView ) {
         const std::array< vk::ImageView, 2U > attachments{ swapchainImageView, m_depthImage->getImageView() };
@@ -303,7 +298,7 @@ std::uint32_t Swapchain::getImagesCount() const noexcept {
     return static_cast< std::uint32_t >( std::size( m_swapchainImages ) );
 }
 
-vk::SwapchainKHR Swapchain::getHandler() const noexcept {
+vk::SwapchainKHR Swapchain::get() const noexcept {
     return m_swapchain;
 }
 

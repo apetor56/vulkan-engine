@@ -28,38 +28,18 @@ void Window::init() {
 
 void Window::framebufferResizeCallback( GLFWwindow *windowHandler, int width, int height ) {
     auto window{ reinterpret_cast< ve::Window * >( glfwGetWindowUserPointer( windowHandler ) ) };
-    window->setSize( width, height );
-    window->setResizedFlag( true );
+    window->setLogicalSize( width, height );
+    window->m_isResized = true;
 }
 
 void Window::createSurface() {
-    if ( glfwCreateWindowSurface( m_vulkanInstance.get(), m_windowHandler, nullptr, &m_surface ) != VK_SUCCESS )
+    if ( glfwCreateWindowSurface( static_cast< VkInstance >( m_vulkanInstance.get() ), m_windowHandler, nullptr,
+                                  &m_surface ) != VK_SUCCESS )
         throw std::runtime_error( "failed to create window surface" );
 }
 
 int Window::shouldClose() const {
     return glfwWindowShouldClose( m_windowHandler );
-}
-
-GLFWwindow *Window::getHandler() const noexcept {
-    return m_windowHandler;
-}
-
-VkSurfaceKHR Window::getSurface() const noexcept {
-    return m_surface;
-}
-
-void Window::setResizedFlag( bool value ) noexcept {
-    m_isResized = value;
-}
-
-void Window::setSize( int width, int height ) noexcept {
-    m_windowInfo.width  = width;
-    m_windowInfo.height = height;
-}
-
-bool Window::isResized() const noexcept {
-    return m_isResized;
 }
 
 } // namespace ve

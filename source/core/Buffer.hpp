@@ -58,7 +58,7 @@ public:
         return *this;
     }
 
-    vk::Buffer getHandler() const noexcept { return m_buffer; }
+    vk::Buffer get() const noexcept { return m_buffer; }
 
     VkDeviceSize size() const noexcept { return m_size; }
 

@@ -8,7 +8,7 @@ DescriptorSetLayout::DescriptorSetLayout( const ve::LogicalDevice& logicalDevice
     : m_logicalDevice{ logicalDevice } {}
 
 DescriptorSetLayout ::~DescriptorSetLayout() {
-    m_logicalDevice.getHandler().destroyDescriptorSetLayout( m_layout );
+    m_logicalDevice.get().destroyDescriptorSetLayout( m_layout );
 }
 
 void DescriptorSetLayout::addBinding( const std::uint32_t bindingPoint, const vk::DescriptorType descriptorType,
@@ -32,10 +32,10 @@ void DescriptorSetLayout::create() {
     layoutInfo.bindingCount = static_cast< std::uint32_t >( std::size( m_descriptorBindings ) );
     layoutInfo.pBindings    = std::data( bindingsData );
 
-    m_layout = m_logicalDevice.getHandler().createDescriptorSetLayout( layoutInfo );
+    m_layout = m_logicalDevice.get().createDescriptorSetLayout( layoutInfo );
 }
 
-vk::DescriptorSetLayout DescriptorSetLayout::getHandler() const noexcept {
+vk::DescriptorSetLayout DescriptorSetLayout::get() const noexcept {
     return m_layout;
 }
 

@@ -1,6 +1,9 @@
 #include "VulkanInstance.hpp"
 #include "DebugMessenger.hpp"
 #include "Config.hpp"
+#include "utils/Common.hpp"
+
+#include <GLFW/glfw3.h>
 
 #include <ranges>
 
@@ -40,13 +43,13 @@ void VulkanInstance::createVulkanInstance() {
     vk::InstanceCreateInfo instanceInfo{};
     instanceInfo.sType                   = vk::StructureType::eInstanceCreateInfo;
     instanceInfo.pApplicationInfo        = &appInfo;
-    instanceInfo.enabledExtensionCount   = static_cast< std::uint32_t >( std::size( extensions ) );
+    instanceInfo.enabledExtensionCount   = utils::size( extensions );
     instanceInfo.ppEnabledExtensionNames = std::data( extensions );
     instanceInfo.pNext                   = nullptr;
 
     if ( cfg::debug::areValidationLayersEnabled ) {
         const auto validationLayers{ DebugMessenger::getLayers() };
-        instanceInfo.enabledLayerCount   = static_cast< std::uint32_t >( std::size( validationLayers ) );
+        instanceInfo.enabledLayerCount   = utils::size( validationLayers );
         instanceInfo.ppEnabledLayerNames = std::data( validationLayers );
     } else {
         instanceInfo.enabledLayerCount   = 0U;
@@ -57,19 +60,15 @@ void VulkanInstance::createVulkanInstance() {
                              "failed to create vulkan instance" );
 }
 
-ve::extentions VulkanInstance::getRequiredInstanceExtensions() const {
+std::vector< const char * > VulkanInstance::getRequiredInstanceExtensions() const {
     std::uint32_t extensionCount{};
     const char **extensions{ glfwGetRequiredInstanceExtensions( &extensionCount ) };
-    ve::extentions instanceExtensions{ extensions, extensions + extensionCount };
+    std::vector< const char * > instanceExtensions{ extensions, extensions + extensionCount };
 
     if constexpr ( cfg::debug::areValidationLayersEnabled )
         instanceExtensions.emplace_back( vk::EXTDebugUtilsExtensionName );
 
     return instanceExtensions;
-}
-
-vk::Instance VulkanInstance::get() const noexcept {
-    return m_instance;
 }
 
 } // namespace ve

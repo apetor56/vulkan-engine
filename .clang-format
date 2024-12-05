@@ -85,4 +85,6 @@ ReferenceAlignment: Left
 Standard: Latest
 TabWidth: 4
 UseTab: Never
+BreakInheritanceList: AfterComma
+IndentRequiresClause : false
 ...

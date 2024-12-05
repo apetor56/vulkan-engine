@@ -10,6 +10,8 @@ namespace ve {
 enum class QueueType : std::uint32_t { eGraphics, ePresentation, eTransfer };
 enum class FamilyType : std::uint32_t { eGraphics, ePresentation, eTransfer };
 
+using QueueFamilyMap = std::unordered_map< ve::FamilyType, std::uint32_t >;
+
 struct QueueFamilyIDs {
     bool hasRequiredFamilies() const noexcept;
     static QueueFamilyIDs findQueueFamilies( const vk::PhysicalDevice device, const vk::SurfaceKHR surface );

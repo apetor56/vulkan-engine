@@ -14,24 +14,22 @@ struct WindowInfo {
     std::string name{};
 };
 
-class Window {
+class Window : public utils::NonCopyable,
+               public utils::NonMovable {
 public:
     Window( WindowInfo windowInfo, const ve::VulkanInstance& instance );
     ~Window();
 
-    Window( const Window& other ) = delete;
-    Window( Window&& other )      = delete;
-
-    Window& operator=( const Window& other ) = delete;
-    Window& operator=( Window&& other )      = delete;
-
     int shouldClose() const;
-    GLFWwindow *getHandler() const noexcept;
-    VkSurfaceKHR getSurface() const noexcept;
+    GLFWwindow *get() const noexcept { return m_windowHandler; }
+    VkSurfaceKHR getSurface() const noexcept { return m_surface; }
 
-    void setResizedFlag( bool value ) noexcept;
-    void setSize( int width, int height ) noexcept;
-    bool isResized() const noexcept;
+    void setLogicalSize( int width, int height ) noexcept {
+        m_windowInfo.width  = width;
+        m_windowInfo.height = height;
+    }
+    void setResizeFlag( bool resized ) noexcept { m_isResized = resized; }
+    bool isResized() const noexcept { return m_isResized; }
 
 private:
     WindowInfo m_windowInfo{};

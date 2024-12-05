@@ -1,6 +1,7 @@
 #pragma once
 
 #include "LogicalDevice.hpp"
+#include "Window.hpp"
 #include "MemoryAllocator.hpp"
 #include "Image.hpp"
 
@@ -17,8 +18,7 @@ public:
         std::vector< vk::PresentModeKHR > presentationModes;
     };
 
-    Swapchain( const ve::PhysicalDevice& physicalDevice, const ve::LogicalDevice& logicalDevice, ve::Window& window,
-               const ve::MemoryAllocator& allocator );
+    Swapchain( const ve::LogicalDevice& logicalDevice, ve::Window& window, const ve::MemoryAllocator& allocator );
 
     ~Swapchain();
 
@@ -35,7 +35,7 @@ public:
     vk::RenderPass getRenderpass() const noexcept;
     vk::Framebuffer getFrambuffer( const uint32_t index ) const;
     std::uint32_t getImagesCount() const noexcept;
-    vk::SwapchainKHR getHandler() const noexcept;
+    vk::SwapchainKHR get() const noexcept;
     vk::Viewport getViewport() const noexcept;
     vk::Rect2D getScissor() const noexcept;
 
@@ -47,7 +47,6 @@ private:
     vk::Viewport m_viewport;
     vk::Rect2D m_scissor;
 
-    const ve::PhysicalDevice& m_physicalDevice;
     const ve::LogicalDevice& m_logicalDevice;
     ve::Window& m_window;
     const ve::MemoryAllocator& m_memoryAllocator;

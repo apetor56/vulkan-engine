@@ -11,7 +11,7 @@ ShaderModule::ShaderModule( std::string_view shaderBinaryPath, const ve::Logical
 }
 
 ShaderModule::~ShaderModule() {
-    m_logicalDevice.getHandler().destroyShaderModule( m_shaderModule );
+    m_logicalDevice.get().destroyShaderModule( m_shaderModule );
 }
 
 std::vector< std::byte > ShaderModule::getShaderBinaryCode( std::string_view shaderBinaryPath ) const {
@@ -31,12 +31,12 @@ void ShaderModule::createShaderModule( const std::vector< std::byte >& shaderByt
     vk::ShaderModuleCreateInfo createInfo{};
     createInfo.sType    = vk::StructureType::eShaderModuleCreateInfo;
     createInfo.codeSize = std::size( shaderByteCode );
-    createInfo.pCode    = reinterpret_cast< const std::uint32_t    *>( shaderByteCode.data() );
+    createInfo.pCode    = reinterpret_cast< const std::uint32_t * >( shaderByteCode.data() );
 
-    m_shaderModule = m_logicalDevice.getHandler().createShaderModule( createInfo );
+    m_shaderModule = m_logicalDevice.get().createShaderModule( createInfo );
 }
 
-vk::ShaderModule ShaderModule::getHandler() const noexcept {
+vk::ShaderModule ShaderModule::get() const noexcept {
     return m_shaderModule;
 }
 

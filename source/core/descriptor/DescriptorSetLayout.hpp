@@ -18,7 +18,7 @@ public:
                      const vk::ShaderStageFlags shaderStage, const std::uint32_t descriptorCount = 1U );
 
     void create();
-    vk::DescriptorSetLayout getHandler() const noexcept;
+    vk::DescriptorSetLayout get() const noexcept;
 
 private:
     std::unordered_map< std::uint32_t, vk::DescriptorSetLayoutBinding > m_descriptorBindings;

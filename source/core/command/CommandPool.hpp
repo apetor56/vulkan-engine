@@ -10,7 +10,7 @@ template < std::derived_from< BaseCommandBuffer > CommandBuffer_T >
 class CommandPool {
 public:
     CommandPool( const ve::LogicalDevice& logicalDevice ) : m_logicalDevice{ logicalDevice } { createCommandPool(); }
-    ~CommandPool() { m_logicalDevice.getHandler().destroyCommandPool( m_commandPool ); }
+    ~CommandPool() { m_logicalDevice.get().destroyCommandPool( m_commandPool ); }
 
     CommandPool( const CommandPool& other ) = delete;
     CommandPool( CommandPool&& other )      = delete;
@@ -21,7 +21,7 @@ public:
     template < std::uint32_t count = 1U, vk::CommandBufferLevel level = vk::CommandBufferLevel::ePrimary >
     auto createCommandBuffers() const {
         const auto allocInfo{ createAllocInfo( count, level ) };
-        const auto logicalDeviceHandler{ m_logicalDevice.getHandler() };
+        const auto logicalDeviceHandler{ m_logicalDevice.get() };
         const auto commandBufferHandlers{ logicalDeviceHandler.allocateCommandBuffers( allocInfo ) };
 
         if constexpr ( count == 1U ) {
@@ -36,7 +36,7 @@ public:
     }
 
     void freeCommandBuffer( const CommandBuffer_T commandBuffer ) const {
-        m_logicalDevice.getHandler().freeCommandBuffers( m_commandPool, commandBuffer.getHandler() );
+        m_logicalDevice.get().freeCommandBuffers( m_commandPool, commandBuffer.get() );
     }
 
 private:
@@ -49,7 +49,7 @@ private:
         poolInfo.flags            = vk::CommandPoolCreateFlagBits::eResetCommandBuffer;
         poolInfo.queueFamilyIndex = CommandBuffer_T::getQueueFamilyID( m_logicalDevice );
 
-        m_commandPool = m_logicalDevice.getHandler().createCommandPool( poolInfo );
+        m_commandPool = m_logicalDevice.get().createCommandPool( poolInfo );
     }
 
     vk::CommandBufferAllocateInfo createAllocInfo( const std::uint32_t buffersCount,
