@@ -1,57 +1,41 @@
 #include "Pipeline.hpp"
+#include "RenderPass.hpp"
 #include "Vertex.hpp"
 #include "Config.hpp"
 #include "descriptor/DescriptorSetLayout.hpp"
+#include "utils/Common.hpp"
 
 #include <stdexcept>
 
 namespace ve {
-Pipeline::Pipeline( const ve::LogicalDevice& logicalDevice, const ve::Swapchain& swapchain,
-                    const ve::DescriptorSetLayout& descriptorSetLayout )
-    : m_vertexShader{ cfg::shader::vertShaderBinaryPath.string(), logicalDevice },
-      m_fragmentShader{ cfg::shader::fragShaderBinaryPath.string(), logicalDevice },
-      m_logicalDevice{ logicalDevice },
-      m_swapchain{ swapchain } {
-    createPipelineLayout( descriptorSetLayout );
-    createPipeline();
-}
 
-Pipeline::~Pipeline() {
-    const auto logicalDeviceHandler{ m_logicalDevice.get() };
-    logicalDeviceHandler.destroyPipeline( m_graphicsPipeline );
-    logicalDeviceHandler.destroyPipelineLayout( m_pipelineLayout );
-}
+Pipeline::Pipeline( const PipelineBuilder& builder, const ve::RenderPass& renderPass )
+    : m_logicalDevice{ renderPass.getLogicalDevice() } {
+    const auto& pipelineLayout{ builder.getLayout() };
+    const auto& shaderStages{ builder.getShaderStages() };
 
-void Pipeline::createPipeline() {
-    const PipelineConfigInfo pipelineConfig{
-        .dynamicState{ createDynamicStatesInfo() },
-        .viewportState{ createViewportStateInfo() },
-        .vertexInputState{ createVertexInputInfo() },
-        .inputAsemblyState{ createInputAsemblyInfo() },
-        .rasterizerState{ createRasterizerInfo() },
-        .multisamplingState{ createMultisamplingInfo() },
-        .colorBlendsState{ createColorBlendStateInfo( createColorBlendAttachmentState() ) },
-        .depthStencilState{ createDepthStencilInfo() } };
+    if ( utils::size( shaderStages ) < 2U )
+        throw std::runtime_error( "pipeline builder: shader stages are not set properly" );
+    if ( !pipelineLayout.has_value() )
+        throw std::runtime_error( "pipeline builder: pipeline layout is not set" );
+
+    m_layout = pipelineLayout.value().get();
 
     vk::GraphicsPipelineCreateInfo pipelineInfo{};
-    pipelineInfo.sType = vk::StructureType::eGraphicsPipelineCreateInfo;
-
-    const auto shaderStagesInfos{ createShaderStagesInfo() };
-    pipelineInfo.stageCount = static_cast< std::uint32_t >( std::size( shaderStagesInfos ) );
-    pipelineInfo.pStages    = std::data( shaderStagesInfos );
-
-    pipelineInfo.pDynamicState       = &pipelineConfig.dynamicState;
-    pipelineInfo.pViewportState      = &pipelineConfig.viewportState;
-    pipelineInfo.pVertexInputState   = &pipelineConfig.vertexInputState;
-    pipelineInfo.pInputAssemblyState = &pipelineConfig.inputAsemblyState;
-    pipelineInfo.pRasterizationState = &pipelineConfig.rasterizerState;
-    pipelineInfo.pMultisampleState   = &pipelineConfig.multisamplingState;
-    pipelineInfo.pColorBlendState    = &pipelineConfig.colorBlendsState;
-    pipelineInfo.pDepthStencilState  = &pipelineConfig.depthStencilState;
-
-    pipelineInfo.layout     = m_pipelineLayout;
-    pipelineInfo.renderPass = m_swapchain.getRenderpass();
-    pipelineInfo.subpass    = 0U;
+    pipelineInfo.sType               = vk::StructureType::eGraphicsPipelineCreateInfo;
+    pipelineInfo.stageCount          = utils::size( shaderStages );
+    pipelineInfo.pStages             = std::data( shaderStages );
+    pipelineInfo.pDynamicState       = &builder.getDynamicState();
+    pipelineInfo.pViewportState      = &builder.getViewportState();
+    pipelineInfo.pVertexInputState   = &builder.getVertexInputState();
+    pipelineInfo.pInputAssemblyState = &builder.getInputAssemblyState();
+    pipelineInfo.pRasterizationState = &builder.getRasterizerState();
+    pipelineInfo.pMultisampleState   = &builder.getMultisamplingState();
+    pipelineInfo.pColorBlendState    = &builder.getColorBlendState();
+    pipelineInfo.pDepthStencilState  = &builder.getDepthStencilState();
+    pipelineInfo.layout              = m_layout;
+    pipelineInfo.renderPass          = renderPass.get();
+    pipelineInfo.subpass             = 0U;
 
     auto [ result, pipeline ]{ m_logicalDevice.get().createGraphicsPipeline( nullptr, pipelineInfo ) };
     if ( result != vk::Result::eSuccess )
@@ -60,37 +44,82 @@ void Pipeline::createPipeline() {
     m_graphicsPipeline = pipeline;
 }
 
-vk::PipelineShaderStageCreateInfo Pipeline::pupulateShaderStageInfo( const vk::ShaderStageFlagBits shaderType,
-                                                                     const ve::ShaderModule& shaderModule ) const {
+Pipeline::~Pipeline() {
+    m_logicalDevice.get().destroyPipeline( m_graphicsPipeline );
+}
+
+PipelineLayout::PipelineLayout( const ve::LogicalDevice& logicalDevice,
+                                const ve::DescriptorSetLayout& descriptorLayout )
+    : m_logicalDevice{ logicalDevice } {
+    const auto layoutHandler{ descriptorLayout.get() };
+
+    vk::PipelineLayoutCreateInfo pipelineLayoutInfo{};
+    pipelineLayoutInfo.sType          = vk::StructureType::ePipelineLayoutCreateInfo;
+    pipelineLayoutInfo.setLayoutCount = 1U;
+    pipelineLayoutInfo.pSetLayouts    = &layoutHandler;
+
+    m_pipelineLayout = m_logicalDevice.get().createPipelineLayout( pipelineLayoutInfo );
+}
+
+PipelineLayout::~PipelineLayout() {
+    m_logicalDevice.get().destroyPipelineLayout( m_pipelineLayout );
+}
+
+PipelineBuilder::PipelineBuilder( const ve::LogicalDevice& logicalDevice )
+    : m_dynamicState{ defaultDynamicStatesInfo() },
+      m_viewportState{ defaultViewportStateInfo() },
+      m_vertexInputState{ defaultVertexInputInfo() },
+      m_inputAsemblyState{ defaultInputAsemblyInfo() },
+      m_rasterizerState{ defaultRasterizerInfo() },
+      m_multisamplingState{ defaultMultisamplingInfo() },
+      m_colorBlendsState{ defaultColorBlendStateInfo() },
+      m_depthStencilState{ defaultDepthStencilInfo() },
+      m_logicalDevice{ logicalDevice } {}
+
+PipelineBuilder::PipelineBuilder( const ve::LogicalDevice& logicalDevice, const ve::ShaderModule& vertexShader,
+                                  const ve::ShaderModule& fragmentShader,
+                                  const ve::DescriptorSetLayout& descriptorLayout )
+    : PipelineBuilder{ logicalDevice } {
+    setShaders( vertexShader, fragmentShader );
+    setLayout( descriptorLayout );
+}
+
+void PipelineBuilder::addShaderStage( const vk::ShaderStageFlagBits shaderType, const ve::ShaderModule& shaderModule ) {
     vk::PipelineShaderStageCreateInfo shaderStageCreateInfo{};
     shaderStageCreateInfo.sType  = vk::StructureType::ePipelineShaderStageCreateInfo;
     shaderStageCreateInfo.stage  = shaderType;
     shaderStageCreateInfo.module = shaderModule.get();
     shaderStageCreateInfo.pName  = "main";
 
-    return shaderStageCreateInfo;
+    m_shaderStages.emplace_back( shaderStageCreateInfo );
 }
 
-ShaderStageInfos Pipeline::createShaderStagesInfo() const {
-    const auto vertStageInfo{ pupulateShaderStageInfo( vk::ShaderStageFlagBits::eVertex, m_vertexShader ) };
-    const auto fragStageInfo{ pupulateShaderStageInfo( vk::ShaderStageFlagBits::eFragment, m_fragmentShader ) };
-
-    return { vertStageInfo, fragStageInfo };
+void PipelineBuilder::setShaders( const ve::ShaderModule& vertexShader, const ve::ShaderModule& fragmentShader ) {
+    addShaderStage( vk::ShaderStageFlagBits::eVertex, vertexShader );
+    addShaderStage( vk::ShaderStageFlagBits::eFragment, fragmentShader );
 }
 
-vk::PipelineDynamicStateCreateInfo Pipeline::createDynamicStatesInfo() const {
+void PipelineBuilder::setLayout( const ve::DescriptorSetLayout& descriptorLayout ) {
+    m_pipelineLayout.emplace( m_logicalDevice, descriptorLayout );
+}
+
+[[nodiscard]] ve::Pipeline PipelineBuilder::build( const ve::RenderPass& renderPass ) {
+    return ve::Pipeline{ *this, renderPass };
+}
+
+vk::PipelineDynamicStateCreateInfo PipelineBuilder::defaultDynamicStatesInfo() const noexcept {
     static constexpr std::array< vk::DynamicState, 2U > dynamicStates{ vk::DynamicState::eViewport,
                                                                        vk::DynamicState::eScissor };
 
     vk::PipelineDynamicStateCreateInfo dynamicState{};
     dynamicState.sType             = vk::StructureType::ePipelineDynamicStateCreateInfo;
-    dynamicState.dynamicStateCount = static_cast< std::uint32_t >( std::size( dynamicStates ) );
+    dynamicState.dynamicStateCount = utils::size( dynamicStates );
     dynamicState.pDynamicStates    = std::data( dynamicStates );
 
     return dynamicState;
 }
 
-vk::PipelineViewportStateCreateInfo Pipeline::createViewportStateInfo() const noexcept {
+vk::PipelineViewportStateCreateInfo PipelineBuilder::defaultViewportStateInfo() const noexcept {
     vk::PipelineViewportStateCreateInfo viewportState{};
     viewportState.sType         = vk::StructureType::ePipelineViewportStateCreateInfo;
     viewportState.pViewports    = nullptr;
@@ -101,22 +130,21 @@ vk::PipelineViewportStateCreateInfo Pipeline::createViewportStateInfo() const no
     return viewportState;
 }
 
-vk::PipelineVertexInputStateCreateInfo Pipeline::createVertexInputInfo() const noexcept {
+vk::PipelineVertexInputStateCreateInfo PipelineBuilder::defaultVertexInputInfo() const noexcept {
     static constexpr auto vertexBindingDescription{ Vertex::getBindingDescription() };
     static const auto vertexAttributeDescriptions{ Vertex::getAttributeDescripstions() };
 
     vk::PipelineVertexInputStateCreateInfo vertexInput{};
-    vertexInput.sType                         = vk::StructureType::ePipelineVertexInputStateCreateInfo;
-    vertexInput.vertexBindingDescriptionCount = 1U;
-    vertexInput.pVertexBindingDescriptions    = &vertexBindingDescription;
-    vertexInput.vertexAttributeDescriptionCount =
-        static_cast< std::uint32_t >( std::size( vertexAttributeDescriptions ) );
-    vertexInput.pVertexAttributeDescriptions = std::data( vertexAttributeDescriptions );
+    vertexInput.sType                           = vk::StructureType::ePipelineVertexInputStateCreateInfo;
+    vertexInput.vertexBindingDescriptionCount   = 1U;
+    vertexInput.pVertexBindingDescriptions      = &vertexBindingDescription;
+    vertexInput.vertexAttributeDescriptionCount = utils::size( vertexAttributeDescriptions );
+    vertexInput.pVertexAttributeDescriptions    = std::data( vertexAttributeDescriptions );
 
     return vertexInput;
 }
 
-vk::PipelineInputAssemblyStateCreateInfo Pipeline::createInputAsemblyInfo() const noexcept {
+vk::PipelineInputAssemblyStateCreateInfo PipelineBuilder::defaultInputAsemblyInfo() const noexcept {
     vk::PipelineInputAssemblyStateCreateInfo assembly{};
     assembly.sType                  = vk::StructureType::ePipelineInputAssemblyStateCreateInfo;
     assembly.topology               = vk::PrimitiveTopology::eTriangleList;
@@ -125,7 +153,7 @@ vk::PipelineInputAssemblyStateCreateInfo Pipeline::createInputAsemblyInfo() cons
     return assembly;
 }
 
-vk::PipelineRasterizationStateCreateInfo Pipeline::createRasterizerInfo() const noexcept {
+vk::PipelineRasterizationStateCreateInfo PipelineBuilder::defaultRasterizerInfo() const noexcept {
     vk::PipelineRasterizationStateCreateInfo rasterizer{};
     rasterizer.sType                   = vk::StructureType::ePipelineRasterizationStateCreateInfo;
     rasterizer.depthClampEnable        = vk::False;
@@ -139,7 +167,7 @@ vk::PipelineRasterizationStateCreateInfo Pipeline::createRasterizerInfo() const 
     return rasterizer;
 }
 
-vk::PipelineMultisampleStateCreateInfo Pipeline::createMultisamplingInfo() const noexcept {
+vk::PipelineMultisampleStateCreateInfo PipelineBuilder::defaultMultisamplingInfo() const noexcept {
     vk::PipelineMultisampleStateCreateInfo multisampling{};
     multisampling.sType                 = vk::StructureType::ePipelineMultisampleStateCreateInfo;
     multisampling.sampleShadingEnable   = vk::False;
@@ -152,7 +180,7 @@ vk::PipelineMultisampleStateCreateInfo Pipeline::createMultisamplingInfo() const
     return multisampling;
 }
 
-vk::PipelineColorBlendAttachmentState Pipeline::createColorBlendAttachmentState() const noexcept {
+vk::PipelineColorBlendAttachmentState PipelineBuilder::defaultColorBlendAttachmentState() const noexcept {
     vk::PipelineColorBlendAttachmentState colorBlendAttachment{};
     colorBlendAttachment.blendEnable         = vk::True;
     colorBlendAttachment.srcColorBlendFactor = vk::BlendFactor::eSrcAlpha;
@@ -167,15 +195,14 @@ vk::PipelineColorBlendAttachmentState Pipeline::createColorBlendAttachmentState(
     return colorBlendAttachment;
 }
 
-vk::PipelineColorBlendStateCreateInfo
-    Pipeline::createColorBlendStateInfo( const vk::PipelineColorBlendAttachmentState state ) const noexcept {
-
+vk::PipelineColorBlendStateCreateInfo PipelineBuilder::defaultColorBlendStateInfo() const noexcept {
+    static const auto attachment{ defaultColorBlendAttachmentState() };
     vk::PipelineColorBlendStateCreateInfo colorBlending{};
     colorBlending.sType               = vk::StructureType::ePipelineColorBlendStateCreateInfo;
     colorBlending.logicOpEnable       = vk::False;
     colorBlending.logicOp             = vk::LogicOp::eCopy;
     colorBlending.attachmentCount     = 1U;
-    colorBlending.pAttachments        = &state;
+    colorBlending.pAttachments        = &attachment;
     colorBlending.blendConstants[ 0 ] = 0.0F;
     colorBlending.blendConstants[ 1 ] = 0.0F;
     colorBlending.blendConstants[ 2 ] = 0.0F;
@@ -184,7 +211,7 @@ vk::PipelineColorBlendStateCreateInfo
     return colorBlending;
 }
 
-vk::PipelineDepthStencilStateCreateInfo Pipeline::createDepthStencilInfo() const noexcept {
+vk::PipelineDepthStencilStateCreateInfo PipelineBuilder::defaultDepthStencilInfo() const noexcept {
     vk::PipelineDepthStencilStateCreateInfo depthStencil{};
     depthStencil.depthTestEnable       = vk::True;
     depthStencil.depthWriteEnable      = vk::True;
@@ -195,25 +222,6 @@ vk::PipelineDepthStencilStateCreateInfo Pipeline::createDepthStencilInfo() const
     depthStencil.stencilTestEnable     = vk::False;
 
     return depthStencil;
-}
-
-void Pipeline::createPipelineLayout( const ve::DescriptorSetLayout& descriptorLayout ) {
-    const auto layoutHandler{ descriptorLayout.get() };
-
-    vk::PipelineLayoutCreateInfo pipelineLayoutInfo{};
-    pipelineLayoutInfo.sType          = vk::StructureType::ePipelineLayoutCreateInfo;
-    pipelineLayoutInfo.setLayoutCount = 1U;
-    pipelineLayoutInfo.pSetLayouts    = &layoutHandler;
-
-    m_pipelineLayout = m_logicalDevice.get().createPipelineLayout( pipelineLayoutInfo );
-}
-
-vk::Pipeline Pipeline::get() const noexcept {
-    return m_graphicsPipeline;
-}
-
-vk::PipelineLayout Pipeline::getLayout() const noexcept {
-    return m_pipelineLayout;
 }
 
 } // namespace ve

@@ -15,7 +15,10 @@ Engine::Engine()
       m_physicalDevice{ m_vulkanInstance, m_window },
       m_logicalDevice{ m_physicalDevice },
       m_memoryAllocator{ m_vulkanInstance, m_physicalDevice, m_logicalDevice },
-      m_swapchain{ m_logicalDevice, m_window, m_memoryAllocator },
+      m_swapchain{ m_logicalDevice, m_window },
+      m_vertexShader{ cfg::shader::vertShaderBinaryPath, m_logicalDevice },
+      m_fragmentShader{ cfg::shader::fragShaderBinaryPath, m_logicalDevice },
+      m_pipelineBuilder{ m_logicalDevice },
       m_graphicsCommandPool{ m_logicalDevice },
       m_immediateSubmitFence{ m_logicalDevice },
       m_immediateBuffer{ m_graphicsCommandPool.createCommandBuffers() },
@@ -24,25 +27,24 @@ Engine::Engine()
       m_descriptorSetLayout{ m_logicalDevice },
       m_loader{ *this, m_memoryAllocator },
       m_descriptorWriter{ m_logicalDevice } {
-    prepareDescriptorSetLayout();
+    init();
+}
+
+Engine::~Engine() {
+    m_logicalDevice.get().destroySampler( m_sampler );
+}
+
+void Engine::init() {
+    createDepthBuffer();
+    createRenderPass();
+    createFramebuffers();
+    preparePipeline();
     createFramesResoures();
     prepareTexture();
     createTextureSampler();
     configureDescriptorSets();
-
-    m_pipeline.emplace( m_logicalDevice, m_swapchain, m_descriptorSetLayout );
-
-    m_modelMeshes = m_loader.loadMeshes( cfg::assets::directory / "viking_room.obj" );
+    loadMeshes();
 }
-
-Engine::~Engine() {
-    const auto logicalDeviceHandler{ m_logicalDevice.get() };
-    logicalDeviceHandler.destroySampler( m_sampler );
-}
-
-void Engine::init() {}
-
-void Engine::cleanup() {}
 
 void Engine::run() {
     while ( m_window.shouldClose() == GLFW_FALSE ) {
@@ -80,7 +82,7 @@ std::optional< std::uint32_t > Engine::acquireNextImage() {
         return imageIndex;
     }
     catch ( const vk::OutOfDateKHRError& ) {
-        m_swapchain.recreate();
+        handleWindowResising();
         return std::nullopt;
     }
 }
@@ -97,7 +99,7 @@ void Engine::draw( const std::uint32_t imageIndex ) {
 
     commandBuffer.reset();
     commandBuffer.begin();
-    commandBuffer.beginRenderPass( m_swapchain.getRenderpass(), m_swapchain.getFrambuffer( imageIndex ),
+    commandBuffer.beginRenderPass( m_renderPass->get(), m_framebuffers.at( imageIndex )->get(),
                                    m_swapchain.getExtent() );
     commandBuffer.bindPipeline( m_pipeline->get() );
     commandBuffer.setViewport( m_swapchain.getViewport() );
@@ -143,20 +145,43 @@ void Engine::present( const std::uint32_t imageIndex ) {
     try {
         const auto presentResult{ presentationQueue.presentKHR( presentInfo ) };
         if ( presentResult == vk::Result::eSuboptimalKHR || m_window.isResized() )
-            m_swapchain.recreate();
+            handleWindowResising();
     }
     catch ( const vk::OutOfDateKHRError& ) {
-        m_swapchain.recreate();
+        handleWindowResising();
     }
 }
 
-void Engine::prepareDescriptorSetLayout() {
+void Engine::createDepthBuffer() {
+    m_depthBuffer.emplace( m_memoryAllocator, m_logicalDevice, m_swapchain.getExtent(), vk::Format::eD32Sfloat,
+                           vk::ImageUsageFlagBits::eDepthStencilAttachment, vk::ImageAspectFlagBits::eDepth );
+}
+
+void Engine::createRenderPass() {
+    m_renderPass.emplace( m_logicalDevice, m_swapchain.getFormat(), m_depthBuffer->getFormat() );
+}
+
+void Engine::createFramebuffers() {
+    const auto& swapchainImageViews{ m_swapchain.getImageViews() };
+    m_framebuffers.clear();
+    m_framebuffers.reserve( std::size( swapchainImageViews ) );
+    std::ranges::for_each( swapchainImageViews, [ this ]( const auto swapchainImageView ) {
+        const std::array< vk::ImageView, 2U > attachments{ swapchainImageView, m_depthBuffer->getImageView() };
+        m_framebuffers.emplace_back( std::in_place, m_renderPass.value(), attachments, m_swapchain.getExtent() );
+    } );
+}
+
+void Engine::preparePipeline() {
     std::vector< vk::DescriptorType > descriptorTypes{ vk::DescriptorType::eUniformBuffer,
                                                        vk::DescriptorType::eCombinedImageSampler };
     m_descriptorSetLayout.addBinding( 0U, vk::DescriptorType::eUniformBuffer, vk::ShaderStageFlagBits::eVertex );
     m_descriptorSetLayout.addBinding( 1U, vk::DescriptorType::eCombinedImageSampler,
                                       vk::ShaderStageFlagBits::eFragment );
     m_descriptorSetLayout.create();
+
+    m_pipelineBuilder.setShaders( m_vertexShader, m_fragmentShader );
+    m_pipelineBuilder.setLayout( m_descriptorSetLayout );
+    m_pipeline.emplace( m_pipelineBuilder, m_renderPass.value() );
 }
 
 void Engine::createFramesResoures() {
@@ -165,7 +190,6 @@ void Engine::createFramesResoures() {
     for ( std::uint32_t frameID{ 0U }; frameID < g_maxFramesInFlight; frameID++ )
         m_frames.at( frameID ).emplace( m_logicalDevice, m_memoryAllocator, graphicsCommandBuffers.at( frameID ),
                                         m_descriptorSetLayout );
-
     m_currentFrameIt = std::begin( m_frames );
 }
 
@@ -294,7 +318,7 @@ void Engine::createTextureSampler() {
     samplerInfo.addressModeU            = vk::SamplerAddressMode::eRepeat;
     samplerInfo.addressModeV            = vk::SamplerAddressMode::eRepeat;
     samplerInfo.addressModeW            = vk::SamplerAddressMode::eRepeat;
-    samplerInfo.anisotropyEnable        = VK_TRUE;
+    samplerInfo.anisotropyEnable        = vk::True;
     samplerInfo.borderColor             = vk::BorderColor::eIntOpaqueBlack;
     samplerInfo.unnormalizedCoordinates = vk::False;
     samplerInfo.compareEnable           = vk::False;
@@ -308,6 +332,17 @@ void Engine::createTextureSampler() {
     samplerInfo.maxAnisotropy = physicalDeviceProperties.limits.maxSamplerAnisotropy;
 
     m_sampler = m_logicalDevice.get().createSampler( samplerInfo );
+}
+
+void Engine::loadMeshes() {
+    m_modelMeshes = m_loader.loadMeshes( cfg::assets::directory / "viking_room.obj" );
+}
+
+void Engine::handleWindowResising() {
+    m_swapchain.recreate();
+    createRenderPass();
+    createDepthBuffer();
+    createFramebuffers();
 }
 
 } // namespace ve

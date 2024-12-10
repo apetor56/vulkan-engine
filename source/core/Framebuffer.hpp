@@ -6,13 +6,16 @@ namespace ve {
 
 class RenderPass;
 
-class Framebuffer : public utils::NonCopyable,
-                    public utils::NonMovable {
+class Framebuffer : public utils::NonCopyable {
 public:
     using Attachments = std::array< vk::ImageView, 2U >;
 
     Framebuffer( const ve::RenderPass& renderPass, const Attachments& attachments, const vk::Extent2D extent );
     ~Framebuffer();
+
+    Framebuffer( Framebuffer&& other ) noexcept;
+
+    vk::Framebuffer get() const noexcept { return m_framebuffer; }
 
 private:
     vk::Framebuffer m_framebuffer;

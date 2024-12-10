@@ -19,6 +19,11 @@ Framebuffer::Framebuffer( const ve::RenderPass& renderPass, const Attachments& a
     m_framebuffer = m_logicalDevice.get().createFramebuffer( framebufferInfo );
 }
 
+Framebuffer::Framebuffer( Framebuffer&& other ) noexcept
+    : m_framebuffer{ other.m_framebuffer }, m_logicalDevice{ other.m_logicalDevice } {
+    other.m_framebuffer = vk::Framebuffer{};
+}
+
 Framebuffer::~Framebuffer() {
     m_logicalDevice.get().destroyFramebuffer( m_framebuffer );
 }

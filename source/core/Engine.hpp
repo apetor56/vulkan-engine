@@ -6,6 +6,9 @@
 #include "LogicalDevice.hpp"
 #include "MemoryAllocator.hpp"
 #include "Swapchain.hpp"
+#include "RenderPass.hpp"
+#include "Framebuffer.hpp"
+#include "ShaderModule.hpp"
 #include "Pipeline.hpp"
 #include "Buffer.hpp"
 #include "Image.hpp"
@@ -28,12 +31,12 @@ public:
 
     void init();
     void run();
-    void cleanup();
 
     MeshBuffers uploadMeshBuffers( std::span< Vertex > vertices, std::span< std::uint32_t > indices ) const;
 
 private:
-    using Frames = std::array< std::optional< ve::Frame >, g_maxFramesInFlight >;
+    using Frames       = std::array< std::optional< ve::Frame >, g_maxFramesInFlight >;
+    using Framebuffers = std::vector< std::optional< ve::Framebuffer > >;
 
     ve::VulkanInstance m_vulkanInstance{};
     ve::Window m_window;
@@ -41,7 +44,13 @@ private:
     ve::LogicalDevice m_logicalDevice;
     ve::MemoryAllocator m_memoryAllocator;
     ve::Swapchain m_swapchain;
-    std::optional< ve::Pipeline > m_pipeline;
+    Framebuffers m_framebuffers;
+    std::optional< ve::Image > m_depthBuffer{};
+    std::optional< ve::RenderPass > m_renderPass{};
+    ve::ShaderModule m_vertexShader;
+    ve::ShaderModule m_fragmentShader;
+    ve::PipelineBuilder m_pipelineBuilder;
+    std::optional< ve::Pipeline > m_pipeline{};
     ve::CommandPool< ve::GraphicsCommandBuffer > m_graphicsCommandPool;
     ve::Fence m_immediateSubmitFence;
     ve::GraphicsCommandBuffer m_immediateBuffer;
@@ -57,16 +66,22 @@ private:
     std::vector< ve::MeshAsset > m_modelMeshes;
     ve::DescriptorWriter m_descriptorWriter;
 
-    void prepareDescriptorSetLayout();
+    void createDepthBuffer();
+    void createRenderPass();
+    void createFramebuffers();
+    void preparePipeline();
     void createFramesResoures();
     void updateUniformBuffer();
     void configureDescriptorSets();
     void prepareTexture();
     void createTextureSampler();
+    void loadMeshes();
 
     std::optional< std::uint32_t > acquireNextImage();
     void draw( const std::uint32_t imageIndex );
     void present( const std::uint32_t imageIndex );
+
+    void handleWindowResising();
 
     template < std::derived_from< ve::BaseCommandBuffer > CommandBuffer_T >
     void immediateSubmit( const std::function< void( CommandBuffer_T command ) >& function ) {

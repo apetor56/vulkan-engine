@@ -5,7 +5,7 @@
 
 namespace ve {
 
-ShaderModule::ShaderModule( std::string_view shaderBinaryPath, const ve::LogicalDevice& logicalDevice )
+ShaderModule::ShaderModule( const std::filesystem::path& shaderBinaryPath, const ve::LogicalDevice& logicalDevice )
     : m_logicalDevice{ logicalDevice } {
     createShaderModule( getShaderBinaryCode( shaderBinaryPath ) );
 }
@@ -14,8 +14,8 @@ ShaderModule::~ShaderModule() {
     m_logicalDevice.get().destroyShaderModule( m_shaderModule );
 }
 
-std::vector< std::byte > ShaderModule::getShaderBinaryCode( std::string_view shaderBinaryPath ) const {
-    std::ifstream binaryFile{ shaderBinaryPath.data(), std::ios::binary };
+std::vector< std::byte > ShaderModule::getShaderBinaryCode( const std::filesystem::path& shaderBinaryPath ) const {
+    std::ifstream binaryFile{ shaderBinaryPath.string(), std::ios::binary };
     if ( !binaryFile.is_open() )
         throw std::runtime_error( "failed to open shader binary file" );
 

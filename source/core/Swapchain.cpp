@@ -9,21 +9,16 @@
 
 namespace ve {
 
-Swapchain::Swapchain( const ve::LogicalDevice& logicalDevice, ve::Window& window, const ve::MemoryAllocator& allocator )
-    : m_logicalDevice{ logicalDevice }, m_window{ window }, m_memoryAllocator{ allocator } {
+Swapchain::Swapchain( const ve::LogicalDevice& logicalDevice, ve::Window& window )
+    : m_logicalDevice{ logicalDevice }, m_window{ window } {
     createSwapchain();
-    m_depthImage.emplace( m_memoryAllocator, m_logicalDevice, m_swapchainImageExtent, vk::Format::eD32Sfloat,
-                          vk::ImageUsageFlagBits::eDepthStencilAttachment, vk::ImageAspectFlagBits::eDepth );
     createViewport();
     createScissor();
     createImageViews();
-    createRenderPass();
-    createFramebuffers();
 }
 
 Swapchain::~Swapchain() {
     cleanup();
-    m_logicalDevice.get().destroyRenderPass( m_renderPass );
 }
 
 void Swapchain::createSwapchain() {
@@ -50,7 +45,7 @@ void Swapchain::createSwapchain() {
     createInfo.imageArrayLayers = 1U;
     createInfo.imageUsage       = vk::ImageUsageFlagBits::eColorAttachment;
 
-    const auto queueFamilyIDs{ physicalDevice.getQueueFamilyIDs() };
+    const auto& queueFamilyIDs{ physicalDevice.getQueueFamilyIDs() };
 
     if ( queueFamilyIDs.at( ve::FamilyType::eGraphics ) != queueFamilyIDs.at( ve::FamilyType::ePresentation ) ) {
         const auto valuesView{ queueFamilyIDs | std::views::values };
@@ -97,19 +92,11 @@ void Swapchain::recreate() {
     createViewport();
     createScissor();
     createImageViews();
-    m_depthImage.emplace( m_memoryAllocator, m_logicalDevice, m_swapchainImageExtent, vk::Format::eD32Sfloat,
-                          vk::ImageUsageFlagBits::eDepthStencilAttachment, vk::ImageAspectFlagBits::eDepth );
-    createFramebuffers();
     m_window.setResizeFlag( false );
 }
 
 void Swapchain::cleanup() {
     const auto logicalDeviceHandler{ m_logicalDevice.get() };
-
-    std::ranges::for_each( m_framebuffers, [ &logicalDeviceHandler ]( const auto& framebuffer ) {
-        logicalDeviceHandler.destroyFramebuffer( framebuffer );
-    } );
-    m_framebuffers.clear();
 
     std::ranges::for_each( m_swapchainImageViews, [ &logicalDeviceHandler ]( const auto& view ) {
         logicalDeviceHandler.destroyImageView( view );
@@ -181,90 +168,9 @@ void Swapchain::createImageViews() {
     createInfo.subresourceRange.baseArrayLayer = 0U;
     createInfo.subresourceRange.layerCount     = 1U;
 
-    const auto createImageView{ [ this, logicalDeviceHandler, &createInfo ]( const auto image ) {
+    std::ranges::for_each( m_swapchainImages, [ this, logicalDeviceHandler, &createInfo ]( const auto image ) {
         createInfo.image = image;
         m_swapchainImageViews.emplace_back( logicalDeviceHandler.createImageView( createInfo ) );
-    } };
-
-    std::ranges::for_each( m_swapchainImages, createImageView );
-}
-
-void Swapchain::createRenderPass() {
-    vk::AttachmentDescription colorAttachment{};
-    colorAttachment.format         = m_swapchainImageFormat;
-    colorAttachment.samples        = vk::SampleCountFlagBits::e1;
-    colorAttachment.loadOp         = vk::AttachmentLoadOp::eClear;
-    colorAttachment.storeOp        = vk::AttachmentStoreOp::eStore;
-    colorAttachment.stencilLoadOp  = vk::AttachmentLoadOp::eDontCare;
-    colorAttachment.stencilStoreOp = vk::AttachmentStoreOp::eDontCare;
-    colorAttachment.initialLayout  = vk::ImageLayout::eUndefined;
-    colorAttachment.finalLayout    = vk::ImageLayout::ePresentSrcKHR;
-
-    vk::AttachmentDescription depthAttachment{};
-    depthAttachment.format         = m_depthImage->getFormat();
-    depthAttachment.samples        = vk::SampleCountFlagBits::e1;
-    depthAttachment.loadOp         = vk::AttachmentLoadOp::eClear;
-    depthAttachment.storeOp        = vk::AttachmentStoreOp::eDontCare;
-    depthAttachment.stencilLoadOp  = vk::AttachmentLoadOp::eDontCare;
-    depthAttachment.stencilStoreOp = vk::AttachmentStoreOp::eDontCare;
-    depthAttachment.initialLayout  = vk::ImageLayout::eUndefined;
-    depthAttachment.finalLayout    = vk::ImageLayout::eDepthStencilAttachmentOptimal;
-
-    vk::AttachmentReference colorAttachmentRef{};
-    colorAttachmentRef.attachment = 0U;
-    colorAttachmentRef.layout     = vk::ImageLayout::eColorAttachmentOptimal;
-
-    vk::AttachmentReference depthAttachmentRef{};
-    depthAttachmentRef.attachment = 1U;
-    depthAttachmentRef.layout     = vk::ImageLayout::eDepthStencilAttachmentOptimal;
-
-    vk::SubpassDescription subpass{};
-    subpass.pipelineBindPoint       = vk::PipelineBindPoint::eGraphics;
-    subpass.colorAttachmentCount    = 1U;
-    subpass.pColorAttachments       = &colorAttachmentRef;
-    subpass.pDepthStencilAttachment = &depthAttachmentRef;
-
-    const std::array< vk::AttachmentDescription, 2U > attachments{ colorAttachment, depthAttachment };
-    vk::RenderPassCreateInfo renderPassInfo{};
-    renderPassInfo.sType           = vk::StructureType::eRenderPassCreateInfo;
-    renderPassInfo.attachmentCount = static_cast< std::uint32_t >( std::size( attachments ) );
-    renderPassInfo.pAttachments    = std::data( attachments );
-    renderPassInfo.subpassCount    = 1U;
-    renderPassInfo.pSubpasses      = &subpass;
-
-    vk::SubpassDependency dependency{};
-    dependency.srcSubpass   = vk::SubpassExternal;
-    dependency.dstSubpass   = 0U;
-    dependency.srcStageMask = vk::PipelineStageFlagBits::eColorAttachmentOutput;
-    dependency.srcStageMask =
-        vk::PipelineStageFlagBits::eColorAttachmentOutput | vk::PipelineStageFlagBits::eEarlyFragmentTests;
-    dependency.dstStageMask =
-        vk::PipelineStageFlagBits::eColorAttachmentOutput | vk::PipelineStageFlagBits::eEarlyFragmentTests;
-    dependency.dstAccessMask =
-        vk::AccessFlagBits::eColorAttachmentWrite | vk::AccessFlagBits::eDepthStencilAttachmentWrite;
-
-    renderPassInfo.dependencyCount = 1U;
-    renderPassInfo.pDependencies   = &dependency;
-
-    m_renderPass = m_logicalDevice.get().createRenderPass( renderPassInfo );
-}
-
-void Swapchain::createFramebuffers() {
-    const auto logicalDeviceHandler{ m_logicalDevice.get() };
-
-    std::ranges::for_each( m_swapchainImageViews, [ logicalDeviceHandler, this ]( const auto swapchainImageView ) {
-        const std::array< vk::ImageView, 2U > attachments{ swapchainImageView, m_depthImage->getImageView() };
-
-        vk::FramebufferCreateInfo framebufferInfo{};
-        framebufferInfo.sType           = vk::StructureType::eFramebufferCreateInfo;
-        framebufferInfo.renderPass      = m_renderPass;
-        framebufferInfo.attachmentCount = static_cast< std::uint32_t >( std::size( attachments ) );
-        framebufferInfo.width           = m_swapchainImageExtent.width;
-        framebufferInfo.height          = m_swapchainImageExtent.height;
-        framebufferInfo.layers          = 1U;
-        framebufferInfo.pAttachments    = std::data( attachments );
-
-        m_framebuffers.emplace_back( logicalDeviceHandler.createFramebuffer( framebufferInfo ) );
     } );
 }
 
@@ -280,34 +186,6 @@ void Swapchain::createViewport() noexcept {
 void Swapchain::createScissor() noexcept {
     m_scissor.offset = vk::Offset2D{ 0, 0 };
     m_scissor.extent = m_swapchainImageExtent;
-}
-
-vk::Extent2D Swapchain::getExtent() const noexcept {
-    return m_swapchainImageExtent;
-}
-
-vk::RenderPass Swapchain::getRenderpass() const noexcept {
-    return m_renderPass;
-}
-
-vk::Framebuffer Swapchain::getFrambuffer( const std::uint32_t index ) const {
-    return m_framebuffers.at( index );
-}
-
-std::uint32_t Swapchain::getImagesCount() const noexcept {
-    return static_cast< std::uint32_t >( std::size( m_swapchainImages ) );
-}
-
-vk::SwapchainKHR Swapchain::get() const noexcept {
-    return m_swapchain;
-}
-
-vk::Viewport Swapchain::getViewport() const noexcept {
-    return m_viewport;
-}
-
-vk::Rect2D Swapchain::getScissor() const noexcept {
-    return m_scissor;
 }
 
 } // namespace ve
