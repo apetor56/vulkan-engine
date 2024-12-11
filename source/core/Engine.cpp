@@ -178,9 +178,10 @@ void Engine::preparePipeline() {
     m_descriptorSetLayout.addBinding( 1U, vk::DescriptorType::eCombinedImageSampler,
                                       vk::ShaderStageFlagBits::eFragment );
     m_descriptorSetLayout.create();
+    m_pipelineLayout.emplace( m_logicalDevice, m_descriptorSetLayout );
 
     m_pipelineBuilder.setShaders( m_vertexShader, m_fragmentShader );
-    m_pipelineBuilder.setLayout( m_descriptorSetLayout );
+    m_pipelineBuilder.setLayout( m_pipelineLayout.value() );
     m_pipeline.emplace( m_pipelineBuilder, m_renderPass.value() );
 }
 
@@ -212,10 +213,10 @@ void Engine::updateUniformBuffer() {
 
     static const auto& extent{ m_swapchain.getExtent() };
     constexpr float angle{ 45.0F };
-    constexpr float near{ 0.1F };
-    constexpr float far{ 20.0F };
-    data.projection =
-        glm::perspective( glm::radians( angle ), static_cast< float >( extent.width ) / extent.height, near, far );
+    constexpr float nearPlane{ 0.1F };
+    constexpr float farPlane{ 20.0F };
+    data.projection = glm::perspective( glm::radians( angle ), static_cast< float >( extent.width ) / extent.height,
+                                        nearPlane, farPlane );
     data.projection[ 1 ][ 1 ] *= -1;
 
     const auto& currentFrame{ m_currentFrameIt->value() };

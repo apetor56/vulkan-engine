@@ -19,7 +19,7 @@ Pipeline::Pipeline( const PipelineBuilder& builder, const ve::RenderPass& render
     if ( !pipelineLayout.has_value() )
         throw std::runtime_error( "pipeline builder: pipeline layout is not set" );
 
-    m_layout = pipelineLayout.value().get();
+    m_layout = pipelineLayout.value();
 
     vk::GraphicsPipelineCreateInfo pipelineInfo{};
     pipelineInfo.sType               = vk::StructureType::eGraphicsPipelineCreateInfo;
@@ -77,11 +77,10 @@ PipelineBuilder::PipelineBuilder( const ve::LogicalDevice& logicalDevice )
       m_logicalDevice{ logicalDevice } {}
 
 PipelineBuilder::PipelineBuilder( const ve::LogicalDevice& logicalDevice, const ve::ShaderModule& vertexShader,
-                                  const ve::ShaderModule& fragmentShader,
-                                  const ve::DescriptorSetLayout& descriptorLayout )
+                                  const ve::ShaderModule& fragmentShader, const ve::PipelineLayout& pipelineLayout )
     : PipelineBuilder{ logicalDevice } {
     setShaders( vertexShader, fragmentShader );
-    setLayout( descriptorLayout );
+    setLayout( pipelineLayout );
 }
 
 void PipelineBuilder::addShaderStage( const vk::ShaderStageFlagBits shaderType, const ve::ShaderModule& shaderModule ) {
@@ -99,8 +98,8 @@ void PipelineBuilder::setShaders( const ve::ShaderModule& vertexShader, const ve
     addShaderStage( vk::ShaderStageFlagBits::eFragment, fragmentShader );
 }
 
-void PipelineBuilder::setLayout( const ve::DescriptorSetLayout& descriptorLayout ) {
-    m_pipelineLayout.emplace( m_logicalDevice, descriptorLayout );
+void PipelineBuilder::setLayout( const ve::PipelineLayout& pipelineLayout ) {
+    m_pipelineLayout.emplace( pipelineLayout.get() );
 }
 
 [[nodiscard]] ve::Pipeline PipelineBuilder::build( const ve::RenderPass& renderPass ) {

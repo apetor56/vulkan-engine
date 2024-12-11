@@ -49,6 +49,7 @@ private:
     std::optional< ve::RenderPass > m_renderPass{};
     ve::ShaderModule m_vertexShader;
     ve::ShaderModule m_fragmentShader;
+    std::optional< ve::PipelineLayout > m_pipelineLayout{};
     ve::PipelineBuilder m_pipelineBuilder;
     std::optional< ve::Pipeline > m_pipeline{};
     ve::CommandPool< ve::GraphicsCommandBuffer > m_graphicsCommandPool;

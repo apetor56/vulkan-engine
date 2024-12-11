@@ -47,10 +47,10 @@ public:
     PipelineBuilder( const ve::LogicalDevice& logicalDevice );
 
     PipelineBuilder( const ve::LogicalDevice& logicalDevice, const ve::ShaderModule& vertexShader,
-                     const ve::ShaderModule& fragmentShader, const ve::DescriptorSetLayout& descriptorLayout );
+                     const ve::ShaderModule& fragmentShader, const ve::PipelineLayout& pipelineLayout );
 
     void setShaders( const ve::ShaderModule& vertexShader, const ve::ShaderModule& fragmentShader );
-    void setLayout( const ve::DescriptorSetLayout& descriptorLayout );
+    void setLayout( const ve::PipelineLayout& pipelineLayout );
 
     [[nodiscard]] ve::Pipeline build( const ve::RenderPass& renderPass );
 
@@ -76,7 +76,7 @@ private:
     vk::PipelineDynamicStateCreateInfo m_dynamicState{};
     vk::PipelineVertexInputStateCreateInfo m_vertexInputState{};
     vk::PipelineInputAssemblyStateCreateInfo m_inputAsemblyState{};
-    std::optional< ve::PipelineLayout > m_pipelineLayout{};
+    std::optional< vk::PipelineLayout > m_pipelineLayout{};
 
     void addShaderStage( const vk::ShaderStageFlagBits shaderType, const ve::ShaderModule& shaderModule );
     vk::PipelineDynamicStateCreateInfo defaultDynamicStatesInfo() const noexcept;
