@@ -14,6 +14,7 @@ public:
     ~Framebuffer();
 
     Framebuffer( Framebuffer&& other ) noexcept;
+    Framebuffer& operator=( Framebuffer&& other ) = delete;
 
     vk::Framebuffer get() const noexcept { return m_framebuffer; }
 

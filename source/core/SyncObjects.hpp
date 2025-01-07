@@ -4,7 +4,8 @@
 
 namespace ve {
 
-class Fence {
+class Fence : public utils::NonCopyable,
+              public utils::NonMovable {
 public:
     Fence( const ve::LogicalDevice& logicalDevice,
            const vk::FenceCreateFlagBits createFlags = vk::FenceCreateFlagBits::eSignaled );
@@ -17,7 +18,8 @@ private:
     const ve::LogicalDevice& m_logicalDevice;
 };
 
-class Semaphore {
+class Semaphore : public utils::NonCopyable,
+                  public utils::NonMovable {
 public:
     Semaphore( const ve::LogicalDevice& logicalDevice, const vk::SemaphoreCreateFlagBits createFlags = {} );
     ~Semaphore();

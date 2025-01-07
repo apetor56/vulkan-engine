@@ -1,5 +1,8 @@
 #pragma once
 
+#include "utils/NonCopyable.hpp"
+#include "utils/Nonmovable.hpp"
+
 #include <vulkan/vulkan.h>
 
 #include <vector>
@@ -7,9 +10,8 @@
 
 namespace ve {
 
-using layers = std::vector< const char * >;
-
-class DebugMessenger {
+class DebugMessenger : public utils::NonCopyable,
+                       public utils::NonMovable {
 public:
     DebugMessenger( VkInstance instance );
     void destroy();
@@ -20,7 +22,7 @@ public:
 
 private:
     VkDebugUtilsMessengerEXT m_debugMessenger{};
-    inline static layers m_validationLayers{ "VK_LAYER_KHRONOS_validation" };
+    inline static std::vector< const char * > m_validationLayers{ "VK_LAYER_KHRONOS_validation" };
     VkInstance m_vulkanInstance{};
 
     static VKAPI_ATTR VkBool32 VKAPI_CALL debugCallback( VkDebugUtilsMessageSeverityFlagBitsEXT messageSeverity,

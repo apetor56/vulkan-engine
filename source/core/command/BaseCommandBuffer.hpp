@@ -19,7 +19,7 @@ public:
     void end() const;
     void reset() const;
 
-    vk::CommandBuffer get() const noexcept;
+    vk::CommandBuffer get() const noexcept { return m_commandBuffer; }
 
 protected:
     vk::CommandBuffer m_commandBuffer;

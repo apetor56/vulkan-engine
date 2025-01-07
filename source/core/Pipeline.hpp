@@ -30,11 +30,11 @@ public:
     Pipeline( const PipelineBuilder& builder, const ve::RenderPass& renderPass );
     ~Pipeline();
 
-    vk::Pipeline get() const noexcept { return m_graphicsPipeline; }
+    vk::Pipeline get() const noexcept { return m_pipeline; }
     vk::PipelineLayout getLayout() const noexcept { return m_layout; }
 
 private:
-    vk::Pipeline m_graphicsPipeline;
+    vk::Pipeline m_pipeline;
     vk::PipelineLayout m_layout;
     const ve::LogicalDevice& m_logicalDevice;
 };

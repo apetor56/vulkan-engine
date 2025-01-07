@@ -36,8 +36,4 @@ void ShaderModule::createShaderModule( const std::vector< std::byte >& shaderByt
     m_shaderModule = m_logicalDevice.get().createShaderModule( createInfo );
 }
 
-vk::ShaderModule ShaderModule::get() const noexcept {
-    return m_shaderModule;
-}
-
 } // namespace ve

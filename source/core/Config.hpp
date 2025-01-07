@@ -22,19 +22,12 @@ inline constexpr int height{ 600 };
 
 } // namespace cfg::window
 
-namespace cfg::shader {
+namespace cfg::directory {
 
-inline const std::filesystem::path vertShaderBinaryPath{ std::filesystem::path{ SHADER_BINARIES_DIR } /
-                                                         "simple.vert.spv" };
-inline const std::filesystem::path fragShaderBinaryPath{ std::filesystem::path{ SHADER_BINARIES_DIR } /
-                                                         "simple.frag.spv" };
-} // namespace cfg::shader
+inline const std::filesystem::path shaderBinaries{ SHADER_BINARIES_DIR };
+inline const std::filesystem::path assets{ ASSETS_DIR };
 
-namespace cfg::assets {
-
-inline const std::filesystem::path directory{ std::filesystem::path{ ASSETS_DIR } };
-
-}
+} // namespace cfg::directory
 
 namespace cfg::gpu {
 

@@ -5,19 +5,12 @@
 #include "command/GraphicsCommandBuffer.hpp"
 #include "descriptor/DescriptorAllocator.hpp"
 
-#include <optional>
-
 namespace ve {
 
-struct Frame {
-    Frame( const ve::LogicalDevice& _logicalDevice, const ve::MemoryAllocator& _memoryAllocator,
-           const ve::GraphicsCommandBuffer _commandBuffer, const ve::DescriptorSetLayout& _layout );
-
-    Frame( const Frame& other ) = delete;
-    Frame( Frame&& other )      = delete;
-
-    Frame& operator=( const Frame& other ) = delete;
-    Frame& operator=( Frame&& other )      = delete;
+struct FrameData : public utils::NonCopyable,
+                   public utils::NonMovable {
+    FrameData( const ve::LogicalDevice& _logicalDevice, const ve::MemoryAllocator& _memoryAllocator,
+               const ve::GraphicsCommandBuffer _commandBuffer, const ve::DescriptorSetLayout& _layout );
 
     ve::UniformBuffer uniformBuffer;
     ve::Semaphore swapchainSemaphore;

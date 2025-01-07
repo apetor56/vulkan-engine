@@ -6,7 +6,8 @@
 
 namespace ve {
 
-class DescriptorWriter {
+class DescriptorWriter : public utils::NonCopyable,
+                         public utils::NonMovable {
 public:
     DescriptorWriter( const ve::LogicalDevice& logicalDevice );
 

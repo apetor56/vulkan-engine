@@ -1,4 +1,5 @@
 #include "DescriptorAllocator.hpp"
+#include "utils/Common.hpp"
 
 namespace ve {
 
@@ -98,7 +99,7 @@ vk::DescriptorPool DescriptorAllocator::createNewPool() {
     poolInfo.sType         = vk::StructureType::eDescriptorPoolCreateInfo;
     poolInfo.maxSets       = m_setsPerPool;
     poolInfo.pPoolSizes    = std::data( poolSizes );
-    poolInfo.poolSizeCount = std::size( poolSizes );
+    poolInfo.poolSizeCount = utils::size( poolSizes );
 
     return m_logicalDevice.get().createDescriptorPool( poolInfo );
 }

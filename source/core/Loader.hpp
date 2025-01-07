@@ -29,7 +29,8 @@ struct MeshAsset {
     aiString name{};
 };
 
-class Loader {
+class Loader : public utils::NonCopyable,
+               public utils::NonMovable {
 public:
     Loader( const ve::Engine& engine, const ve::MemoryAllocator& allocator );
     std::vector< MeshAsset > loadMeshes( const std::filesystem::path& path );

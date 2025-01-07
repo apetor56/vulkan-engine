@@ -6,7 +6,7 @@ BaseCommandBuffer::BaseCommandBuffer( const vk::CommandBuffer commandBufferHandl
     : m_commandBuffer{ commandBufferHandler } {}
 
 void BaseCommandBuffer::begin( const vk::CommandBufferUsageFlags flags ) const {
-    static vk::CommandBufferBeginInfo beginInfo;
+    vk::CommandBufferBeginInfo beginInfo;
     beginInfo.sType = vk::StructureType::eCommandBufferBeginInfo;
     beginInfo.flags = flags;
 
@@ -19,10 +19,6 @@ void BaseCommandBuffer::end() const {
 
 void BaseCommandBuffer::reset() const {
     m_commandBuffer.reset();
-}
-
-vk::CommandBuffer BaseCommandBuffer::get() const noexcept {
-    return m_commandBuffer;
 }
 
 } // namespace ve

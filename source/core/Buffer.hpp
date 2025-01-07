@@ -6,9 +6,7 @@
 #include <vulkan/vulkan.hpp>
 #include <glm/glm.hpp>
 
-#include <span>
-
-struct UniformBufferData {
+struct UniformBufferObject {
     glm::mat4 model{ 1.0F };
     glm::mat4 view{ 1.0F };
     glm::mat4 projection{ 1.0F };
@@ -31,11 +29,11 @@ public:
         allocationCreateInfo.flags = allocationFlags;
 
         VmaAllocationInfo allocationInfo{};
-        vmaCreateBuffer( m_memoryAllocator, &bufferCreateInfo, &allocationCreateInfo, &m_buffer, &m_allocation,
+        vmaCreateBuffer( m_memoryAllocator.get(), &bufferCreateInfo, &allocationCreateInfo, &m_buffer, &m_allocation,
                          &allocationInfo );
     }
 
-    ~Buffer() { vmaDestroyBuffer( m_memoryAllocator, m_buffer, m_allocation ); }
+    ~Buffer() { vmaDestroyBuffer( m_memoryAllocator.get(), m_buffer, m_allocation ); }
 
     Buffer( const Buffer& other ) = delete;
     Buffer( Buffer&& other ) : m_memoryAllocator{ other.m_memoryAllocator } {
@@ -64,7 +62,7 @@ public:
 
     void *getMappedMemory() const noexcept {
         VmaAllocationInfo allocationInfo{};
-        vmaGetAllocationInfo( m_memoryAllocator, m_allocation, &allocationInfo );
+        vmaGetAllocationInfo( m_memoryAllocator.get(), m_allocation, &allocationInfo );
         return allocationInfo.pMappedData;
     }
 

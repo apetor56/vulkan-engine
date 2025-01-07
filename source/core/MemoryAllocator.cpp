@@ -21,8 +21,4 @@ MemoryAllocator::~MemoryAllocator() {
     vmaDestroyAllocator( m_allocator );
 }
 
-MemoryAllocator::operator VmaAllocator() const noexcept {
-    return m_allocator;
-}
-
 } // namespace ve

@@ -10,9 +10,9 @@ static std::array< ve::DescriptorAllocator::PoolSizeRatio, 4U > g_poolSizeRatios
 
 static constexpr std::uint32_t g_maxSets{ 1000U };
 
-Frame::Frame( const ve::LogicalDevice& _logicalDevice, const ve::MemoryAllocator& _memoryAllocator,
-              const ve::GraphicsCommandBuffer _commandBuffer, const ve::DescriptorSetLayout& _layout )
-    : uniformBuffer{ _memoryAllocator, sizeof( UniformBufferData ) },
+FrameData::FrameData( const ve::LogicalDevice& _logicalDevice, const ve::MemoryAllocator& _memoryAllocator,
+                      const ve::GraphicsCommandBuffer _commandBuffer, const ve::DescriptorSetLayout& _layout )
+    : uniformBuffer{ _memoryAllocator, sizeof( UniformBufferObject ) },
       swapchainSemaphore{ _logicalDevice },
       renderSemaphore{ _logicalDevice },
       renderFence{ _logicalDevice },

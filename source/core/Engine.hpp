@@ -35,8 +35,8 @@ public:
     MeshBuffers uploadMeshBuffers( std::span< Vertex > vertices, std::span< std::uint32_t > indices ) const;
 
 private:
-    using Frames       = std::array< std::optional< ve::Frame >, g_maxFramesInFlight >;
-    using Framebuffers = std::vector< std::optional< ve::Framebuffer > >;
+    using FrameResources = std::array< std::optional< ve::FrameData >, g_maxFramesInFlight >;
+    using Framebuffers   = std::vector< std::optional< ve::Framebuffer > >;
 
     ve::VulkanInstance m_vulkanInstance{};
     ve::Window m_window;
@@ -59,8 +59,8 @@ private:
     ve::TransferCommandBuffer m_transferCommandBuffer;
     ve::MeshBuffers m_meshBuffers{};
     ve::DescriptorSetLayout m_descriptorSetLayout;
-    Frames m_frames;
-    Frames::iterator m_currentFrameIt{ nullptr };
+    FrameResources m_frameResources;
+    FrameResources::iterator m_currentFrameIt{ nullptr };
     std::optional< ve::Image > m_textureImage{};
     vk::Sampler m_sampler;
     ve::Loader m_loader;
@@ -71,7 +71,7 @@ private:
     void createRenderPass();
     void createFramebuffers();
     void preparePipeline();
-    void createFramesResoures();
+    void createFrameResoures();
     void updateUniformBuffer();
     void configureDescriptorSets();
     void prepareTexture();
@@ -83,28 +83,7 @@ private:
     void present( const std::uint32_t imageIndex );
 
     void handleWindowResising();
-
-    template < std::derived_from< ve::BaseCommandBuffer > CommandBuffer_T >
-    void immediateSubmit( const std::function< void( CommandBuffer_T command ) >& function ) {
-        const auto logicalDeviceHandler{ m_logicalDevice.get() };
-        logicalDeviceHandler.resetFences( m_immediateSubmitFence.get() );
-        m_immediateBuffer.reset();
-
-        CommandBuffer_T command{ m_immediateBuffer };
-        command.begin( vk::CommandBufferUsageFlagBits::eOneTimeSubmit );
-        function( command );
-        command.end();
-
-        const auto commandHanlder{ command.get() };
-        vk::SubmitInfo submitInfo{};
-        submitInfo.sType              = vk::StructureType::eSubmitInfo;
-        submitInfo.commandBufferCount = 1U;
-        submitInfo.pCommandBuffers    = &commandHanlder;
-
-        m_logicalDevice.getQueue( ve::QueueType::eGraphics ).submit( submitInfo, m_immediateSubmitFence.get() );
-        [[maybe_unused]] const auto waitForFencesResult{
-            logicalDeviceHandler.waitForFences( m_immediateSubmitFence.get(), g_waitForAllFences, g_timeoutOff ) };
-    }
+    void immediateSubmit( const std::function< void( GraphicsCommandBuffer command ) >& function );
 };
 
 } // namespace ve

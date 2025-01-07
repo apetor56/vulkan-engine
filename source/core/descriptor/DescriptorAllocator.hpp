@@ -4,7 +4,8 @@
 
 namespace ve {
 
-class DescriptorAllocator {
+class DescriptorAllocator : public utils::NonCopyable,
+                            public utils::NonMovable {
 public:
     struct PoolSizeRatio {
         vk::DescriptorType descriptorType{};

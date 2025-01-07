@@ -41,11 +41,11 @@ Pipeline::Pipeline( const PipelineBuilder& builder, const ve::RenderPass& render
     if ( result != vk::Result::eSuccess )
         throw std::runtime_error( "failed to create graphics pipeline" );
 
-    m_graphicsPipeline = pipeline;
+    m_pipeline = pipeline;
 }
 
 Pipeline::~Pipeline() {
-    m_logicalDevice.get().destroyPipeline( m_graphicsPipeline );
+    m_logicalDevice.get().destroyPipeline( m_pipeline );
 }
 
 PipelineLayout::PipelineLayout( const ve::LogicalDevice& logicalDevice,

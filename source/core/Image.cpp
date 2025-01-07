@@ -15,7 +15,7 @@ Image::Image( const ve::MemoryAllocator& allocator, const ve::LogicalDevice& log
 
 Image::~Image() {
     m_logicalDevice.get().destroyImageView( m_imageView );
-    vmaDestroyImage( m_memoryAllocator, m_image, m_allocation );
+    vmaDestroyImage( m_memoryAllocator.get(), m_image, m_allocation );
 }
 
 void Image::createImage( const vk::ImageUsageFlags usage, const vk::ImageTiling tiling ) {
@@ -38,8 +38,8 @@ void Image::createImage( const vk::ImageUsageFlags usage, const vk::ImageTiling 
     allocationCreateInfo.usage         = VMA_MEMORY_USAGE_AUTO;
     allocationCreateInfo.requiredFlags = VkMemoryPropertyFlags( VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT );
 
-    vmaCreateImage( m_memoryAllocator, reinterpret_cast< VkImageCreateInfo * >( &imageInfo ), &allocationCreateInfo,
-                    reinterpret_cast< VkImage * >( &m_image ), &m_allocation, nullptr );
+    vmaCreateImage( m_memoryAllocator.get(), reinterpret_cast< VkImageCreateInfo * >( &imageInfo ),
+                    &allocationCreateInfo, reinterpret_cast< VkImage * >( &m_image ), &m_allocation, nullptr );
 }
 
 void Image::createImageView( const vk::ImageAspectFlagBits imageAspect ) {

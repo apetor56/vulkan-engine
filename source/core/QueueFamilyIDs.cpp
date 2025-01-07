@@ -40,8 +40,4 @@ void QueueFamilyIDs::add( FamilyType type, std::uint32_t familyID ) {
     m_familyIndices.emplace( type, familyID );
 }
 
-std::unordered_map< FamilyType, std::uint32_t > QueueFamilyIDs::getAll() const {
-    return m_familyIndices;
-}
-
 } // namespace ve

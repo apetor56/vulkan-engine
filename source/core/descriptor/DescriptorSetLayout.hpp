@@ -2,14 +2,13 @@
 
 #include "LogicalDevice.hpp"
 
-#include <vulkan/vulkan.hpp>
-
 #include <cstdint>
 #include <unordered_map>
 
 namespace ve {
 
-class DescriptorSetLayout {
+class DescriptorSetLayout : public utils::NonCopyable,
+                            public utils::NonMovable {
 public:
     DescriptorSetLayout( const ve::LogicalDevice& logicalDevice ) noexcept;
     ~DescriptorSetLayout();

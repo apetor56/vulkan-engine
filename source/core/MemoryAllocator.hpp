@@ -1,5 +1,8 @@
 #pragma once
 
+#include "utils/NonCopyable.hpp"
+#include "utils/NonMovable.hpp"
+
 #include <vma/vk_mem_alloc.h>
 
 namespace ve {
@@ -8,14 +11,15 @@ class VulkanInstance;
 class PhysicalDevice;
 class LogicalDevice;
 
-class MemoryAllocator {
+class MemoryAllocator : public utils::NonCopyable,
+                        public utils::NonMovable {
 public:
     MemoryAllocator( const VulkanInstance& instance, const PhysicalDevice& physicalDevice,
                      const LogicalDevice& logicalDevice );
 
     ~MemoryAllocator();
 
-    operator VmaAllocator() const noexcept;
+    VmaAllocator get() const noexcept { return m_allocator; }
 
 private:
     VmaAllocator m_allocator;

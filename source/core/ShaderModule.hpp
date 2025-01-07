@@ -12,7 +12,7 @@ public:
     ShaderModule( const std::filesystem::path& shaderBinaryPath, const ve::LogicalDevice& logicalDevice );
     ~ShaderModule();
 
-    vk::ShaderModule get() const noexcept;
+    vk::ShaderModule get() const noexcept { return m_shaderModule; }
 
 private:
     vk::ShaderModule m_shaderModule{};

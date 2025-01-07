@@ -15,7 +15,7 @@ using QueueFamilyMap = std::unordered_map< ve::FamilyType, std::uint32_t >;
 struct QueueFamilyIDs {
     bool hasRequiredFamilies() const noexcept;
     static QueueFamilyIDs findQueueFamilies( const vk::PhysicalDevice device, const vk::SurfaceKHR surface );
-    std::unordered_map< FamilyType, std::uint32_t > getAll() const;
+    std::unordered_map< FamilyType, std::uint32_t > getAll() const noexcept { return m_familyIndices; }
 
 private:
     std::unordered_map< FamilyType, std::uint32_t > m_familyIndices;

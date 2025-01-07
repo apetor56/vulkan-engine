@@ -16,8 +16,8 @@ Engine::Engine()
       m_logicalDevice{ m_physicalDevice },
       m_memoryAllocator{ m_vulkanInstance, m_physicalDevice, m_logicalDevice },
       m_swapchain{ m_logicalDevice, m_window },
-      m_vertexShader{ cfg::shader::vertShaderBinaryPath, m_logicalDevice },
-      m_fragmentShader{ cfg::shader::fragShaderBinaryPath, m_logicalDevice },
+      m_vertexShader{ cfg::directory::shaderBinaries / "simple.vert.spv", m_logicalDevice },
+      m_fragmentShader{ cfg::directory::shaderBinaries / "simple.frag.spv", m_logicalDevice },
       m_pipelineBuilder{ m_logicalDevice },
       m_graphicsCommandPool{ m_logicalDevice },
       m_immediateSubmitFence{ m_logicalDevice },
@@ -39,7 +39,7 @@ void Engine::init() {
     createRenderPass();
     createFramebuffers();
     preparePipeline();
-    createFramesResoures();
+    createFrameResoures();
     prepareTexture();
     createTextureSampler();
     configureDescriptorSets();
@@ -64,8 +64,8 @@ void Engine::run() {
         present( imageIndex.value() );
 
         m_currentFrameIt++;
-        if ( m_currentFrameIt == std::end( m_frames ) )
-            m_currentFrameIt = std::begin( m_frames );
+        if ( m_currentFrameIt == std::end( m_frameResources ) )
+            m_currentFrameIt = std::begin( m_frameResources );
     }
     m_logicalDevice.get().waitIdle();
 }
@@ -108,7 +108,8 @@ void Engine::draw( const std::uint32_t imageIndex ) {
     std::ranges::for_each( m_modelMeshes, [ &commandBuffer ]( const auto& meshAsset ) {
         commandBuffer.bindVertexBuffer( meshAsset.buffers.vertexBuffer->get() );
         commandBuffer.bindIndexBuffer( meshAsset.buffers.indexBuffer->get() );
-        commandBuffer.drawIndices( meshAsset.buffers.indexBuffer->size() / sizeof( std::uint32_t ) );
+        commandBuffer.drawIndices( static_cast< std::uint32_t >( meshAsset.buffers.indexBuffer->size() ) /
+                                   sizeof( std::uint32_t ) );
     } );
     commandBuffer.endRenderPass();
     commandBuffer.end();
@@ -185,13 +186,13 @@ void Engine::preparePipeline() {
     m_pipeline.emplace( m_pipelineBuilder, m_renderPass.value() );
 }
 
-void Engine::createFramesResoures() {
+void Engine::createFrameResoures() {
     const auto graphicsCommandBuffers{ m_graphicsCommandPool.createCommandBuffers< g_maxFramesInFlight >() };
 
     for ( std::uint32_t frameID{ 0U }; frameID < g_maxFramesInFlight; frameID++ )
-        m_frames.at( frameID ).emplace( m_logicalDevice, m_memoryAllocator, graphicsCommandBuffers.at( frameID ),
-                                        m_descriptorSetLayout );
-    m_currentFrameIt = std::begin( m_frames );
+        m_frameResources.at( frameID ).emplace( m_logicalDevice, m_memoryAllocator,
+                                                graphicsCommandBuffers.at( frameID ), m_descriptorSetLayout );
+    m_currentFrameIt = std::begin( m_frameResources );
 }
 
 void Engine::updateUniformBuffer() {
@@ -200,7 +201,7 @@ void Engine::updateUniformBuffer() {
     auto now{ high_resolution_clock::now() };
     milliseconds elapsed{ duration_cast< milliseconds >( now - start ) };
 
-    UniformBufferData data{};
+    UniformBufferObject data{};
 
     constexpr glm::vec3 zAxis{ 0.0F, 0.0F, 1.0F };
     data.model = glm::scale( glm::mat4{ 1.0F }, glm::vec3{ 1.0F, 1.0F, 1.0F } ) *
@@ -224,17 +225,17 @@ void Engine::updateUniformBuffer() {
 }
 
 void Engine::configureDescriptorSets() {
-    std::ranges::for_each( m_frames, [ this ]( auto& frame ) {
+    std::ranges::for_each( m_frameResources, [ this ]( auto& frameData ) {
         static constexpr std::uint32_t uniformBufferBinding{ 0U };
-        m_descriptorWriter.writeBuffer( uniformBufferBinding, frame.value().uniformBuffer.get(),
-                                        sizeof( UniformBufferData ), 0U, vk::DescriptorType::eUniformBuffer );
+        m_descriptorWriter.writeBuffer( uniformBufferBinding, frameData.value().uniformBuffer.get(),
+                                        sizeof( UniformBufferObject ), 0U, vk::DescriptorType::eUniformBuffer );
 
         static constexpr std::uint32_t textureImageBinding{ 1U };
         m_descriptorWriter.writeImage( textureImageBinding, m_textureImage->getImageView(),
                                        vk::ImageLayout::eShaderReadOnlyOptimal, m_sampler,
                                        vk::DescriptorType::eCombinedImageSampler );
 
-        m_descriptorWriter.updateSet( frame.value().descriptorSet );
+        m_descriptorWriter.updateSet( frameData.value().descriptorSet );
     } );
 }
 
@@ -287,7 +288,7 @@ void Engine::prepareTexture() {
     int width;
     int height;
     int channels;
-    const auto fullTexturePath{ cfg::assets::directory / "viking_room.png" };
+    const auto fullTexturePath{ cfg::directory::assets / "viking_room.png" };
 
     stbi_uc *pixels{ stbi_load( fullTexturePath.string().c_str(), &width, &height, &channels, STBI_rgb_alpha ) };
 
@@ -303,7 +304,7 @@ void Engine::prepareTexture() {
                             vk::ImageUsageFlagBits::eTransferDst | vk::ImageUsageFlagBits::eSampled,
                             vk::ImageAspectFlagBits::eColor );
 
-    immediateSubmit< ve::GraphicsCommandBuffer >( [ &stagingBuffer, this ]( ve::GraphicsCommandBuffer cmd ) {
+    immediateSubmit( [ &stagingBuffer, this ]( ve::GraphicsCommandBuffer cmd ) {
         cmd.transitionImageBuffer( m_textureImage->get(), vk::Format::eR8G8B8A8Srgb, vk::ImageLayout::eUndefined,
                                    vk::ImageLayout::eTransferDstOptimal );
         cmd.copyBufferToImage( stagingBuffer.get(), m_textureImage->get(), m_textureImage->getExtent() );
@@ -336,7 +337,7 @@ void Engine::createTextureSampler() {
 }
 
 void Engine::loadMeshes() {
-    m_modelMeshes = m_loader.loadMeshes( cfg::assets::directory / "viking_room.obj" );
+    m_modelMeshes = m_loader.loadMeshes( cfg::directory::assets / "viking_room.obj" );
 }
 
 void Engine::handleWindowResising() {
@@ -344,6 +345,27 @@ void Engine::handleWindowResising() {
     createRenderPass();
     createDepthBuffer();
     createFramebuffers();
+}
+
+void Engine::immediateSubmit( const std::function< void( ve::GraphicsCommandBuffer command ) >& function ) {
+    const auto logicalDeviceHandler{ m_logicalDevice.get() };
+    logicalDeviceHandler.resetFences( m_immediateSubmitFence.get() );
+    m_immediateBuffer.reset();
+
+    ve::GraphicsCommandBuffer command{ m_immediateBuffer };
+    command.begin( vk::CommandBufferUsageFlagBits::eOneTimeSubmit );
+    function( command );
+    command.end();
+
+    const auto commandHanlder{ command.get() };
+    vk::SubmitInfo submitInfo{};
+    submitInfo.sType              = vk::StructureType::eSubmitInfo;
+    submitInfo.commandBufferCount = 1U;
+    submitInfo.pCommandBuffers    = &commandHanlder;
+
+    m_logicalDevice.getQueue( ve::QueueType::eGraphics ).submit( submitInfo, m_immediateSubmitFence.get() );
+    [[maybe_unused]] const auto waitForFencesResult{
+        logicalDeviceHandler.waitForFences( m_immediateSubmitFence.get(), g_waitForAllFences, g_timeoutOff ) };
 }
 
 } // namespace ve

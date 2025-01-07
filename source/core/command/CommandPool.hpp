@@ -7,16 +7,11 @@
 namespace ve {
 
 template < std::derived_from< BaseCommandBuffer > CommandBuffer_T >
-class CommandPool {
+class CommandPool : public utils::NonCopyable,
+                    public utils::NonMovable {
 public:
     CommandPool( const ve::LogicalDevice& logicalDevice ) : m_logicalDevice{ logicalDevice } { createCommandPool(); }
     ~CommandPool() { m_logicalDevice.get().destroyCommandPool( m_commandPool ); }
-
-    CommandPool( const CommandPool& other ) = delete;
-    CommandPool( CommandPool&& other )      = delete;
-
-    CommandPool& operator=( const CommandPool& other ) = delete;
-    CommandPool& operator=( CommandPool&& other )      = delete;
 
     template < std::uint32_t count = 1U, vk::CommandBufferLevel level = vk::CommandBufferLevel::ePrimary >
     auto createCommandBuffers() const {
