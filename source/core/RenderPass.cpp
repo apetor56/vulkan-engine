@@ -29,7 +29,7 @@ void RenderPass::createDescription( const vk::Format format, const vk::ImageLayo
                                            vk::ImageLayout::eUndefined, finalLayout );
 }
 
-void RenderPass::createReference( const std::uint32_t attachmentIndex, const vk::ImageLayout layout ) {
+void RenderPass::createReference( const uint32_t attachmentIndex, const vk::ImageLayout layout ) {
     m_attachmentReferences.emplace_back( attachmentIndex, layout );
 }
 

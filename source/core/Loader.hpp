@@ -6,7 +6,6 @@
 #include <assimp/Importer.hpp>
 #include <assimp/mesh.h>
 
-#include <cstdint>
 #include <vector>
 #include <optional>
 #include <filesystem>

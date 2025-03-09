@@ -3,9 +3,9 @@
 
 namespace ve {
 
-DescriptorAllocator::DescriptorAllocator( const ve::LogicalDevice& logicalDevice, const std::uint32_t maxSets,
+DescriptorAllocator::DescriptorAllocator( const ve::LogicalDevice& logicalDevice, const uint32_t maxSets,
                                           std::span< PoolSizeRatio > poolSizeRatios )
-    : m_logicalDevice{ logicalDevice }, m_setsPerPool{ static_cast< std::uint32_t >( maxSets * 1.5 ) } {
+    : m_logicalDevice{ logicalDevice }, m_setsPerPool{ static_cast< uint32_t >( maxSets * 1.5 ) } {
     m_poolSizeRatios.assign_range( poolSizeRatios );
     m_availablePools.emplace_back( createNewPool() );
 }

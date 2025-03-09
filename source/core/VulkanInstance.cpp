@@ -61,7 +61,7 @@ void VulkanInstance::createVulkanInstance() {
 }
 
 std::vector< const char * > VulkanInstance::getRequiredInstanceExtensions() const {
-    std::uint32_t extensionCount{};
+    uint32_t extensionCount{};
     const char **extensions{ glfwGetRequiredInstanceExtensions( &extensionCount ) };
     std::vector< const char * > instanceExtensions{ extensions, extensions + extensionCount };
 

@@ -46,6 +46,8 @@ set(CORE
     core/SyncObjects.hpp           core/SyncObjects.cpp
     core/Constants.hpp
     core/Loader.hpp                core/Loader.cpp
+    core/RenderObject.hpp
+    core/Material.hpp
 )
 
 set(UTILS

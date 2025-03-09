@@ -3,7 +3,6 @@
 // TODO: better config system
 
 #include <filesystem>
-#include <cstdint>
 
 namespace cfg::debug {
 
@@ -31,12 +30,12 @@ inline const std::filesystem::path assets{ ASSETS_DIR };
 
 namespace cfg::gpu {
 
-inline constexpr std::uint32_t discreteGpuValue{ 1000U };
+inline constexpr uint32_t discreteGpuValue{ 1000U };
 
 } // namespace cfg::gpu
 
 namespace cfg::device {
 
-inline constexpr std::uint32_t queueFamiliesCount{ 2U };
+inline constexpr uint32_t queueFamiliesCount{ 2U };
 
 } // namespace cfg::device

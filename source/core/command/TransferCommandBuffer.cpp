@@ -3,7 +3,7 @@
 
 namespace ve {
 
-std::uint32_t TransferCommandBuffer::getQueueFamilyID( const ve::LogicalDevice& logicalDevice ) {
+uint32_t TransferCommandBuffer::getQueueFamilyID( const ve::LogicalDevice& logicalDevice ) {
     return logicalDevice.getQueueFamilyIDs().at( ve::FamilyType::eTransfer );
 }
 

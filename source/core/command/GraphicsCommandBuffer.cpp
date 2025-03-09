@@ -3,14 +3,14 @@
 #include "LogicalDevice.hpp"
 
 namespace {
-constexpr std::uint32_t g_firstVertex{ 0U };
-constexpr std::uint32_t g_instanceCount{ 1U };
-constexpr std::uint32_t g_firstInstance{ 0U };
-constexpr std::uint32_t g_firstIndex{ 0U };
+constexpr uint32_t g_firstVertex{ 0U };
+constexpr uint32_t g_instanceCount{ 1U };
+constexpr uint32_t g_firstInstance{ 0U };
+constexpr uint32_t g_firstIndex{ 0U };
 constexpr vk::DeviceSize g_offset{ 0UL };
-constexpr std::uint32_t g_firstBinding{ 0U };
-constexpr std::uint32_t g_firstScissor{ 0U };
-constexpr std::uint32_t g_firstViewport{ 0U };
+constexpr uint32_t g_firstBinding{ 0U };
+constexpr uint32_t g_firstScissor{ 0U };
+constexpr uint32_t g_firstViewport{ 0U };
 constexpr vk::ClearColorValue g_clearColor{ 0.1F, 0.1F, 0.1F, 1.0F };
 constexpr vk::ClearDepthStencilValue g_clearDepthStencil{ 1.0F, 0U };
 constexpr std::array< vk::ClearValue, 2U > g_clearValues{ g_clearColor, g_clearDepthStencil };
@@ -18,7 +18,7 @@ constexpr std::array< vk::ClearValue, 2U > g_clearValues{ g_clearColor, g_clearD
 
 namespace ve {
 
-std::uint32_t GraphicsCommandBuffer::getQueueFamilyID( const ve::LogicalDevice& logicalDevice ) {
+uint32_t GraphicsCommandBuffer::getQueueFamilyID( const ve::LogicalDevice& logicalDevice ) {
     return logicalDevice.getQueueFamilyIDs().at( ve::FamilyType::eGraphics );
 }
 
@@ -31,7 +31,7 @@ void GraphicsCommandBuffer::beginRenderPass( const vk::RenderPass renderPass, co
     renderPassBeginInfo.renderArea.offset = vk::Offset2D{ 0, 0 };
     renderPassBeginInfo.renderArea.extent = renderArea;
 
-    renderPassBeginInfo.clearValueCount = static_cast< std::uint32_t >( std::size( g_clearValues ) );
+    renderPassBeginInfo.clearValueCount = static_cast< uint32_t >( std::size( g_clearValues ) );
     renderPassBeginInfo.pClearValues    = std::data( g_clearValues );
 
     m_commandBuffer.beginRenderPass( renderPassBeginInfo, vk::SubpassContents::eInline );
@@ -59,16 +59,16 @@ void GraphicsCommandBuffer::bindIndexBuffer( const vk::Buffer indexBuffer ) cons
 
 void GraphicsCommandBuffer::bindDescriptorSet( const vk::PipelineLayout pipelineLayout,
                                                const vk::DescriptorSet descriptorSet,
-                                               const std::uint32_t firstSet ) const noexcept {
+                                               const uint32_t firstSet ) const noexcept {
     m_commandBuffer.bindDescriptorSets( vk::PipelineBindPoint::eGraphics, pipelineLayout, firstSet, descriptorSet,
                                         nullptr );
 }
 
-void GraphicsCommandBuffer::draw( const std::uint32_t verticesCount ) const noexcept {
+void GraphicsCommandBuffer::draw( const uint32_t verticesCount ) const noexcept {
     m_commandBuffer.draw( verticesCount, g_instanceCount, g_firstVertex, g_firstInstance );
 }
 
-void GraphicsCommandBuffer::drawIndices( const std::uint32_t indicesCount ) const noexcept {
+void GraphicsCommandBuffer::drawIndices( const uint32_t indicesCount ) const noexcept {
     m_commandBuffer.drawIndexed( indicesCount, g_instanceCount, g_firstIndex, g_offset, g_firstInstance );
 }
 

@@ -5,7 +5,6 @@
 #include <iostream>
 #include <ranges>
 #include <algorithm>
-#include <cstdint>
 
 namespace ve {
 
@@ -20,7 +19,7 @@ void DebugMessenger::destroy() {
 }
 
 bool DebugMessenger::areValidationLayersSupported() {
-    std::uint32_t layersCount{};
+    uint32_t layersCount{};
     vkEnumerateInstanceLayerProperties( &layersCount, nullptr );
 
     std::vector< VkLayerProperties > allAvailableLayers( layersCount );

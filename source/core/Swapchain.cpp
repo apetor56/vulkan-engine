@@ -31,9 +31,9 @@ void Swapchain::createSwapchain() {
     const vk::PresentModeKHR presentationMode{ choosePresentationMode( swapchainDetails.presentationModes ) };
     const vk::Extent2D extent{ chooseExtent( swapchainDetails.capabilities ) };
 
-    const std::uint32_t minImageCount{ swapchainDetails.capabilities.minImageCount };
-    const std::uint32_t maxImageCount{ swapchainDetails.capabilities.maxImageCount };
-    const std::uint32_t imageCount{ minImageCount != maxImageCount ? minImageCount + 1U : maxImageCount };
+    const uint32_t minImageCount{ swapchainDetails.capabilities.minImageCount };
+    const uint32_t maxImageCount{ swapchainDetails.capabilities.maxImageCount };
+    const uint32_t imageCount{ minImageCount != maxImageCount ? minImageCount + 1U : maxImageCount };
 
     vk::SwapchainCreateInfoKHR createInfo{};
     createInfo.sType            = vk::StructureType::eSwapchainCreateInfoKHR;
@@ -49,10 +49,10 @@ void Swapchain::createSwapchain() {
 
     if ( queueFamilyIDs.at( ve::FamilyType::eGraphics ) != queueFamilyIDs.at( ve::FamilyType::ePresentation ) ) {
         const auto valuesView{ queueFamilyIDs | std::views::values };
-        const std::vector< std::uint32_t > indices{ std::begin( valuesView ), std::end( valuesView ) };
+        const std::vector< uint32_t > indices{ std::begin( valuesView ), std::end( valuesView ) };
         createInfo.pQueueFamilyIndices   = std::data( indices );
         createInfo.imageSharingMode      = vk::SharingMode::eConcurrent;
-        createInfo.queueFamilyIndexCount = static_cast< std::uint32_t >( std::size( indices ) );
+        createInfo.queueFamilyIndexCount = static_cast< uint32_t >( std::size( indices ) );
 
     } else {
         createInfo.imageSharingMode      = vk::SharingMode::eExclusive;
@@ -138,7 +138,7 @@ vk::PresentModeKHR
 }
 
 vk::Extent2D Swapchain::chooseExtent( const vk::SurfaceCapabilitiesKHR& capabilities ) const noexcept {
-    if ( capabilities.currentExtent.width != std::numeric_limits< std::uint32_t >::max() )
+    if ( capabilities.currentExtent.width != std::numeric_limits< uint32_t >::max() )
         return capabilities.currentExtent;
 
     int width{};

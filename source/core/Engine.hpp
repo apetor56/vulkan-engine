@@ -32,7 +32,7 @@ public:
     void init();
     void run();
 
-    MeshBuffers uploadMeshBuffers( std::span< Vertex > vertices, std::span< std::uint32_t > indices ) const;
+    MeshBuffers uploadMeshBuffers( std::span< Vertex > vertices, std::span< uint32_t > indices ) const;
 
 private:
     using FrameResources = std::array< std::optional< ve::FrameData >, g_maxFramesInFlight >;
@@ -78,9 +78,9 @@ private:
     void createTextureSampler();
     void loadMeshes();
 
-    std::optional< std::uint32_t > acquireNextImage();
-    void draw( const std::uint32_t imageIndex );
-    void present( const std::uint32_t imageIndex );
+    std::optional< uint32_t > acquireNextImage();
+    void draw( const uint32_t imageIndex );
+    void present( const uint32_t imageIndex );
 
     void handleWindowResising();
     void immediateSubmit( const std::function< void( GraphicsCommandBuffer command ) >& function );

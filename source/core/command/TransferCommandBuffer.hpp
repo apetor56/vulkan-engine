@@ -11,7 +11,7 @@ public:
     using BaseCommandBuffer::BaseCommandBuffer;
     using BaseCommandBuffer::operator=;
 
-    static std::uint32_t getQueueFamilyID( const ve::LogicalDevice& logicalDevice );
+    static uint32_t getQueueFamilyID( const ve::LogicalDevice& logicalDevice );
 
     void copyBuffer( const vk::DeviceSize srcOffset, const vk::DeviceSize dstOffset, const std::size_t size,
                      const vk::Buffer srcBuffer, const vk::Buffer dstBuffer ) const;

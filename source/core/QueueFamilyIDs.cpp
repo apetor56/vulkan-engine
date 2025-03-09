@@ -11,7 +11,7 @@ QueueFamilyIDs QueueFamilyIDs::findQueueFamilies( const vk::PhysicalDevice devic
     QueueFamilyIDs queueFamilyIndices{};
     const auto queueFamilyProperties{ device.getQueueFamilyProperties() };
 
-    std::uint32_t queueFamilyID{};
+    uint32_t queueFamilyID{};
     vk::Bool32 isPresentionSupportAvailable{ false };
 
     for ( const auto& queueFamily : queueFamilyProperties ) {
@@ -36,7 +36,7 @@ QueueFamilyIDs QueueFamilyIDs::findQueueFamilies( const vk::PhysicalDevice devic
     return queueFamilyIndices;
 }
 
-void QueueFamilyIDs::add( FamilyType type, std::uint32_t familyID ) {
+void QueueFamilyIDs::add( FamilyType type, uint32_t familyID ) {
     m_familyIndices.emplace( type, familyID );
 }
 

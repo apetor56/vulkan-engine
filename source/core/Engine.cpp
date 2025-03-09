@@ -70,7 +70,7 @@ void Engine::run() {
     m_logicalDevice.get().waitIdle();
 }
 
-std::optional< std::uint32_t > Engine::acquireNextImage() {
+std::optional< uint32_t > Engine::acquireNextImage() {
     try {
         const auto& currentFrame{ m_currentFrameIt->value() };
         auto [ result, imageIndex ]{ m_logicalDevice.get().acquireNextImageKHR(
@@ -87,7 +87,7 @@ std::optional< std::uint32_t > Engine::acquireNextImage() {
     }
 }
 
-void Engine::draw( const std::uint32_t imageIndex ) {
+void Engine::draw( const uint32_t imageIndex ) {
     auto& currentFrame{ m_currentFrameIt->value() };
 
     updateUniformBuffer();
@@ -108,8 +108,8 @@ void Engine::draw( const std::uint32_t imageIndex ) {
     std::ranges::for_each( m_modelMeshes, [ &commandBuffer ]( const auto& meshAsset ) {
         commandBuffer.bindVertexBuffer( meshAsset.buffers.vertexBuffer->get() );
         commandBuffer.bindIndexBuffer( meshAsset.buffers.indexBuffer->get() );
-        commandBuffer.drawIndices( static_cast< std::uint32_t >( meshAsset.buffers.indexBuffer->size() ) /
-                                   sizeof( std::uint32_t ) );
+        commandBuffer.drawIndices( static_cast< uint32_t >( meshAsset.buffers.indexBuffer->size() ) /
+                                   sizeof( uint32_t ) );
     } );
     commandBuffer.endRenderPass();
     commandBuffer.end();
@@ -129,7 +129,7 @@ void Engine::draw( const std::uint32_t imageIndex ) {
     graphicsQueue.submit( submitInfo, currentFrame.renderFence.get() );
 }
 
-void Engine::present( const std::uint32_t imageIndex ) {
+void Engine::present( const uint32_t imageIndex ) {
     const auto swapchainHandler{ m_swapchain.get() };
     const auto& currentFrame{ m_currentFrameIt->value() };
     const auto renderSemaphore{ currentFrame.renderSemaphore.get() };
@@ -189,7 +189,7 @@ void Engine::preparePipeline() {
 void Engine::createFrameResoures() {
     const auto graphicsCommandBuffers{ m_graphicsCommandPool.createCommandBuffers< g_maxFramesInFlight >() };
 
-    for ( std::uint32_t frameID{ 0U }; frameID < g_maxFramesInFlight; frameID++ )
+    for ( uint32_t frameID{ 0U }; frameID < g_maxFramesInFlight; frameID++ )
         m_frameResources.at( frameID ).emplace( m_logicalDevice, m_memoryAllocator,
                                                 graphicsCommandBuffers.at( frameID ), m_descriptorSetLayout );
     m_currentFrameIt = std::begin( m_frameResources );
@@ -226,11 +226,11 @@ void Engine::updateUniformBuffer() {
 
 void Engine::configureDescriptorSets() {
     std::ranges::for_each( m_frameResources, [ this ]( auto& frameData ) {
-        static constexpr std::uint32_t uniformBufferBinding{ 0U };
+        static constexpr uint32_t uniformBufferBinding{ 0U };
         m_descriptorWriter.writeBuffer( uniformBufferBinding, frameData.value().uniformBuffer.get(),
                                         sizeof( UniformBufferObject ), 0U, vk::DescriptorType::eUniformBuffer );
 
-        static constexpr std::uint32_t textureImageBinding{ 1U };
+        static constexpr uint32_t textureImageBinding{ 1U };
         m_descriptorWriter.writeImage( textureImageBinding, m_textureImage->getImageView(),
                                        vk::ImageLayout::eShaderReadOnlyOptimal, m_sampler,
                                        vk::DescriptorType::eCombinedImageSampler );
@@ -239,13 +239,13 @@ void Engine::configureDescriptorSets() {
     } );
 }
 
-MeshBuffers Engine::uploadMeshBuffers( std::span< Vertex > vertices, std::span< std::uint32_t > indices ) const {
+MeshBuffers Engine::uploadMeshBuffers( std::span< Vertex > vertices, std::span< uint32_t > indices ) const {
     MeshBuffers newMeshBuffers;
     newMeshBuffers.vertexBuffer.emplace( m_memoryAllocator, std::size( vertices ) * sizeof( Vertex ) );
-    newMeshBuffers.indexBuffer.emplace( m_memoryAllocator, std::size( indices ) * sizeof( std::uint32_t ) );
+    newMeshBuffers.indexBuffer.emplace( m_memoryAllocator, std::size( indices ) * sizeof( uint32_t ) );
 
     const vk::DeviceSize vertexBufferSize{ std::size( vertices ) * sizeof( Vertex ) };
-    const vk::DeviceSize indexBufferSize{ std::size( indices ) * sizeof( std::uint32_t ) };
+    const vk::DeviceSize indexBufferSize{ std::size( indices ) * sizeof( uint32_t ) };
 
     StagingBuffer stagingBuffer{ m_memoryAllocator, vertexBufferSize + indexBufferSize };
     void *mappedMemory{ stagingBuffer.getMappedMemory() };
@@ -299,7 +299,7 @@ void Engine::prepareTexture() {
     ve::StagingBuffer stagingBuffer{ m_memoryAllocator, bufferSize };
     memcpy( stagingBuffer.getMappedMemory(), pixels, bufferSize );
 
-    const vk::Extent2D imageExtent{ static_cast< std::uint32_t >( width ), static_cast< std::uint32_t >( height ) };
+    const vk::Extent2D imageExtent{ static_cast< uint32_t >( width ), static_cast< uint32_t >( height ) };
     m_textureImage.emplace( m_memoryAllocator, m_logicalDevice, imageExtent, vk::Format::eR8G8B8A8Srgb,
                             vk::ImageUsageFlagBits::eTransferDst | vk::ImageUsageFlagBits::eSampled,
                             vk::ImageAspectFlagBits::eColor );

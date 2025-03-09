@@ -22,7 +22,7 @@ void PhysicalDevice::pickPhysicalDevice( const ve::VulkanInstance& instance, con
     if ( std::size( devices ) == 0U )
         throw std::runtime_error( "failed to find GPU with Vulkan support" );
 
-    std::map< std::uint32_t, vk::PhysicalDevice > deviceCandidates{};
+    std::map< uint32_t, vk::PhysicalDevice > deviceCandidates{};
     std::ranges::for_each( devices, [ this, &window, &deviceCandidates ]( const auto device ) {
         deviceCandidates.insert( { rate( device, window.getSurface() ), device } );
     } );
@@ -38,8 +38,7 @@ void PhysicalDevice::pickPhysicalDevice( const ve::VulkanInstance& instance, con
     SPDLOG_INFO( "Picked GPU: {}", deviceProperties.deviceName.data() );
 }
 
-std::uint32_t PhysicalDevice::rate( const vk::PhysicalDevice physicalDevice,
-                                    const VkSurfaceKHR surface ) const noexcept {
+uint32_t PhysicalDevice::rate( const vk::PhysicalDevice physicalDevice, const VkSurfaceKHR surface ) const noexcept {
     const auto queueFamilyIndices{ ve::QueueFamilyIDs::findQueueFamilies( physicalDevice, surface ) };
     const auto deviceProperties{ physicalDevice.getProperties() };
     const auto deviceFeatures{ physicalDevice.getFeatures() };
@@ -55,7 +54,7 @@ std::uint32_t PhysicalDevice::rate( const vk::PhysicalDevice physicalDevice,
          !queueFamilyIndices.hasRequiredFamilies() || !deviceFeatures.samplerAnisotropy )
         return 0U;
 
-    std::uint32_t score{};
+    uint32_t score{};
     if ( deviceProperties.deviceType == vk::PhysicalDeviceType::eDiscreteGpu )
         score += cfg::gpu::discreteGpuValue;
 

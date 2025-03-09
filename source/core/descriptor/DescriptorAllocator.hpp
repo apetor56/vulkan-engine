@@ -12,7 +12,7 @@ public:
         float ratio;
     };
 
-    DescriptorAllocator( const ve::LogicalDevice& logicalDevice, const std::uint32_t maxSets,
+    DescriptorAllocator( const ve::LogicalDevice& logicalDevice, const uint32_t maxSets,
                          std::span< PoolSizeRatio > poolSizeRatios );
 
     ~DescriptorAllocator();
@@ -28,7 +28,7 @@ private:
     Pools m_availablePools;
     std::vector< PoolSizeRatio > m_poolSizeRatios;
     const ve::LogicalDevice& m_logicalDevice;
-    std::uint32_t m_setsPerPool{ 1U };
+    uint32_t m_setsPerPool{ 1U };
 
     vk::DescriptorPool getPool();
     vk::DescriptorPool createNewPool();

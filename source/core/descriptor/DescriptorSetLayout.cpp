@@ -11,8 +11,8 @@ DescriptorSetLayout ::~DescriptorSetLayout() {
     m_logicalDevice.get().destroyDescriptorSetLayout( m_layout );
 }
 
-void DescriptorSetLayout::addBinding( const std::uint32_t bindingPoint, const vk::DescriptorType descriptorType,
-                                      const vk::ShaderStageFlags shaderStage, const std::uint32_t descriptorCount ) {
+void DescriptorSetLayout::addBinding( const uint32_t bindingPoint, const vk::DescriptorType descriptorType,
+                                      const vk::ShaderStageFlags shaderStage, const uint32_t descriptorCount ) {
     vk::DescriptorSetLayoutBinding layoutBinding{};
     layoutBinding.binding         = bindingPoint;
     layoutBinding.descriptorType  = descriptorType;
@@ -29,7 +29,7 @@ void DescriptorSetLayout::create() {
 
     vk::DescriptorSetLayoutCreateInfo layoutInfo{};
     layoutInfo.sType        = vk::StructureType::eDescriptorSetLayoutCreateInfo;
-    layoutInfo.bindingCount = static_cast< std::uint32_t >( std::size( m_descriptorBindings ) );
+    layoutInfo.bindingCount = static_cast< uint32_t >( std::size( m_descriptorBindings ) );
     layoutInfo.pBindings    = std::data( bindingsData );
 
     m_layout = m_logicalDevice.get().createDescriptorSetLayout( layoutInfo );

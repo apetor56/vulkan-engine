@@ -31,7 +31,7 @@ void ShaderModule::createShaderModule( const std::vector< std::byte >& shaderByt
     vk::ShaderModuleCreateInfo createInfo{};
     createInfo.sType    = vk::StructureType::eShaderModuleCreateInfo;
     createInfo.codeSize = std::size( shaderByteCode );
-    createInfo.pCode    = reinterpret_cast< const std::uint32_t * >( shaderByteCode.data() );
+    createInfo.pCode    = reinterpret_cast< const uint32_t * >( shaderByteCode.data() );
 
     m_shaderModule = m_logicalDevice.get().createShaderModule( createInfo );
 }

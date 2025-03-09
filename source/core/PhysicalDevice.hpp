@@ -26,7 +26,7 @@ private:
     vk::PhysicalDevice m_physicalDevice{};
 
     void pickPhysicalDevice( const ve::VulkanInstance& instance, const ve::Window& window );
-    std::uint32_t rate( const vk::PhysicalDevice device, const VkSurfaceKHR surface ) const noexcept;
+    uint32_t rate( const vk::PhysicalDevice device, const VkSurfaceKHR surface ) const noexcept;
     bool areRequiredExtensionsSupported( const vk::PhysicalDevice physicalDevice ) const;
 };
 

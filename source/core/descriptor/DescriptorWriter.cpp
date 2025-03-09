@@ -4,7 +4,7 @@ namespace ve {
 
 DescriptorWriter::DescriptorWriter( const ve::LogicalDevice& logicalDevice ) : m_logicalDevice{ logicalDevice } {}
 
-void DescriptorWriter::writeImage( const std::uint32_t binding, const vk::ImageView imageView,
+void DescriptorWriter::writeImage( const uint32_t binding, const vk::ImageView imageView,
                                    const vk::ImageLayout imageLayout, const vk::Sampler sampler,
                                    const vk::DescriptorType descriptorType ) {
     const vk::DescriptorImageInfo& descriptorImageInfo{
@@ -21,7 +21,7 @@ void DescriptorWriter::writeImage( const std::uint32_t binding, const vk::ImageV
     m_descriptorWrites.emplace_back( write );
 }
 
-void DescriptorWriter::writeBuffer( const std::uint32_t binding, const vk::Buffer buffer, const std::uint32_t range,
+void DescriptorWriter::writeBuffer( const uint32_t binding, const vk::Buffer buffer, const uint32_t range,
                                     const std::size_t offset, const vk::DescriptorType descriptorType ) {
     const vk::DescriptorBufferInfo& descriptorBufferInfo{
         m_descriptorBufferInfos.emplace_back( buffer, offset, range ) };

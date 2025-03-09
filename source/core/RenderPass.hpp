@@ -22,7 +22,7 @@ private:
     const ve::LogicalDevice& m_logicalDevice;
 
     void createDescription( const vk::Format format, const vk::ImageLayout finalLayout );
-    void createReference( const std::uint32_t attachmentIndex, const vk::ImageLayout layout );
+    void createReference( const uint32_t attachmentIndex, const vk::ImageLayout layout );
     void createSubpass();
     void createSubpassDependency();
     void createRenderPass();

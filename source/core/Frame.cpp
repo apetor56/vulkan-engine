@@ -8,7 +8,7 @@ static std::array< ve::DescriptorAllocator::PoolSizeRatio, 4U > g_poolSizeRatios
     { vk::DescriptorType::eUniformBuffer, 0.3F },
     { vk::DescriptorType::eCombinedImageSampler, 0.4F } };
 
-static constexpr std::uint32_t g_maxSets{ 1000U };
+static constexpr uint32_t g_maxSets{ 1000U };
 
 FrameData::FrameData( const ve::LogicalDevice& _logicalDevice, const ve::MemoryAllocator& _memoryAllocator,
                       const ve::GraphicsCommandBuffer _commandBuffer, const ve::DescriptorSetLayout& _layout )

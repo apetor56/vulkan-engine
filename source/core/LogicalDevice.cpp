@@ -20,13 +20,13 @@ LogicalDevice::~LogicalDevice() {
 void LogicalDevice::createLogicalDevice() {
     const auto& physicalDeviceExtensions{ m_physicalDevice.getExtensions() };
     const auto queueFamilyIndices{ m_physicalDevice.getQueueFamilyIDs() };
-    static constexpr std::uint32_t queueCount{ 1U };
+    static constexpr uint32_t queueCount{ 1U };
     static constexpr float queuePriority{ 1.0F };
 
     std::vector< vk::DeviceQueueCreateInfo > queueCreateInfos{};
-    std::set< std::uint32_t > uniqueQueueFamilies{ queueFamilyIndices.at( FamilyType::eGraphics ),
-                                                   queueFamilyIndices.at( FamilyType::ePresentation ),
-                                                   queueFamilyIndices.at( FamilyType::eTransfer ) };
+    std::set< uint32_t > uniqueQueueFamilies{ queueFamilyIndices.at( FamilyType::eGraphics ),
+                                              queueFamilyIndices.at( FamilyType::ePresentation ),
+                                              queueFamilyIndices.at( FamilyType::eTransfer ) };
 
     std::ranges::for_each( uniqueQueueFamilies, [ &queueCreateInfos ]( const auto queueFamilyID ) {
         vk::DeviceQueueCreateInfo queueCreateInfo{};
@@ -52,7 +52,7 @@ void LogicalDevice::createLogicalDevice() {
 
     m_logicalDevice = m_physicalDevice.get().createDevice( deviceCreateInfo, nullptr );
 
-    constexpr std::uint32_t queueIndex{ 0U };
+    constexpr uint32_t queueIndex{ 0U };
     m_queues.emplace( ve::QueueType::eGraphics,
                       m_logicalDevice.getQueue( queueFamilyIndices.at( FamilyType::eGraphics ), queueIndex ) );
     m_queues.emplace( ve::QueueType::ePresentation,
