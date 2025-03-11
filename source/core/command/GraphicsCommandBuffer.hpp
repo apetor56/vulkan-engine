@@ -5,6 +5,7 @@
 namespace ve {
 
 class LogicalDevice;
+struct PushConstants;
 
 class GraphicsCommandBuffer : public BaseCommandBuffer {
 public:
@@ -28,6 +29,8 @@ public:
     void transitionImageBuffer( const vk::Image image, const vk::Format format, const vk::ImageLayout oldLayout,
                                 const vk::ImageLayout newLayout );
     void copyBufferToImage( const vk::Buffer buffer, const vk::Image image, const vk::Extent2D extent );
+    void pushConstants( const vk::PipelineLayout layout, const vk::ShaderStageFlags shaderStages,
+                        const ve::PushConstants& pushConstants, const uint32_t offset = 0U ) const noexcept;
 };
 
 } // namespace ve

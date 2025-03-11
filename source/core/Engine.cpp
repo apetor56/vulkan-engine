@@ -99,14 +99,22 @@ void Engine::draw( const uint32_t imageIndex ) {
 
     commandBuffer.reset();
     commandBuffer.begin();
+
+    if ( !m_renderPass.has_value() )
+        throw std::runtime_error( "renderpass not initialized" );
+    if ( !m_pipeline.has_value() )
+        throw std::runtime_error( "pipeline not initialized" );
+
     commandBuffer.beginRenderPass( m_renderPass->get(), m_framebuffers.at( imageIndex )->get(),
                                    m_swapchain.getExtent() );
     commandBuffer.bindPipeline( m_pipeline->get() );
     commandBuffer.setViewport( m_swapchain.getViewport() );
     commandBuffer.setScissor( m_swapchain.getScissor() );
     commandBuffer.bindDescriptorSet( m_pipeline->getLayout(), currentFrame.descriptorSet );
-    std::ranges::for_each( m_modelMeshes, [ &commandBuffer ]( const auto& meshAsset ) {
-        commandBuffer.bindVertexBuffer( meshAsset.buffers.vertexBuffer->get() );
+    std::ranges::for_each( m_modelMeshes, [ this, &commandBuffer ]( const auto& meshAsset ) {
+        const ve::PushConstants pushConstants{ .worldMatrix{ glm::mat4{ 1.0F } },
+                                               .vertexBufferAddress{ meshAsset.buffers.vertexBufferAddress } };
+        commandBuffer.pushConstants( m_pipeline->getLayout(), vk::ShaderStageFlagBits::eVertex, pushConstants );
         commandBuffer.bindIndexBuffer( meshAsset.buffers.indexBuffer->get() );
         commandBuffer.drawIndices( static_cast< uint32_t >( meshAsset.buffers.indexBuffer->size() ) /
                                    sizeof( uint32_t ) );
@@ -179,7 +187,16 @@ void Engine::preparePipeline() {
     m_descriptorSetLayout.addBinding( 1U, vk::DescriptorType::eCombinedImageSampler,
                                       vk::ShaderStageFlagBits::eFragment );
     m_descriptorSetLayout.create();
-    m_pipelineLayout.emplace( m_logicalDevice, m_descriptorSetLayout );
+    const auto layoutHandler{ m_descriptorSetLayout.get() };
+
+    static constexpr vk::PushConstantRange bufferRange{ ve::PushConstants::defaultRange() };
+    auto pipelineLayoutInfo{ ve::PipelineLayout::defaultInfo() };
+    pipelineLayoutInfo.pPushConstantRanges    = &bufferRange;
+    pipelineLayoutInfo.pushConstantRangeCount = 1U;
+    pipelineLayoutInfo.pSetLayouts            = &layoutHandler;
+    pipelineLayoutInfo.setLayoutCount         = 1U;
+
+    m_pipelineLayout.emplace( m_logicalDevice, pipelineLayoutInfo );
 
     m_pipelineBuilder.setShaders( m_vertexShader, m_fragmentShader );
     m_pipelineBuilder.setLayout( m_pipelineLayout.value() );
@@ -240,9 +257,21 @@ void Engine::configureDescriptorSets() {
 }
 
 MeshBuffers Engine::uploadMeshBuffers( std::span< Vertex > vertices, std::span< uint32_t > indices ) const {
+    const auto logicalDeviceHandler{ m_logicalDevice.get() };
+    const auto commandBufferHandler{ m_transferCommandBuffer.get() };
+
     MeshBuffers newMeshBuffers;
     newMeshBuffers.vertexBuffer.emplace( m_memoryAllocator, std::size( vertices ) * sizeof( Vertex ) );
     newMeshBuffers.indexBuffer.emplace( m_memoryAllocator, std::size( indices ) * sizeof( uint32_t ) );
+
+    if ( newMeshBuffers.vertexBuffer.has_value() ) {
+        vk::BufferDeviceAddressInfo addressInfo{};
+        addressInfo.sType                  = vk::StructureType::eBufferDeviceAddressInfo;
+        addressInfo.buffer                 = newMeshBuffers.vertexBuffer->get();
+        newMeshBuffers.vertexBufferAddress = logicalDeviceHandler.getBufferAddress( addressInfo );
+    } else {
+        throw std::runtime_error( "failed to obtain buffer address" );
+    }
 
     const vk::DeviceSize vertexBufferSize{ std::size( vertices ) * sizeof( Vertex ) };
     const vk::DeviceSize indexBufferSize{ std::size( indices ) * sizeof( uint32_t ) };
@@ -252,8 +281,6 @@ MeshBuffers Engine::uploadMeshBuffers( std::span< Vertex > vertices, std::span< 
     memcpy( mappedMemory, std::data( vertices ), vertexBufferSize );
     memcpy( static_cast< char * >( mappedMemory ) + vertexBufferSize, std::data( indices ), indexBufferSize );
 
-    const auto logicalDeviceHandler{ m_logicalDevice.get() };
-    const auto commandBufferHandler{ m_transferCommandBuffer.get() };
     logicalDeviceHandler.resetFences( m_immediateSubmitFence.get() );
     m_transferCommandBuffer.reset();
 

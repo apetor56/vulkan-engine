@@ -1,6 +1,7 @@
 #include "GraphicsCommandBuffer.hpp"
 #include "QueueFamilyIDs.hpp"
 #include "LogicalDevice.hpp"
+#include "Loader.hpp"
 
 namespace {
 constexpr uint32_t g_firstVertex{ 0U };
@@ -129,6 +130,12 @@ void GraphicsCommandBuffer::copyBufferToImage( const vk::Buffer buffer, const vk
     copyRegion.imageExtent = vk::Extent3D{ extent.width, extent.height, 1U };
 
     m_commandBuffer.copyBufferToImage( buffer, image, vk::ImageLayout::eTransferDstOptimal, copyRegion );
+}
+
+void GraphicsCommandBuffer::pushConstants( const vk::PipelineLayout layout, const vk::ShaderStageFlags shaderStages,
+                                           const ve::PushConstants& pushConstants,
+                                           const uint32_t offset ) const noexcept {
+    m_commandBuffer.pushConstants( layout, shaderStages, offset, sizeof( ve::PushConstants ), &pushConstants );
 }
 
 } // namespace ve
