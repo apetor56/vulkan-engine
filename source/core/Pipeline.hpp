@@ -14,9 +14,10 @@ class RenderPass;
 class PipelineLayout : public utils::NonCopyable,
                        public utils::NonMovable {
 public:
-    PipelineLayout( const ve::LogicalDevice& logicalDevice, const ve::DescriptorSetLayout& descriptorLayout );
+    PipelineLayout( const ve::LogicalDevice& logicalDevice, const vk::PipelineLayoutCreateInfo& layoutInfo );
     ~PipelineLayout();
 
+    static vk::PipelineLayoutCreateInfo defaultInfo() noexcept;
     vk::PipelineLayout get() const noexcept { return m_pipelineLayout; }
 
 private:

@@ -13,6 +13,7 @@ MemoryAllocator::MemoryAllocator( const VulkanInstance& instance, const Physical
     allocatorCreateInfo.instance       = instance.get();
     allocatorCreateInfo.physicalDevice = physicalDevice.get();
     allocatorCreateInfo.device         = logicalDevice.get();
+    allocatorCreateInfo.flags          = VMA_ALLOCATOR_CREATE_BUFFER_DEVICE_ADDRESS_BIT;
 
     vmaCreateAllocator( &allocatorCreateInfo, &m_allocator );
 }

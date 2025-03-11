@@ -48,6 +48,7 @@ set(CORE
     core/Loader.hpp                core/Loader.cpp
     core/RenderObject.hpp
     core/Material.hpp
+    core/Mesh.hpp
 )
 
 set(UTILS

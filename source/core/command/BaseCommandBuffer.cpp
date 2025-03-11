@@ -2,8 +2,8 @@
 
 namespace ve {
 
-BaseCommandBuffer::BaseCommandBuffer( const vk::CommandBuffer commandBufferHandler ) noexcept
-    : m_commandBuffer{ commandBufferHandler } {}
+BaseCommandBuffer::BaseCommandBuffer( const vk::CommandBuffer commandBufferVk ) noexcept
+    : m_commandBuffer{ commandBufferVk } {}
 
 void BaseCommandBuffer::begin( const vk::CommandBufferUsageFlags flags ) const {
     vk::CommandBufferBeginInfo beginInfo;

@@ -1,7 +1,7 @@
 #pragma once
 
 #include <vulkan/vulkan.hpp>
-#include <glm/vec3.hpp>
+#include <glm/vec4.hpp>
 #include <glm/vec2.hpp>
 
 #include <array>
@@ -9,9 +9,10 @@
 namespace ve {
 
 struct Vertex {
-    glm::vec3 position;
-    glm::vec3 color;
+    glm::vec4 position;
+    glm::vec4 color;
     glm::vec2 texCoord;
+    glm::vec2 uv;
 
     static constexpr vk::VertexInputBindingDescription getBindingDescription() noexcept {
         constexpr auto bindingPoint{ 0U };

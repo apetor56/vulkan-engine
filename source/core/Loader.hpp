@@ -2,6 +2,7 @@
 
 #include "Buffer.hpp"
 #include "MemoryAllocator.hpp"
+#include "Mesh.hpp"
 
 #include <assimp/Importer.hpp>
 #include <assimp/mesh.h>
@@ -17,16 +18,6 @@ struct aiScene;
 namespace ve {
 
 class Engine;
-
-struct MeshBuffers {
-    std::optional< ve::VertexBuffer > vertexBuffer;
-    std::optional< ve::IndexBuffer > indexBuffer;
-};
-
-struct MeshAsset {
-    MeshBuffers buffers{};
-    aiString name{};
-};
 
 class Loader : public utils::NonCopyable,
                public utils::NonMovable {

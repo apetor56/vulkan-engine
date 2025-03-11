@@ -50,8 +50,14 @@ uint32_t PhysicalDevice::rate( const vk::PhysicalDevice physicalDevice, const Vk
         isSwapchainAdequate = !swapchainDetails.formats.empty() && !swapchainDetails.presentationModes.empty();
     }
 
+    vk::PhysicalDeviceVulkan12Features supportedFeaturesV12{};
+    vk::PhysicalDeviceFeatures2 features2{};
+    features2.pNext = &supportedFeaturesV12;
+    physicalDevice.getFeatures2( &features2 );
+
     if ( !isExtensionSupportAvailable || !isSwapchainAdequate || !deviceFeatures.geometryShader ||
-         !queueFamilyIndices.hasRequiredFamilies() || !deviceFeatures.samplerAnisotropy )
+         !queueFamilyIndices.hasRequiredFamilies() || !deviceFeatures.samplerAnisotropy ||
+         !supportedFeaturesV12.bufferDeviceAddress )
         return 0U;
 
     uint32_t score{};

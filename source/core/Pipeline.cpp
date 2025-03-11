@@ -48,17 +48,22 @@ Pipeline::~Pipeline() {
     m_logicalDevice.get().destroyPipeline( m_pipeline );
 }
 
-PipelineLayout::PipelineLayout( const ve::LogicalDevice& logicalDevice,
-                                const ve::DescriptorSetLayout& descriptorLayout )
+PipelineLayout::PipelineLayout( const ve::LogicalDevice& logicalDevice, const vk::PipelineLayoutCreateInfo& layoutInfo )
     : m_logicalDevice{ logicalDevice } {
-    const auto layoutHandler{ descriptorLayout.get() };
+    m_pipelineLayout = m_logicalDevice.get().createPipelineLayout( layoutInfo );
+}
 
-    vk::PipelineLayoutCreateInfo pipelineLayoutInfo{};
-    pipelineLayoutInfo.sType          = vk::StructureType::ePipelineLayoutCreateInfo;
-    pipelineLayoutInfo.setLayoutCount = 1U;
-    pipelineLayoutInfo.pSetLayouts    = &layoutHandler;
+vk::PipelineLayoutCreateInfo PipelineLayout::defaultInfo() noexcept {
+    vk::PipelineLayoutCreateInfo info{};
+    info.sType                  = vk::StructureType::ePipelineLayoutCreateInfo;
+    info.pNext                  = nullptr;
+    info.flags                  = vk::PipelineLayoutCreateFlags{};
+    info.setLayoutCount         = 0U;
+    info.pSetLayouts            = nullptr;
+    info.pushConstantRangeCount = 0U;
+    info.pPushConstantRanges    = nullptr;
 
-    m_pipelineLayout = m_logicalDevice.get().createPipelineLayout( pipelineLayoutInfo );
+    return info;
 }
 
 PipelineLayout::~PipelineLayout() {
@@ -130,15 +135,12 @@ vk::PipelineViewportStateCreateInfo PipelineBuilder::defaultViewportStateInfo() 
 }
 
 vk::PipelineVertexInputStateCreateInfo PipelineBuilder::defaultVertexInputInfo() const noexcept {
-    static constexpr auto vertexBindingDescription{ Vertex::getBindingDescription() };
-    static const auto vertexAttributeDescriptions{ Vertex::getAttributeDescripstions() };
-
     vk::PipelineVertexInputStateCreateInfo vertexInput{};
     vertexInput.sType                           = vk::StructureType::ePipelineVertexInputStateCreateInfo;
-    vertexInput.vertexBindingDescriptionCount   = 1U;
-    vertexInput.pVertexBindingDescriptions      = &vertexBindingDescription;
-    vertexInput.vertexAttributeDescriptionCount = utils::size( vertexAttributeDescriptions );
-    vertexInput.pVertexAttributeDescriptions    = std::data( vertexAttributeDescriptions );
+    vertexInput.vertexBindingDescriptionCount   = 0U;
+    vertexInput.pVertexBindingDescriptions      = nullptr;
+    vertexInput.vertexAttributeDescriptionCount = 0U;
+    vertexInput.pVertexAttributeDescriptions    = nullptr;
 
     return vertexInput;
 }

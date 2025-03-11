@@ -16,15 +16,15 @@ public:
     template < uint32_t count = 1U, vk::CommandBufferLevel level = vk::CommandBufferLevel::ePrimary >
     auto createCommandBuffers() const {
         const auto allocInfo{ createAllocInfo( count, level ) };
-        const auto logicalDeviceHandler{ m_logicalDevice.get() };
-        const auto commandBufferHandlers{ logicalDeviceHandler.allocateCommandBuffers( allocInfo ) };
+        const auto logicalDeviceVk{ m_logicalDevice.get() };
+        const auto commandBufferVks{ logicalDeviceVk.allocateCommandBuffers( allocInfo ) };
 
         if constexpr ( count == 1U ) {
-            return CommandBuffer_T{ *commandBufferHandlers.begin() };
+            return CommandBuffer_T{ *commandBufferVks.begin() };
         } else {
             std::vector< CommandBuffer_T > m_commandBuffers;
             for ( uint32_t index{ 0 }; index < count; index++ )
-                m_commandBuffers.emplace_back( commandBufferHandlers.at( index ) );
+                m_commandBuffers.emplace_back( commandBufferVks.at( index ) );
 
             return m_commandBuffers;
         }

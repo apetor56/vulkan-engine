@@ -40,12 +40,12 @@ MeshAsset Loader::processMesh( aiMesh *const mesh ) {
     std::vector< uint32_t > indices;
     indices.reserve( mesh->mNumVertices * 2 );
 
-    Vertex vertex{ .color{ 0.5F, 0.5F, 0.5F } };
+    Vertex vertex{ .color{ 0.5F, 0.5F, 0.5F, 1.0F } };
     aiVector3D meshVertex{};
     aiVector3D meshTexCoord{};
     for ( uint32_t vertexID{}; vertexID < mesh->mNumVertices; vertexID++ ) {
         meshVertex      = mesh->mVertices[ vertexID ];
-        vertex.position = { meshVertex.x, meshVertex.y, meshVertex.z };
+        vertex.position = { meshVertex.x, meshVertex.y, meshVertex.z, 1.0F };
 
         if ( mesh->mTextureCoords[ 0 ] != nullptr ) {
             meshTexCoord    = mesh->mTextureCoords[ 0 ][ vertexID ];
@@ -64,7 +64,7 @@ MeshAsset Loader::processMesh( aiMesh *const mesh ) {
             indices.emplace_back( face.mIndices[ indexID ] );
     }
 
-    return MeshAsset{ .buffers{ m_engine.uploadMeshBuffers( vertices, indices ) }, .name{ mesh->mName } };
+    return MeshAsset{ .buffers{ m_engine.uploadMeshBuffers( vertices, indices ) }, .name{ mesh->mName.C_Str() } };
 }
 
 } // namespace ve

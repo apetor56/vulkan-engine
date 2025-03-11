@@ -34,7 +34,7 @@ void VulkanInstance::createVulkanInstance() {
     appInfo.pNext              = nullptr;
     appInfo.pApplicationName   = "vulkan engine";
     appInfo.pEngineName        = nullptr;
-    appInfo.apiVersion         = vk::ApiVersion10;
+    appInfo.apiVersion         = vk::ApiVersion13;
     appInfo.applicationVersion = vk::makeApiVersion( 0, 1, 0, 0 );
     appInfo.engineVersion      = vk::makeApiVersion( 0, 1, 0, 0 );
 
