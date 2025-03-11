@@ -16,14 +16,14 @@ DescriptorAllocator::~DescriptorAllocator() {
 
 vk::DescriptorSet DescriptorAllocator::allocate( const ve::DescriptorSetLayout& layout, void *pNext ) {
     vk::DescriptorPool poolToUse{ getPool() };
-    const auto layoutHandler{ layout.get() };
+    const auto layoutVk{ layout.get() };
 
     vk::DescriptorSetAllocateInfo allocInfo{};
     allocInfo.sType              = vk::StructureType::eDescriptorSetAllocateInfo;
     allocInfo.pNext              = pNext;
     allocInfo.descriptorPool     = poolToUse;
     allocInfo.descriptorSetCount = 1U;
-    allocInfo.pSetLayouts        = &layoutHandler;
+    allocInfo.pSetLayouts        = &layoutVk;
 
     std::optional< vk::DescriptorSet > descriptorSet{};
     try {

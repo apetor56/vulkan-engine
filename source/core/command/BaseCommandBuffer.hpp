@@ -6,7 +6,7 @@ namespace ve {
 
 class BaseCommandBuffer {
 public:
-    BaseCommandBuffer( const vk::CommandBuffer commandBufferHandler ) noexcept;
+    BaseCommandBuffer( const vk::CommandBuffer commandBufferVk ) noexcept;
     ~BaseCommandBuffer() = default;
 
     BaseCommandBuffer( const BaseCommandBuffer& other ) = default;

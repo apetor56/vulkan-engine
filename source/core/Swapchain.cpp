@@ -23,7 +23,7 @@ Swapchain::~Swapchain() {
 
 void Swapchain::createSwapchain() {
     const ve::PhysicalDevice& physicalDevice{ m_logicalDevice.getParentPhysicalDevice() };
-    vk::Device logicalDeviceHandler{ m_logicalDevice.get() };
+    vk::Device logicalDeviceVk{ m_logicalDevice.get() };
     VkSurfaceKHR surface{ m_window.getSurface() };
 
     const Swapchain::Details swapchainDetails{ getSwapchainDetails( physicalDevice.get(), surface ) };
@@ -66,8 +66,8 @@ void Swapchain::createSwapchain() {
     createInfo.clipped        = vk::True;
     createInfo.oldSwapchain   = nullptr;
 
-    m_swapchain            = logicalDeviceHandler.createSwapchainKHR( createInfo );
-    m_swapchainImages      = logicalDeviceHandler.getSwapchainImagesKHR( m_swapchain );
+    m_swapchain            = logicalDeviceVk.createSwapchainKHR( createInfo );
+    m_swapchainImages      = logicalDeviceVk.getSwapchainImagesKHR( m_swapchain );
     m_swapchainImageFormat = surfaceFormat.format;
     m_swapchainImageExtent = extent;
 }
@@ -96,14 +96,13 @@ void Swapchain::recreate() {
 }
 
 void Swapchain::cleanup() {
-    const auto logicalDeviceHandler{ m_logicalDevice.get() };
+    const auto logicalDeviceVk{ m_logicalDevice.get() };
 
-    std::ranges::for_each( m_swapchainImageViews, [ &logicalDeviceHandler ]( const auto& view ) {
-        logicalDeviceHandler.destroyImageView( view );
-    } );
+    std::ranges::for_each( m_swapchainImageViews,
+                           [ &logicalDeviceVk ]( const auto& view ) { logicalDeviceVk.destroyImageView( view ); } );
     m_swapchainImageViews.clear();
 
-    logicalDeviceHandler.destroySwapchainKHR( m_swapchain );
+    logicalDeviceVk.destroySwapchainKHR( m_swapchain );
 }
 
 Swapchain::Details Swapchain::getSwapchainDetails( const vk::PhysicalDevice physicalDevice,
@@ -152,7 +151,7 @@ vk::Extent2D Swapchain::chooseExtent( const vk::SurfaceCapabilitiesKHR& capabili
 }
 
 void Swapchain::createImageViews() {
-    const auto logicalDeviceHandler{ m_logicalDevice.get() };
+    const auto logicalDeviceVk{ m_logicalDevice.get() };
 
     vk::ImageViewCreateInfo createInfo{};
     createInfo.sType                           = vk::StructureType::eImageViewCreateInfo;
@@ -168,9 +167,9 @@ void Swapchain::createImageViews() {
     createInfo.subresourceRange.baseArrayLayer = 0U;
     createInfo.subresourceRange.layerCount     = 1U;
 
-    std::ranges::for_each( m_swapchainImages, [ this, logicalDeviceHandler, &createInfo ]( const auto image ) {
+    std::ranges::for_each( m_swapchainImages, [ this, logicalDeviceVk, &createInfo ]( const auto image ) {
         createInfo.image = image;
-        m_swapchainImageViews.emplace_back( logicalDeviceHandler.createImageView( createInfo ) );
+        m_swapchainImageViews.emplace_back( logicalDeviceVk.createImageView( createInfo ) );
     } );
 }
 

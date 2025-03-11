@@ -93,7 +93,7 @@ void Engine::draw( const uint32_t imageIndex ) {
     updateUniformBuffer();
 
     const auto& commandBuffer{ currentFrame.graphicsCommandBuffer };
-    const auto commandBufferHandler{ commandBuffer.get() };
+    const auto commandBufferVk{ commandBuffer.get() };
     const auto renderFinishedSemaphore{ currentFrame.renderSemaphore.get() };
     const auto swapchainSemaphore{ currentFrame.swapchainSemaphore.get() };
 
@@ -129,7 +129,7 @@ void Engine::draw( const uint32_t imageIndex ) {
     submitInfo.pWaitSemaphores      = &swapchainSemaphore;
     submitInfo.pWaitDstStageMask    = &waitStage;
     submitInfo.commandBufferCount   = 1U;
-    submitInfo.pCommandBuffers      = &commandBufferHandler;
+    submitInfo.pCommandBuffers      = &commandBufferVk;
     submitInfo.signalSemaphoreCount = 1U;
     submitInfo.pSignalSemaphores    = &renderFinishedSemaphore;
 
@@ -138,7 +138,7 @@ void Engine::draw( const uint32_t imageIndex ) {
 }
 
 void Engine::present( const uint32_t imageIndex ) {
-    const auto swapchainHandler{ m_swapchain.get() };
+    const auto swapchainVk{ m_swapchain.get() };
     const auto& currentFrame{ m_currentFrameIt->value() };
     const auto renderSemaphore{ currentFrame.renderSemaphore.get() };
 
@@ -147,7 +147,7 @@ void Engine::present( const uint32_t imageIndex ) {
     presentInfo.waitSemaphoreCount = 1U;
     presentInfo.pWaitSemaphores    = &renderSemaphore;
     presentInfo.swapchainCount     = 1U;
-    presentInfo.pSwapchains        = &swapchainHandler;
+    presentInfo.pSwapchains        = &swapchainVk;
     presentInfo.pImageIndices      = &imageIndex;
 
     const auto presentationQueue{ m_logicalDevice.getQueue( ve::QueueType::ePresentation ) };
@@ -187,13 +187,13 @@ void Engine::preparePipeline() {
     m_descriptorSetLayout.addBinding( 1U, vk::DescriptorType::eCombinedImageSampler,
                                       vk::ShaderStageFlagBits::eFragment );
     m_descriptorSetLayout.create();
-    const auto layoutHandler{ m_descriptorSetLayout.get() };
+    const auto layoutVk{ m_descriptorSetLayout.get() };
 
     static constexpr vk::PushConstantRange bufferRange{ ve::PushConstants::defaultRange() };
     auto pipelineLayoutInfo{ ve::PipelineLayout::defaultInfo() };
     pipelineLayoutInfo.pPushConstantRanges    = &bufferRange;
     pipelineLayoutInfo.pushConstantRangeCount = 1U;
-    pipelineLayoutInfo.pSetLayouts            = &layoutHandler;
+    pipelineLayoutInfo.pSetLayouts            = &layoutVk;
     pipelineLayoutInfo.setLayoutCount         = 1U;
 
     m_pipelineLayout.emplace( m_logicalDevice, pipelineLayoutInfo );
@@ -257,8 +257,8 @@ void Engine::configureDescriptorSets() {
 }
 
 MeshBuffers Engine::uploadMeshBuffers( std::span< Vertex > vertices, std::span< uint32_t > indices ) const {
-    const auto logicalDeviceHandler{ m_logicalDevice.get() };
-    const auto commandBufferHandler{ m_transferCommandBuffer.get() };
+    const auto logicalDeviceVk{ m_logicalDevice.get() };
+    const auto commandBufferVk{ m_transferCommandBuffer.get() };
 
     MeshBuffers newMeshBuffers;
     newMeshBuffers.vertexBuffer.emplace( m_memoryAllocator, std::size( vertices ) * sizeof( Vertex ) );
@@ -268,7 +268,7 @@ MeshBuffers Engine::uploadMeshBuffers( std::span< Vertex > vertices, std::span< 
         vk::BufferDeviceAddressInfo addressInfo{};
         addressInfo.sType                  = vk::StructureType::eBufferDeviceAddressInfo;
         addressInfo.buffer                 = newMeshBuffers.vertexBuffer->get();
-        newMeshBuffers.vertexBufferAddress = logicalDeviceHandler.getBufferAddress( addressInfo );
+        newMeshBuffers.vertexBufferAddress = logicalDeviceVk.getBufferAddress( addressInfo );
     } else {
         throw std::runtime_error( "failed to obtain buffer address" );
     }
@@ -281,7 +281,7 @@ MeshBuffers Engine::uploadMeshBuffers( std::span< Vertex > vertices, std::span< 
     memcpy( mappedMemory, std::data( vertices ), vertexBufferSize );
     memcpy( static_cast< char * >( mappedMemory ) + vertexBufferSize, std::data( indices ), indexBufferSize );
 
-    logicalDeviceHandler.resetFences( m_immediateSubmitFence.get() );
+    logicalDeviceVk.resetFences( m_immediateSubmitFence.get() );
     m_transferCommandBuffer.reset();
 
     m_transferCommandBuffer.begin();
@@ -301,12 +301,12 @@ MeshBuffers Engine::uploadMeshBuffers( std::span< Vertex > vertices, std::span< 
     vk::SubmitInfo submitInfo{};
     submitInfo.sType              = vk::StructureType::eSubmitInfo;
     submitInfo.commandBufferCount = 1U;
-    submitInfo.pCommandBuffers    = &commandBufferHandler;
+    submitInfo.pCommandBuffers    = &commandBufferVk;
 
     const auto transferQueue{ m_logicalDevice.getQueue( ve::QueueType::eTransfer ) };
     transferQueue.submit( submitInfo, m_immediateSubmitFence.get() );
     [[maybe_unused]] const auto result{
-        logicalDeviceHandler.waitForFences( m_immediateSubmitFence.get(), g_waitForAllFences, g_timeoutOff ) };
+        logicalDeviceVk.waitForFences( m_immediateSubmitFence.get(), g_waitForAllFences, g_timeoutOff ) };
 
     return newMeshBuffers;
 }
@@ -375,8 +375,8 @@ void Engine::handleWindowResising() {
 }
 
 void Engine::immediateSubmit( const std::function< void( ve::GraphicsCommandBuffer command ) >& function ) {
-    const auto logicalDeviceHandler{ m_logicalDevice.get() };
-    logicalDeviceHandler.resetFences( m_immediateSubmitFence.get() );
+    const auto logicalDeviceVk{ m_logicalDevice.get() };
+    logicalDeviceVk.resetFences( m_immediateSubmitFence.get() );
     m_immediateBuffer.reset();
 
     ve::GraphicsCommandBuffer command{ m_immediateBuffer };
@@ -392,7 +392,7 @@ void Engine::immediateSubmit( const std::function< void( ve::GraphicsCommandBuff
 
     m_logicalDevice.getQueue( ve::QueueType::eGraphics ).submit( submitInfo, m_immediateSubmitFence.get() );
     [[maybe_unused]] const auto waitForFencesResult{
-        logicalDeviceHandler.waitForFences( m_immediateSubmitFence.get(), g_waitForAllFences, g_timeoutOff ) };
+        logicalDeviceVk.waitForFences( m_immediateSubmitFence.get(), g_waitForAllFences, g_timeoutOff ) };
 }
 
 } // namespace ve
