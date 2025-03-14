@@ -47,7 +47,7 @@ set(CORE
     core/Constants.hpp
     core/Loader.hpp                core/Loader.cpp
     core/RenderObject.hpp
-    core/Material.hpp
+    core/Material.hpp              core/Material.cpp
     core/Mesh.hpp
 )
 
@@ -73,6 +73,9 @@ set(DESCRIPTOR
 set(SHADER_SOURCE
     "${CMAKE_CURRENT_SOURCE_DIR}/shaders/simple.vert"
     "${CMAKE_CURRENT_SOURCE_DIR}/shaders/simple.frag"
+#    "${CMAKE_CURRENT_SOURCE_DIR}/shaders/Mesh.vert"
+#    "${CMAKE_CURRENT_SOURCE_DIR}/shaders/Mesh.frag"
+#    "${CMAKE_CURRENT_SOURCE_DIR}/shaders/Structures.glsl"
 )
 
 source_group("Command" FILES ${COMMAND})
