@@ -79,6 +79,7 @@ PipelineBuilder::PipelineBuilder( const ve::LogicalDevice& logicalDevice )
       m_multisamplingState{ defaultMultisamplingInfo() },
       m_colorBlendsState{ defaultColorBlendStateInfo() },
       m_depthStencilState{ defaultDepthStencilInfo() },
+      m_colorBlendAttachmentState{ defaultColorBlendAttachmentState() },
       m_logicalDevice{ logicalDevice } {}
 
 PipelineBuilder::PipelineBuilder( const ve::LogicalDevice& logicalDevice, const ve::ShaderModule& vertexShader,
@@ -109,6 +110,28 @@ void PipelineBuilder::setLayout( const ve::PipelineLayout& pipelineLayout ) {
 
 [[nodiscard]] ve::Pipeline PipelineBuilder::build( const ve::RenderPass& renderPass ) {
     return ve::Pipeline{ *this, renderPass };
+}
+
+void PipelineBuilder::disableBlending() noexcept {
+    m_colorBlendAttachmentState.colorWriteMask = vk::ColorComponentFlagBits::eR | vk::ColorComponentFlagBits::eG |
+                                                 vk::ColorComponentFlagBits::eB | vk::ColorComponentFlagBits::eA;
+    m_colorBlendAttachmentState.blendEnable = vk::False;
+}
+
+void PipelineBuilder::enableBlendingAdditive() noexcept {
+    m_colorBlendAttachmentState.blendEnable         = vk::True;
+    m_colorBlendAttachmentState.srcColorBlendFactor = vk::BlendFactor::eSrcAlpha;
+    m_colorBlendAttachmentState.dstColorBlendFactor = vk::BlendFactor::eOne;
+    m_colorBlendAttachmentState.colorBlendOp        = vk::BlendOp::eAdd;
+    m_colorBlendAttachmentState.srcAlphaBlendFactor = vk::BlendFactor::eOne;
+    m_colorBlendAttachmentState.dstAlphaBlendFactor = vk::BlendFactor::eZero;
+    m_colorBlendAttachmentState.alphaBlendOp        = vk::BlendOp::eAdd;
+    m_colorBlendAttachmentState.colorWriteMask      = vk::ColorComponentFlagBits::eR | vk::ColorComponentFlagBits::eG |
+                                                 vk::ColorComponentFlagBits::eB | vk::ColorComponentFlagBits::eA;
+}
+
+void PipelineBuilder::disableDepthWrite() noexcept {
+    m_depthStencilState.depthWriteEnable = vk::False;
 }
 
 vk::PipelineDynamicStateCreateInfo PipelineBuilder::defaultDynamicStatesInfo() const noexcept {
@@ -197,13 +220,12 @@ vk::PipelineColorBlendAttachmentState PipelineBuilder::defaultColorBlendAttachme
 }
 
 vk::PipelineColorBlendStateCreateInfo PipelineBuilder::defaultColorBlendStateInfo() const noexcept {
-    static const auto attachment{ defaultColorBlendAttachmentState() };
     vk::PipelineColorBlendStateCreateInfo colorBlending{};
     colorBlending.sType               = vk::StructureType::ePipelineColorBlendStateCreateInfo;
     colorBlending.logicOpEnable       = vk::False;
     colorBlending.logicOp             = vk::LogicOp::eCopy;
     colorBlending.attachmentCount     = 1U;
-    colorBlending.pAttachments        = &attachment;
+    colorBlending.pAttachments        = &m_colorBlendAttachmentState;
     colorBlending.blendConstants[ 0 ] = 0.0F;
     colorBlending.blendConstants[ 1 ] = 0.0F;
     colorBlending.blendConstants[ 2 ] = 0.0F;

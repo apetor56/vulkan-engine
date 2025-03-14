@@ -7,17 +7,14 @@
 
 namespace ve {
 
-class Engine;
+class DescriptorSetLayout;
 class DescriptorAllocator;
-
-struct PushConstants {
-    glm::mat4 worldMatrix;
-};
+class RenderPass;
 
 struct Material {
     enum class Type { eMainColor, eTransparent, eOther };
 
-    const ve::Pipeline& pipeline;
+    std::optional< ve::Pipeline > pipeline;
     vk::DescriptorSet descriptorSet;
     const Type type{};
 };
@@ -38,14 +35,16 @@ struct GltfMetalicRoughness {
         const uint32_t offset;
     };
 
-    void buildPipelines( const ve::Engine& engine, const ve::LogicalDevice& logicalDevice );
+    void buildPipelines( const ve::DescriptorSetLayout& layout, const ve::LogicalDevice& logicalDevice,
+                         const ve::RenderPass& renderPass );
     void clearResources( const ve::LogicalDevice& logicalDevice );
     Material writeMaterial( const ve::LogicalDevice& logicalDevice, Material::Type materialType,
                             const Resources& resources, const ve::DescriptorAllocator& descriptorAllocator );
 
-    const ve::DescriptorWriter descriptorWriter;
-    const ve::Pipeline& opaquePipeline;
-    const ve::Pipeline& transparentPipeline;
+    std::optional< ve::DescriptorWriter > descriptorWriter;
+    std::optional< ve::Pipeline > opaquePipeline;
+    std::optional< ve::Pipeline > transparentPipeline;
+    std::optional< ve::PipelineLayout > meshLayout;
 };
 
 } // namespace ve

@@ -19,6 +19,7 @@
 #include "descriptor/DescriptorSetLayout.hpp"
 #include "descriptor/DescriptorWriter.hpp"
 #include "Loader.hpp"
+#include "Material.hpp"
 
 #include <functional>
 
@@ -66,6 +67,8 @@ private:
     ve::Loader m_loader;
     std::vector< ve::MeshAsset > m_modelMeshes;
     ve::DescriptorWriter m_descriptorWriter;
+    ve::Material m_material;
+    ve::GltfMetalicRoughness m_metalRoughMaterial;
 
     void createDepthBuffer();
     void createRenderPass();

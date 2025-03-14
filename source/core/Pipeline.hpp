@@ -55,6 +55,10 @@ public:
 
     [[nodiscard]] ve::Pipeline build( const ve::RenderPass& renderPass );
 
+    void disableBlending() noexcept;
+    void enableBlendingAdditive() noexcept;
+    void disableDepthWrite() noexcept;
+
     const auto& getDepthStencilState() const noexcept { return m_depthStencilState; }
     const auto& getRasterizerState() const noexcept { return m_rasterizerState; }
     const auto& getColorBlendState() const noexcept { return m_colorBlendsState; }
@@ -77,6 +81,7 @@ private:
     vk::PipelineDynamicStateCreateInfo m_dynamicState{};
     vk::PipelineVertexInputStateCreateInfo m_vertexInputState{};
     vk::PipelineInputAssemblyStateCreateInfo m_inputAsemblyState{};
+    vk::PipelineColorBlendAttachmentState m_colorBlendAttachmentState{};
     std::optional< vk::PipelineLayout > m_pipelineLayout{};
 
     void addShaderStage( const vk::ShaderStageFlagBits shaderType, const ve::ShaderModule& shaderModule );
