@@ -3,7 +3,10 @@
 #include "Mesh.hpp"
 #include "Config.hpp"
 #include "RenderPass.hpp"
+
 #include "descriptor/DescriptorSetLayout.hpp"
+#include "descriptor/DescriptorAllocator.hpp"
+
 #include "utils/Common.hpp"
 
 namespace ve {
@@ -17,29 +20,56 @@ void GltfMetalicRoughness::buildPipelines( const ve::DescriptorSetLayout& layout
     static constexpr vk::ShaderStageFlags shaderStages{ vk::ShaderStageFlagBits::eVertex |
                                                         vk::ShaderStageFlagBits::eFragment };
 
-    ve::DescriptorSetLayout materialLayout{ logicalDevice };
-    materialLayout.addBinding( 0U, vk::DescriptorType::eUniformBuffer, shaderStages );
-    materialLayout.addBinding( 1U, vk::DescriptorType::eCombinedImageSampler, shaderStages );
-    materialLayout.addBinding( 2U, vk::DescriptorType::eCombinedImageSampler, shaderStages );
-    materialLayout.create();
+    desMaterialLayout.emplace( logicalDevice );
+    desMaterialLayout->addBinding( 0U, vk::DescriptorType::eUniformBuffer, shaderStages );
+    desMaterialLayout->addBinding( 1U, vk::DescriptorType::eCombinedImageSampler, shaderStages );
+    desMaterialLayout->addBinding( 2U, vk::DescriptorType::eCombinedImageSampler, shaderStages );
+    desMaterialLayout->create();
 
-    const std::array< vk::DescriptorSetLayout, 2U > layoutsVk{ layout.get(), materialLayout.get() };
+    const std::array< vk::DescriptorSetLayout, 2U > layoutsVk{ desMaterialLayout->get(), layout.get() };
     auto meshLayoutInfo{ ve::PipelineLayout::defaultInfo() };
     meshLayoutInfo.pPushConstantRanges    = &range;
     meshLayoutInfo.pushConstantRangeCount = 1U;
     meshLayoutInfo.pSetLayouts            = std::data( layoutsVk );
     meshLayoutInfo.setLayoutCount         = utils::size( layoutsVk );
-    meshLayout.emplace( logicalDevice, meshLayoutInfo );
+    pipelineLayout.emplace( logicalDevice, meshLayoutInfo );
 
     ve::PipelineBuilder builder{ logicalDevice };
     builder.setShaders( meshVertexShader, meshFragmentShader );
-    builder.setLayout( meshLayout.value() );
+    builder.setLayout( pipelineLayout.value() );
     builder.disableBlending();
     opaquePipeline.emplace( builder, renderPass );
 
     builder.enableBlendingAdditive();
     builder.disableDepthWrite();
     transparentPipeline.emplace( builder, renderPass );
+}
+
+Material GltfMetalicRoughness::writeMaterial( const ve::LogicalDevice& logicalDevice, const Material::Type materialType,
+                                              const Resources& resources,
+                                              ve::DescriptorAllocator& descriptorAllocator ) {
+    if ( !transparentPipeline.has_value() || !opaquePipeline.has_value() )
+        throw std::runtime_error( "GltfMetalicRoughness: pipeline not built" );
+
+    const vk::DescriptorSet set{ descriptorAllocator.allocate( desMaterialLayout.value() ) };
+
+    descriptorWriter->clear();
+    descriptorWriter->writeBuffer( 0U, resources.dataBuffer.get(), sizeof( Constants ), resources.offset,
+                                   vk::DescriptorType::eUniformBuffer );
+    descriptorWriter->writeImage( 1U, resources.colorImage.getImageView(), vk::ImageLayout::eShaderReadOnlyOptimal,
+                                  resources.colorSampler, vk::DescriptorType::eCombinedImageSampler );
+    descriptorWriter->writeImage( 1U, resources.metalicRoughnessImage.getImageView(),
+                                  vk::ImageLayout::eShaderReadOnlyOptimal, resources.metalicRoughnessSampler,
+                                  vk::DescriptorType::eCombinedImageSampler );
+    descriptorWriter->updateSet( set );
+
+    if ( materialType == Material::Type::eTransparent )
+        return Material{ .pipeline{ transparentPipeline.value() }, .descriptorSet{ set }, .type{ materialType } };
+
+    if ( materialType == Material::Type::eMainColor )
+        return Material{ .pipeline{ opaquePipeline.value() }, .descriptorSet{ set }, .type{ materialType } };
+
+    throw std::runtime_error( "given material type not found" );
 }
 
 } // namespace ve

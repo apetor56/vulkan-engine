@@ -73,8 +73,8 @@ set(DESCRIPTOR
 set(SHADER_SOURCE
     "${CMAKE_CURRENT_SOURCE_DIR}/shaders/Simple.vert"
     "${CMAKE_CURRENT_SOURCE_DIR}/shaders/Simple.frag"
-#    "${CMAKE_CURRENT_SOURCE_DIR}/shaders/Mesh.vert"
-#    "${CMAKE_CURRENT_SOURCE_DIR}/shaders/Mesh.frag"
+    "${CMAKE_CURRENT_SOURCE_DIR}/shaders/Mesh.vert"
+    "${CMAKE_CURRENT_SOURCE_DIR}/shaders/Mesh.frag"
 #    "${CMAKE_CURRENT_SOURCE_DIR}/shaders/Structures.glsl"
 )
 

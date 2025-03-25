@@ -14,7 +14,7 @@ class RenderPass;
 struct Material {
     enum class Type { eMainColor, eTransparent, eOther };
 
-    std::optional< ve::Pipeline > pipeline;
+    const ve::Pipeline& pipeline;
     vk::DescriptorSet descriptorSet;
     const Type type{};
 };
@@ -38,13 +38,14 @@ struct GltfMetalicRoughness {
     void buildPipelines( const ve::DescriptorSetLayout& layout, const ve::LogicalDevice& logicalDevice,
                          const ve::RenderPass& renderPass );
     void clearResources( const ve::LogicalDevice& logicalDevice );
-    Material writeMaterial( const ve::LogicalDevice& logicalDevice, Material::Type materialType,
-                            const Resources& resources, const ve::DescriptorAllocator& descriptorAllocator );
+    Material writeMaterial( const ve::LogicalDevice& logicalDevice, const Material::Type materialType,
+                            const Resources& resources, ve::DescriptorAllocator& descriptorAllocator );
 
     std::optional< ve::DescriptorWriter > descriptorWriter;
     std::optional< ve::Pipeline > opaquePipeline;
     std::optional< ve::Pipeline > transparentPipeline;
-    std::optional< ve::PipelineLayout > meshLayout;
+    std::optional< ve::PipelineLayout > pipelineLayout;
+    std::optional< ve::DescriptorSetLayout > desMaterialLayout;
 };
 
 } // namespace ve

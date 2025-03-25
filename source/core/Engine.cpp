@@ -38,7 +38,7 @@ void Engine::init() {
     createDepthBuffer();
     createRenderPass();
     createFramebuffers();
-    preparePipeline();
+    preparePipelines();
     createFrameResoures();
     prepareTexture();
     createTextureSampler();
@@ -180,7 +180,7 @@ void Engine::createFramebuffers() {
     } );
 }
 
-void Engine::preparePipeline() {
+void Engine::preparePipelines() {
     std::vector< vk::DescriptorType > descriptorTypes{ vk::DescriptorType::eUniformBuffer,
                                                        vk::DescriptorType::eCombinedImageSampler };
     m_descriptorSetLayout.addBinding( 0U, vk::DescriptorType::eUniformBuffer, vk::ShaderStageFlagBits::eVertex );
@@ -201,6 +201,8 @@ void Engine::preparePipeline() {
     m_pipelineBuilder.setShaders( m_vertexShader, m_fragmentShader );
     m_pipelineBuilder.setLayout( m_pipelineLayout.value() );
     m_pipeline.emplace( m_pipelineBuilder, m_renderPass.value() );
+
+    m_metalRoughMaterial.buildPipelines( m_descriptorSetLayout, m_logicalDevice, m_renderPass.value() );
 }
 
 void Engine::createFrameResoures() {

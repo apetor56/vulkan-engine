@@ -67,13 +67,13 @@ private:
     ve::Loader m_loader;
     std::vector< ve::MeshAsset > m_modelMeshes;
     ve::DescriptorWriter m_descriptorWriter;
-    ve::Material m_material;
+    std::optional< ve::Material > m_material;
     ve::GltfMetalicRoughness m_metalRoughMaterial;
 
     void createDepthBuffer();
     void createRenderPass();
     void createFramebuffers();
-    void preparePipeline();
+    void preparePipelines();
     void createFrameResoures();
     void updateUniformBuffer();
     void configureDescriptorSets();

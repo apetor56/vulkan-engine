@@ -1,4 +1,5 @@
 #include "DescriptorSetLayout.hpp"
+#include "utils/Common.hpp"
 
 #include <ranges>
 
@@ -7,7 +8,7 @@ namespace ve {
 DescriptorSetLayout::DescriptorSetLayout( const ve::LogicalDevice& logicalDevice ) noexcept
     : m_logicalDevice{ logicalDevice } {}
 
-DescriptorSetLayout ::~DescriptorSetLayout() {
+DescriptorSetLayout::~DescriptorSetLayout() {
     m_logicalDevice.get().destroyDescriptorSetLayout( m_layout );
 }
 
@@ -29,7 +30,7 @@ void DescriptorSetLayout::create() {
 
     vk::DescriptorSetLayoutCreateInfo layoutInfo{};
     layoutInfo.sType        = vk::StructureType::eDescriptorSetLayoutCreateInfo;
-    layoutInfo.bindingCount = static_cast< uint32_t >( std::size( m_descriptorBindings ) );
+    layoutInfo.bindingCount = utils::size( m_descriptorBindings );
     layoutInfo.pBindings    = std::data( bindingsData );
 
     m_layout = m_logicalDevice.get().createDescriptorSetLayout( layoutInfo );
