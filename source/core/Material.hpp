@@ -19,33 +19,42 @@ struct Material {
     const Type type{};
 };
 
+struct GltfMaterial {
+    Material data;
+};
+
 struct GltfMetalicRoughness {
+    GltfMetalicRoughness( const ve::LogicalDevice& logicalDevice )
+        : m_logicalDevice{ logicalDevice }, descriptorWriter{ logicalDevice } {}
+
     struct Constants {
-        const glm::vec4 colorFactors{};
-        const glm::vec4 metalicRoughnessFactors{};
-        const glm::vec4 extraPadding[ 14 ];
+        glm::vec4 colorFactors{};
+        glm::vec4 metalicRoughnessFactors{};
+        glm::vec4 extraPadding[ 14 ];
     };
 
     struct Resources {
-        const ve::Image colorImage;
-        const ve::Image metalicRoughnessImage;
+        const vk::ImageView colorImageView;
+        const vk::ImageView metalicRoughnessImageView;
         const vk::Sampler colorSampler;
         const vk::Sampler metalicRoughnessSampler;
-        const ve::UniformBuffer dataBuffer;
-        const uint32_t offset;
+        const vk::Buffer dataBuffer;
+        const uint32_t dataBufferOffset;
     };
 
-    void buildPipelines( const ve::DescriptorSetLayout& layout, const ve::LogicalDevice& logicalDevice,
-                         const ve::RenderPass& renderPass );
-    void clearResources( const ve::LogicalDevice& logicalDevice );
-    Material writeMaterial( const ve::LogicalDevice& logicalDevice, const Material::Type materialType,
-                            const Resources& resources, ve::DescriptorAllocator& descriptorAllocator );
+    void buildPipelines( const ve::DescriptorSetLayout& layout, const ve::RenderPass& renderPass );
+    void clearResources();
+    Material writeMaterial( const Material::Type materialType, const Resources& resources,
+                            ve::DescriptorAllocator& descriptorAllocator );
 
-    std::optional< ve::DescriptorWriter > descriptorWriter;
+    ve::DescriptorWriter descriptorWriter;
     std::optional< ve::Pipeline > opaquePipeline;
     std::optional< ve::Pipeline > transparentPipeline;
     std::optional< ve::PipelineLayout > pipelineLayout;
     std::optional< ve::DescriptorSetLayout > desMaterialLayout;
+
+private:
+    const ve::LogicalDevice& m_logicalDevice;
 };
 
 } // namespace ve

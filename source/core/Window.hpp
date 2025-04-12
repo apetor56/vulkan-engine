@@ -3,6 +3,7 @@
 #include "VulkanInstance.hpp"
 
 #include <GLFW/glfw3.h>
+#include <glm/vec2.hpp>
 
 #include <string>
 
@@ -30,6 +31,7 @@ public:
     }
     void setResizeFlag( bool resized ) noexcept { m_isResized = resized; }
     bool isResized() const noexcept { return m_isResized; }
+    glm::ivec2 getSize() const noexcept { return { m_windowInfo.width, m_windowInfo.height }; }
 
 private:
     WindowInfo m_windowInfo{};

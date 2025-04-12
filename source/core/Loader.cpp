@@ -64,7 +64,9 @@ MeshAsset Loader::processMesh( aiMesh *const mesh ) {
             indices.emplace_back( face.mIndices[ indexID ] );
     }
 
-    return MeshAsset{ .buffers{ m_engine.uploadMeshBuffers( vertices, indices ) }, .name{ mesh->mName.C_Str() } };
+    return MeshAsset{ .surface{ .startIndex{ 0U }, .count{ utils::size( indices ) }, .material{ nullptr } },
+                      .buffers{ m_engine.uploadMeshBuffers( vertices, indices ) },
+                      .name{ mesh->mName.C_Str() } };
 }
 
 } // namespace ve

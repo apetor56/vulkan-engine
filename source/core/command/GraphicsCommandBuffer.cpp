@@ -69,8 +69,8 @@ void GraphicsCommandBuffer::draw( const uint32_t verticesCount ) const noexcept 
     m_commandBuffer.draw( verticesCount, g_instanceCount, g_firstVertex, g_firstInstance );
 }
 
-void GraphicsCommandBuffer::drawIndices( const uint32_t indicesCount ) const noexcept {
-    m_commandBuffer.drawIndexed( indicesCount, g_instanceCount, g_firstIndex, g_offset, g_firstInstance );
+void GraphicsCommandBuffer::drawIndices( const uint32_t firstIndex, const uint32_t indicesCount ) const noexcept {
+    m_commandBuffer.drawIndexed( indicesCount, g_instanceCount, firstIndex, g_offset, g_firstInstance );
 }
 
 void GraphicsCommandBuffer::endRenderPass() const noexcept {

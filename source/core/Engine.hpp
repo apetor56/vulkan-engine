@@ -20,6 +20,7 @@
 #include "descriptor/DescriptorWriter.hpp"
 #include "Loader.hpp"
 #include "Material.hpp"
+#include "Node.hpp"
 
 #include <functional>
 
@@ -38,6 +39,13 @@ public:
 private:
     using FrameResources = std::array< std::optional< ve::FrameData >, g_maxFramesInFlight >;
     using Framebuffers   = std::vector< std::optional< ve::Framebuffer > >;
+    using Nodes          = std::unordered_map< std::string, std::shared_ptr< Node > >;
+
+    struct SceneData {
+        glm::mat4 model;
+        glm::mat4 view;
+        glm::mat4 projection;
+    };
 
     ve::VulkanInstance m_vulkanInstance{};
     ve::Window m_window;
@@ -69,6 +77,14 @@ private:
     ve::DescriptorWriter m_descriptorWriter;
     std::optional< ve::Material > m_material;
     ve::GltfMetalicRoughness m_metalRoughMaterial;
+    std::optional< ve::DescriptorAllocator > m_globalDescriptorAllocator;
+    std::optional< ve::Image > m_whiteImage;
+    std::optional< ve::Material > m_defaultMaterial;
+    std::optional< GltfMetalicRoughness::Resources > m_defaultResources;
+    std::optional< ve::UniformBuffer > m_materialConstantsUniformBuffer;
+    ve::RenderContext m_mainRenderContext;
+    SceneData m_sceneData{};
+    Nodes m_nodes;
 
     void createDepthBuffer();
     void createRenderPass();
@@ -80,7 +96,9 @@ private:
     void prepareTexture();
     void createTextureSampler();
     void loadMeshes();
+    void initDefaultData();
 
+    void updateScene();
     std::optional< uint32_t > acquireNextImage();
     void draw( const uint32_t imageIndex );
     void present( const uint32_t imageIndex );

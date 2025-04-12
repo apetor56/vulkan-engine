@@ -26,7 +26,8 @@ Engine::Engine()
       m_transferCommandBuffer{ m_transferCommandPool.createCommandBuffers() },
       m_descriptorSetLayout{ m_logicalDevice },
       m_loader{ *this, m_memoryAllocator },
-      m_descriptorWriter{ m_logicalDevice } {
+      m_descriptorWriter{ m_logicalDevice },
+      m_metalRoughMaterial{ m_logicalDevice } {
     init();
 }
 
@@ -43,12 +44,15 @@ void Engine::init() {
     prepareTexture();
     createTextureSampler();
     configureDescriptorSets();
+    initDefaultData();
     loadMeshes();
 }
 
 void Engine::run() {
     while ( m_window.shouldClose() == GLFW_FALSE ) {
         glfwPollEvents();
+
+        updateScene();
 
         const auto& currentFrame{ m_currentFrameIt->value() };
         [[maybe_unused]] const auto waitForFencesResult{
@@ -107,18 +111,28 @@ void Engine::draw( const uint32_t imageIndex ) {
 
     commandBuffer.beginRenderPass( m_renderPass->get(), m_framebuffers.at( imageIndex )->get(),
                                    m_swapchain.getExtent() );
-    commandBuffer.bindPipeline( m_pipeline->get() );
     commandBuffer.setViewport( m_swapchain.getViewport() );
     commandBuffer.setScissor( m_swapchain.getScissor() );
-    commandBuffer.bindDescriptorSet( m_pipeline->getLayout(), currentFrame.descriptorSet );
-    std::ranges::for_each( m_modelMeshes, [ this, &commandBuffer ]( const auto& meshAsset ) {
-        const ve::PushConstants pushConstants{ .worldMatrix{ glm::mat4{ 1.0F } },
-                                               .vertexBufferAddress{ meshAsset.buffers.vertexBufferAddress } };
-        commandBuffer.pushConstants( m_pipeline->getLayout(), vk::ShaderStageFlagBits::eVertex, pushConstants );
-        commandBuffer.bindIndexBuffer( meshAsset.buffers.indexBuffer->get() );
-        commandBuffer.drawIndices( static_cast< uint32_t >( meshAsset.buffers.indexBuffer->size() ) /
-                                   sizeof( uint32_t ) );
-    } );
+
+    commandBuffer.bindPipeline( m_pipeline->get() );
+
+    auto currentDescriptorSet{ currentFrame.descriptorSet };
+
+    std::ranges::for_each(
+        m_mainRenderContext.opaqueSurfaces, [ &commandBuffer, currentDescriptorSet, this ]( const auto& renderObject ) {
+            commandBuffer.bindPipeline( renderObject.material.pipeline.get() );
+            commandBuffer.bindDescriptorSet( renderObject.material.pipeline.getLayout(), currentDescriptorSet, 0U );
+            commandBuffer.bindDescriptorSet( renderObject.material.pipeline.getLayout(),
+                                             renderObject.material.descriptorSet, 1U );
+            commandBuffer.bindIndexBuffer( renderObject.indexBuffer );
+
+            const ve::PushConstants pushConstants{ .worldMatrix{ renderObject.transform },
+                                                   .vertexBufferAddress{ renderObject.vertexBufferAddress } };
+            commandBuffer.pushConstants( renderObject.material.pipeline.getLayout(), vk::ShaderStageFlagBits::eVertex,
+                                         pushConstants );
+            commandBuffer.drawIndices( renderObject.firstIndex, renderObject.indexCount );
+        } );
+
     commandBuffer.endRenderPass();
     commandBuffer.end();
 
@@ -181,11 +195,7 @@ void Engine::createFramebuffers() {
 }
 
 void Engine::preparePipelines() {
-    std::vector< vk::DescriptorType > descriptorTypes{ vk::DescriptorType::eUniformBuffer,
-                                                       vk::DescriptorType::eCombinedImageSampler };
     m_descriptorSetLayout.addBinding( 0U, vk::DescriptorType::eUniformBuffer, vk::ShaderStageFlagBits::eVertex );
-    m_descriptorSetLayout.addBinding( 1U, vk::DescriptorType::eCombinedImageSampler,
-                                      vk::ShaderStageFlagBits::eFragment );
     m_descriptorSetLayout.create();
     const auto layoutVk{ m_descriptorSetLayout.get() };
 
@@ -202,60 +212,35 @@ void Engine::preparePipelines() {
     m_pipelineBuilder.setLayout( m_pipelineLayout.value() );
     m_pipeline.emplace( m_pipelineBuilder, m_renderPass.value() );
 
-    m_metalRoughMaterial.buildPipelines( m_descriptorSetLayout, m_logicalDevice, m_renderPass.value() );
+    m_metalRoughMaterial.buildPipelines( m_descriptorSetLayout, m_renderPass.value() );
 }
 
 void Engine::createFrameResoures() {
     const auto graphicsCommandBuffers{ m_graphicsCommandPool.createCommandBuffers< g_maxFramesInFlight >() };
 
     for ( uint32_t frameID{ 0U }; frameID < g_maxFramesInFlight; frameID++ )
-        m_frameResources.at( frameID ).emplace( m_logicalDevice, m_memoryAllocator,
+        m_frameResources.at( frameID ).emplace( sizeof( SceneData ), m_logicalDevice, m_memoryAllocator,
                                                 graphicsCommandBuffers.at( frameID ), m_descriptorSetLayout );
     m_currentFrameIt = std::begin( m_frameResources );
 }
 
 void Engine::updateUniformBuffer() {
-    using namespace std::chrono;
-    static auto start{ high_resolution_clock::now() };
-    auto now{ high_resolution_clock::now() };
-    milliseconds elapsed{ duration_cast< milliseconds >( now - start ) };
-
-    UniformBufferObject data{};
-
-    constexpr glm::vec3 zAxis{ 0.0F, 0.0F, 1.0F };
-    data.model = glm::scale( glm::mat4{ 1.0F }, glm::vec3{ 1.0F, 1.0F, 1.0F } ) *
-                 glm::rotate( glm::mat4( 1.0F ), elapsed.count() * glm::radians( 90.0F ) / 1000, zAxis );
-
-    constexpr glm::vec3 cameraPos{ 2.0F, 2.0F, 2.0F };
-    constexpr glm::vec3 centerPos{};
-    constexpr glm::vec3 up{ 0.0F, 0.0F, 1.0F };
-    data.view = glm::lookAt( cameraPos, centerPos, up );
-
-    static const auto& extent{ m_swapchain.getExtent() };
-    constexpr float angle{ 45.0F };
-    constexpr float nearPlane{ 0.1F };
-    constexpr float farPlane{ 20.0F };
-    data.projection = glm::perspective( glm::radians( angle ), static_cast< float >( extent.width ) / extent.height,
-                                        nearPlane, farPlane );
-    data.projection[ 1 ][ 1 ] *= -1;
-
     const auto& currentFrame{ m_currentFrameIt->value() };
-    memcpy( currentFrame.uniformBuffer.getMappedMemory(), &data, sizeof( data ) );
+    memcpy( currentFrame.uniformBuffer.getMappedMemory(), &m_sceneData, sizeof( m_sceneData ) );
 }
 
 void Engine::configureDescriptorSets() {
     std::ranges::for_each( m_frameResources, [ this ]( auto& frameData ) {
         static constexpr uint32_t uniformBufferBinding{ 0U };
         m_descriptorWriter.writeBuffer( uniformBufferBinding, frameData.value().uniformBuffer.get(),
-                                        sizeof( UniformBufferObject ), 0U, vk::DescriptorType::eUniformBuffer );
-
-        static constexpr uint32_t textureImageBinding{ 1U };
-        m_descriptorWriter.writeImage( textureImageBinding, m_textureImage->getImageView(),
-                                       vk::ImageLayout::eShaderReadOnlyOptimal, m_sampler,
-                                       vk::DescriptorType::eCombinedImageSampler );
+                                        sizeof( SceneData ), 0U, vk::DescriptorType::eUniformBuffer );
 
         m_descriptorWriter.updateSet( frameData.value().descriptorSet );
     } );
+
+    std::vector< DescriptorAllocator::PoolSizeRatio > sizes = { { vk::DescriptorType::eStorageImage, 1 },
+                                                                { vk::DescriptorType::eUniformBuffer, 1 } };
+    m_globalDescriptorAllocator.emplace( m_logicalDevice, 10, sizes );
 }
 
 MeshBuffers Engine::uploadMeshBuffers( std::span< Vertex > vertices, std::span< uint32_t > indices ) const {
@@ -367,6 +352,11 @@ void Engine::createTextureSampler() {
 
 void Engine::loadMeshes() {
     m_modelMeshes = m_loader.loadMeshes( cfg::directory::assets / "viking_room.obj" );
+    std::ranges::for_each( m_modelMeshes, [ this ]( auto& meshAsset ) {
+        std::shared_ptr< MeshNode > meshNode{ std::make_shared< MeshNode >( meshAsset ) };
+        meshAsset.surface.material = std::make_shared< GltfMaterial >( m_defaultMaterial.value() );
+        m_nodes.emplace( meshAsset.name, std::move( meshNode ) );
+    } );
 }
 
 void Engine::handleWindowResising() {
@@ -395,6 +385,53 @@ void Engine::immediateSubmit( const std::function< void( ve::GraphicsCommandBuff
     m_logicalDevice.getQueue( ve::QueueType::eGraphics ).submit( submitInfo, m_immediateSubmitFence.get() );
     [[maybe_unused]] const auto waitForFencesResult{
         logicalDeviceVk.waitForFences( m_immediateSubmitFence.get(), g_waitForAllFences, g_timeoutOff ) };
+}
+
+void Engine::updateScene() {
+    m_mainRenderContext.opaqueSurfaces.clear();
+
+    using namespace std::chrono;
+    static auto start{ high_resolution_clock::now() };
+    auto now{ high_resolution_clock::now() };
+    milliseconds elapsed{ duration_cast< milliseconds >( now - start ) };
+
+    constexpr glm::vec3 zAxis{ 0.0F, 0.0F, 1.0F };
+    m_sceneData.model = glm::scale( glm::mat4{ 1.0F }, glm::vec3{ 1.0F, 1.0F, 1.0F } ) *
+                        glm::rotate( glm::mat4( 1.0F ), elapsed.count() * glm::radians( 90.0F ) / 1000, zAxis );
+
+    constexpr glm::vec3 cameraPos{ 2.0F, 2.0F, 2.0F };
+    constexpr glm::vec3 centerPos{};
+    constexpr glm::vec3 up{ 0.0F, 0.0F, 1.0F };
+    m_sceneData.view = glm::lookAt( cameraPos, centerPos, up );
+
+    static const auto& extent{ m_swapchain.getExtent() };
+    constexpr float angle{ 45.0F };
+    constexpr float nearPlane{ 0.1F };
+    constexpr float farPlane{ 500.0F };
+    m_sceneData.projection = glm::perspective(
+        glm::radians( angle ), static_cast< float >( extent.width ) / extent.height, nearPlane, farPlane );
+    m_sceneData.projection[ 1 ][ 1 ] *= -1;
+
+    std::ranges::for_each( m_nodes | std::views::values,
+                           [ this ]( auto& meshNode ) { meshNode->render( glm::mat4{ 1.0F }, m_mainRenderContext ); } );
+}
+
+void Engine::initDefaultData() {
+    m_whiteImage.emplace( m_memoryAllocator, m_logicalDevice, vk::Extent2D{ 1U, 1U }, vk::Format::eR8G8B8A8Unorm,
+                          vk::ImageUsageFlagBits::eSampled, vk::ImageAspectFlagBits::eColor );
+
+    m_materialConstantsUniformBuffer.emplace( m_memoryAllocator, sizeof( GltfMetalicRoughness::Constants ) );
+    GltfMetalicRoughness::Constants *materialConstants{
+        static_cast< GltfMetalicRoughness::Constants * >( m_materialConstantsUniformBuffer->getMappedMemory() ) };
+    materialConstants->colorFactors            = glm::vec4{ 1.0F, 1.0F, 1.0F, 1.0F };
+    materialConstants->metalicRoughnessFactors = glm::vec4{ 1.0F, 0.0F, 0.0F, 0.0F };
+
+    static constexpr uint32_t offset{ 0U };
+    m_defaultResources.emplace( m_whiteImage->getImageView(), m_whiteImage->getImageView(), m_sampler, m_sampler,
+                                m_materialConstantsUniformBuffer->get(), offset );
+
+    m_defaultMaterial.emplace( m_metalRoughMaterial.writeMaterial(
+        Material::Type::eMainColor, m_defaultResources.value(), m_globalDescriptorAllocator.value() ) );
 }
 
 } // namespace ve

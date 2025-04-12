@@ -18,19 +18,17 @@ layout( push_constant ) uniform Constants {
 }
 pushConstants;
 
-layout( binding = 0 ) uniform uniformBufferObject {
+layout( set = 0, binding = 0 ) uniform SceneData {
     mat4 model;
     mat4 view;
     mat4 projection;
 }
-ubo;
+sceneData;
 
 layout( location = 0 ) out vec4 fragColor;
-layout( location = 1 ) out vec2 fragTexCoord;
 
 void main() {
     Vertex vertex = pushConstants.vertexBuffer.vertices[ gl_VertexIndex ];
-    gl_Position   = pushConstants.worldMatrix * ubo.projection * ubo.view * ubo.model * vertex.position;
-    fragColor     = vertex.color;
-    fragTexCoord  = vertex.texCoord;
+    gl_Position = pushConstants.worldMatrix * sceneData.projection * sceneData.view * sceneData.model * vertex.position;
+    fragColor   = vertex.color;
 }

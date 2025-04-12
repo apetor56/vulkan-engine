@@ -24,7 +24,7 @@ public:
     void bindDescriptorSet( const vk::PipelineLayout pipelineLayout, const vk::DescriptorSet descriptorSet,
                             const uint32_t firstSet = 0U ) const noexcept;
     void draw( const uint32_t verticesCount ) const noexcept;
-    void drawIndices( const uint32_t indicesCount ) const noexcept;
+    void drawIndices( const uint32_t firstIndex, const uint32_t indicesCount ) const noexcept;
     void endRenderPass() const noexcept;
     void transitionImageBuffer( const vk::Image image, const vk::Format format, const vk::ImageLayout oldLayout,
                                 const vk::ImageLayout newLayout );

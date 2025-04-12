@@ -5,16 +5,14 @@
 
 #include "Structures.glsl"
 
-layout( location = 0 ) out vec3 outNormal;
-layout( location = 1 ) out vec3 outColor;
-layout( location = 2 ) out vec2 outUV;
+layout( location = 0 ) out vec3 outColor;
+layout( location = 1 ) out vec2 fragTexCoord;
 
 struct Vertex {
-    vec3 position;
-    float uv_x;
-    vec3 normal;
-    float uv_y;
+    vec4 position;
     vec4 color;
+    vec2 texCoord;
+    vec2 uv;
 };
 
 layout( buffer_reference, std430 ) readonly buffer VertexBuffer {
@@ -22,17 +20,18 @@ layout( buffer_reference, std430 ) readonly buffer VertexBuffer {
 };
 
 layout( push_constant ) uniform constants {
-    mat4 worldMartix;
+    mat4 renderMartix;
     VertexBuffer vertexBuffer;
 }
 PushConstants;
 
 void main() {
     Vertex vertex = PushConstants.vertexBuffer.vertices[ gl_VertexIndex ];
-    vec4 position = vec4( vertex.position, 1.0f );
 
-    gl_Position = sceneData.viewproj * PushConstants.worldMartix * position;
-    outNormal   = ( PushConstants.worldMartix * vec4( vertex.normal, 0.f ) ).xyz;
-    outColor    = vertex.color.xyz * materialData.colorFactors.xyz;
-    outUV       = vec2( vertex.uv_x, vertex.uv_y );
+    gl_Position =
+        sceneData.projection * sceneData.view * sceneData.model * PushConstants.renderMartix * vertex.position;
+
+    // outColor     = ( sceneData.projection * sceneData.view * sceneData.model * vertex.position ).xyz;
+    outColor     = materialData.colorFactors.xyz;
+    fragTexCoord = vertex.texCoord;
 }

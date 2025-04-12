@@ -1,10 +1,12 @@
 #pragma once
 
 #include "Buffer.hpp"
+#include "Material.hpp"
 
 #include <optional>
 
 namespace ve {
+
 struct MeshBuffers {
     std::optional< ve::VertexBuffer > vertexBuffer;
     std::optional< ve::IndexBuffer > indexBuffer;
@@ -21,7 +23,14 @@ struct PushConstants {
     }
 };
 
+struct Surface {
+    uint32_t startIndex{};
+    uint32_t count{};
+    std::shared_ptr< GltfMaterial > material{};
+};
+
 struct MeshAsset {
+    Surface surface;
     MeshBuffers buffers{};
     std::string name{};
 };

@@ -46,7 +46,7 @@ set(CORE
     core/SyncObjects.hpp           core/SyncObjects.cpp
     core/Constants.hpp
     core/Loader.hpp                core/Loader.cpp
-    core/RenderObject.hpp
+    core/Node.hpp                  core/Node.cpp
     core/Material.hpp              core/Material.cpp
     core/Mesh.hpp
 )
