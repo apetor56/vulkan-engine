@@ -71,14 +71,13 @@ private:
     FrameResources m_frameResources;
     FrameResources::iterator m_currentFrameIt{ nullptr };
     std::optional< ve::Image > m_textureImage{};
-    vk::Sampler m_sampler;
+    vk::Sampler m_textureSampler;
     ve::Loader m_loader;
     std::vector< ve::MeshAsset > m_modelMeshes;
     ve::DescriptorWriter m_descriptorWriter;
     std::optional< ve::Material > m_material;
     ve::GltfMetalicRoughness m_metalRoughMaterial;
-    std::optional< ve::DescriptorAllocator > m_globalDescriptorAllocator;
-    std::optional< ve::Image > m_whiteImage;
+    ve::DescriptorAllocator m_globalDescriptorAllocator;
     std::optional< ve::Material > m_defaultMaterial;
     std::optional< GltfMetalicRoughness::Resources > m_defaultResources;
     std::optional< ve::UniformBuffer > m_materialConstantsUniformBuffer;

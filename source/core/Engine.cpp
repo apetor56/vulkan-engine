@@ -10,6 +10,9 @@
 
 namespace ve {
 
+std::vector< DescriptorAllocator::PoolSizeRatio > g_poolSizes = { { vk::DescriptorType::eStorageImage, 1 },
+                                                                  { vk::DescriptorType::eUniformBuffer, 1 } };
+
 Engine::Engine()
     : m_window{ WindowInfo{ cfg::window::width, cfg::window::height, "example" }, m_vulkanInstance },
       m_physicalDevice{ m_vulkanInstance, m_window },
@@ -27,12 +30,13 @@ Engine::Engine()
       m_descriptorSetLayout{ m_logicalDevice },
       m_loader{ *this, m_memoryAllocator },
       m_descriptorWriter{ m_logicalDevice },
-      m_metalRoughMaterial{ m_logicalDevice } {
+      m_metalRoughMaterial{ m_logicalDevice },
+      m_globalDescriptorAllocator{ m_logicalDevice, 10U, g_poolSizes } {
     init();
 }
 
 Engine::~Engine() {
-    m_logicalDevice.get().destroySampler( m_sampler );
+    m_logicalDevice.get().destroySampler( m_textureSampler );
 }
 
 void Engine::init() {
@@ -240,7 +244,6 @@ void Engine::configureDescriptorSets() {
 
     std::vector< DescriptorAllocator::PoolSizeRatio > sizes = { { vk::DescriptorType::eStorageImage, 1 },
                                                                 { vk::DescriptorType::eUniformBuffer, 1 } };
-    m_globalDescriptorAllocator.emplace( m_logicalDevice, 10, sizes );
 }
 
 MeshBuffers Engine::uploadMeshBuffers( std::span< Vertex > vertices, std::span< uint32_t > indices ) const {
@@ -347,7 +350,7 @@ void Engine::createTextureSampler() {
     const auto physicalDeviceProperties{ m_physicalDevice.get().getProperties() };
     samplerInfo.maxAnisotropy = physicalDeviceProperties.limits.maxSamplerAnisotropy;
 
-    m_sampler = m_logicalDevice.get().createSampler( samplerInfo );
+    m_textureSampler = m_logicalDevice.get().createSampler( samplerInfo );
 }
 
 void Engine::loadMeshes() {
@@ -412,14 +415,15 @@ void Engine::updateScene() {
         glm::radians( angle ), static_cast< float >( extent.width ) / extent.height, nearPlane, farPlane );
     m_sceneData.projection[ 1 ][ 1 ] *= -1;
 
-    std::ranges::for_each( m_nodes | std::views::values,
-                           [ this ]( auto& meshNode ) { meshNode->render( glm::mat4{ 1.0F }, m_mainRenderContext ); } );
+    std::ranges::for_each( m_nodes | std::views::values, [ this ]( auto& meshNode ) {
+        meshNode->render( glm::mat4{ 1.0F }, m_mainRenderContext );
+        glm::mat4 translation{ glm::translate( glm::mat4{ 1.0F }, glm::vec3{ 2, 0, 0 } ) };
+        glm::mat4 scale{ glm::scale( glm::mat4{ 1.0F }, glm::vec3{ 0.5F } ) };
+        meshNode->render( translation * scale, m_mainRenderContext );
+    } );
 }
 
 void Engine::initDefaultData() {
-    m_whiteImage.emplace( m_memoryAllocator, m_logicalDevice, vk::Extent2D{ 1U, 1U }, vk::Format::eR8G8B8A8Unorm,
-                          vk::ImageUsageFlagBits::eSampled, vk::ImageAspectFlagBits::eColor );
-
     m_materialConstantsUniformBuffer.emplace( m_memoryAllocator, sizeof( GltfMetalicRoughness::Constants ) );
     GltfMetalicRoughness::Constants *materialConstants{
         static_cast< GltfMetalicRoughness::Constants * >( m_materialConstantsUniformBuffer->getMappedMemory() ) };
@@ -427,11 +431,11 @@ void Engine::initDefaultData() {
     materialConstants->metalicRoughnessFactors = glm::vec4{ 1.0F, 0.0F, 0.0F, 0.0F };
 
     static constexpr uint32_t offset{ 0U };
-    m_defaultResources.emplace( m_whiteImage->getImageView(), m_whiteImage->getImageView(), m_sampler, m_sampler,
-                                m_materialConstantsUniformBuffer->get(), offset );
+    m_defaultResources.emplace( m_textureImage->getImageView(), m_textureImage->getImageView(), m_textureSampler,
+                                m_textureSampler, m_materialConstantsUniformBuffer->get(), offset );
 
     m_defaultMaterial.emplace( m_metalRoughMaterial.writeMaterial(
-        Material::Type::eMainColor, m_defaultResources.value(), m_globalDescriptorAllocator.value() ) );
+        Material::Type::eMainColor, m_defaultResources.value(), m_globalDescriptorAllocator ) );
 }
 
 } // namespace ve

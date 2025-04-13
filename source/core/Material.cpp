@@ -53,8 +53,8 @@ Material GltfMetalicRoughness::writeMaterial( const Material::Type materialType,
     descriptorWriter.clear();
     descriptorWriter.writeBuffer( 0U, resources.dataBuffer, sizeof( Constants ), resources.dataBufferOffset,
                                   vk::DescriptorType::eUniformBuffer );
-    descriptorWriter.writeImage( 1U, resources.colorImageView, vk::ImageLayout::eShaderReadOnlyOptimal,
-                                 resources.colorSampler, vk::DescriptorType::eCombinedImageSampler );
+    descriptorWriter.writeImage( 1U, resources.textureImageView, vk::ImageLayout::eShaderReadOnlyOptimal,
+                                 resources.textureSampler, vk::DescriptorType::eCombinedImageSampler );
 
     descriptorWriter.updateSet( set );
 

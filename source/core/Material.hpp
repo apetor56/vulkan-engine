@@ -34,9 +34,9 @@ struct GltfMetalicRoughness {
     };
 
     struct Resources {
-        const vk::ImageView colorImageView;
+        const vk::ImageView textureImageView;
         const vk::ImageView metalicRoughnessImageView;
-        const vk::Sampler colorSampler;
+        const vk::Sampler textureSampler;
         const vk::Sampler metalicRoughnessSampler;
         const vk::Buffer dataBuffer;
         const uint32_t dataBufferOffset;
