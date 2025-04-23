@@ -402,7 +402,7 @@ void Engine::updateScene() {
     m_sceneData.model = glm::scale( glm::mat4{ 1.0F }, glm::vec3{ 1.0F, 1.0F, 1.0F } ) *
                         glm::rotate( glm::mat4( 1.0F ), elapsed.count() * glm::radians( 90.0F ) / 1000, zAxis );
 
-    constexpr glm::vec3 cameraPos{ 2.0F, 2.0F, 2.0F };
+    constexpr glm::vec3 cameraPos{ 2.0F, 4.0F, 2.0F };
     constexpr glm::vec3 centerPos{};
     constexpr glm::vec3 up{ 0.0F, 0.0F, 1.0F };
     m_sceneData.view = glm::lookAt( cameraPos, centerPos, up );
