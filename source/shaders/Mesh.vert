@@ -31,7 +31,6 @@ void main() {
     gl_Position =
         sceneData.projection * sceneData.view * sceneData.model * PushConstants.renderMartix * vertex.position;
 
-    // outColor     = ( sceneData.projection * sceneData.view * sceneData.model * vertex.position ).xyz;
     outColor     = materialData.colorFactors.xyz;
     fragTexCoord = vertex.texCoord;
 }
