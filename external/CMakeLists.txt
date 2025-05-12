@@ -35,21 +35,35 @@ FetchContent_Declare(
     GIT_REPOSITORY https://github.com/assimp/assimp.git
     GIT_TAG        v5.4.3
 )
+FetchContent_Declare(
+    vma
+    GIT_REPOSITORY https://github.com/GPUOpen-LibrariesAndSDKs/VulkanMemoryAllocator.git
+    GIT_TAG        v3.3.0
+)
+FetchContent_Declare(
+    glm
+    GIT_REPOSITORY https://github.com/g-truc/glm.git
+    GIT_TAG        1.0.1
+)
 
 FetchContent_MakeAvailable(glfw)
 FetchContent_MakeAvailable(spdlog)
 FetchContent_MakeAvailable(stb)
 FetchContent_MakeAvailable(assimp)
+FetchContent_MakeAvailable(vma)
+FetchContent_MakeAvailable(glm)
 
 target_include_directories(${PROJECT_NAME} PRIVATE
     ${Vulkan_INCLUDE_DIR}
     ${glfw_SOURCE_DIR}/include
     ${spdlog_SOURCE_DIR}/include
     ${CMAKE_BINARY_DIR}/_deps/stb-src
+    ${vma_SOURCE_DIR}
 )
 
 target_link_libraries(${PROJECT_NAME} PRIVATE
     Vulkan::Vulkan
     glfw
     assimp
+    glm
 )
