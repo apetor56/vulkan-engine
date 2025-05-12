@@ -14,13 +14,16 @@
 #include "Image.hpp"
 #include "Frame.hpp"
 #include "Constants.hpp"
-#include "command/CommandPool.hpp"
-#include "command/GraphicsCommandBuffer.hpp"
-#include "descriptor/DescriptorSetLayout.hpp"
-#include "descriptor/DescriptorWriter.hpp"
 #include "Loader.hpp"
 #include "Material.hpp"
 #include "Node.hpp"
+#include "Camera.hpp"
+
+#include "command/CommandPool.hpp"
+#include "command/GraphicsCommandBuffer.hpp"
+
+#include "descriptor/DescriptorSetLayout.hpp"
+#include "descriptor/DescriptorWriter.hpp"
 
 #include <functional>
 
@@ -84,6 +87,7 @@ private:
     ve::RenderContext m_mainRenderContext;
     SceneData m_sceneData{};
     Nodes m_nodes;
+    std::shared_ptr< ve::Camera > m_camera{};
 
     void createDepthBuffer();
     void createRenderPass();
@@ -97,7 +101,7 @@ private:
     void loadMeshes();
     void initDefaultData();
 
-    void updateScene();
+    void updateScene( float deltaTime );
     std::optional< uint32_t > acquireNextImage();
     void draw( const uint32_t imageIndex );
     void present( const uint32_t imageIndex );

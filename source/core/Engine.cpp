@@ -31,7 +31,8 @@ Engine::Engine()
       m_loader{ *this, m_memoryAllocator },
       m_descriptorWriter{ m_logicalDevice },
       m_metalRoughMaterial{ m_logicalDevice },
-      m_globalDescriptorAllocator{ m_logicalDevice, 10U, g_poolSizes } {
+      m_globalDescriptorAllocator{ m_logicalDevice, 10U, g_poolSizes },
+      m_camera{ std::make_shared< ve::Camera >() } {
     init();
 }
 
@@ -40,6 +41,7 @@ Engine::~Engine() {
 }
 
 void Engine::init() {
+    m_window.setCamera( m_camera );
     createDepthBuffer();
     createRenderPass();
     createFramebuffers();
@@ -53,10 +55,17 @@ void Engine::init() {
 }
 
 void Engine::run() {
-    while ( m_window.shouldClose() == GLFW_FALSE ) {
-        glfwPollEvents();
+    using namespace std::chrono;
+    high_resolution_clock::time_point frameStart{ high_resolution_clock::now() };
+    high_resolution_clock::time_point now{};
+    duration< float, std::milli > deltaTime{};
 
-        updateScene();
+    while ( m_window.shouldClose() == GLFW_FALSE ) {
+        now       = high_resolution_clock::now();
+        deltaTime = now - frameStart;
+
+        glfwPollEvents();
+        updateScene( deltaTime.count() );
 
         const auto& currentFrame{ m_currentFrameIt->value() };
         [[maybe_unused]] const auto waitForFencesResult{
@@ -74,6 +83,8 @@ void Engine::run() {
         m_currentFrameIt++;
         if ( m_currentFrameIt == std::end( m_frameResources ) )
             m_currentFrameIt = std::begin( m_frameResources );
+
+        frameStart = now;
     }
     m_logicalDevice.get().waitIdle();
 }
@@ -117,8 +128,6 @@ void Engine::draw( const uint32_t imageIndex ) {
                                    m_swapchain.getExtent() );
     commandBuffer.setViewport( m_swapchain.getViewport() );
     commandBuffer.setScissor( m_swapchain.getScissor() );
-
-    commandBuffer.bindPipeline( m_pipeline->get() );
 
     auto currentDescriptorSet{ currentFrame.descriptorSet };
 
@@ -355,6 +364,7 @@ void Engine::createTextureSampler() {
 
 void Engine::loadMeshes() {
     m_modelMeshes = m_loader.loadMeshes( cfg::directory::assets / "viking_room.obj" );
+
     std::ranges::for_each( m_modelMeshes, [ this ]( auto& meshAsset ) {
         std::shared_ptr< MeshNode > meshNode{ std::make_shared< MeshNode >( meshAsset ) };
         meshAsset.surface.material = std::make_shared< GltfMaterial >( m_defaultMaterial.value() );
@@ -390,22 +400,27 @@ void Engine::immediateSubmit( const std::function< void( ve::GraphicsCommandBuff
         logicalDeviceVk.waitForFences( m_immediateSubmitFence.get(), g_waitForAllFences, g_timeoutOff ) };
 }
 
-void Engine::updateScene() {
+void Engine::updateScene( float deltaTime ) {
+    using namespace std::chrono_literals;
     m_mainRenderContext.opaqueSurfaces.clear();
+
+    if ( m_camera != nullptr )
+        m_camera->update( deltaTime );
 
     using namespace std::chrono;
     static auto start{ high_resolution_clock::now() };
     auto now{ high_resolution_clock::now() };
     milliseconds elapsed{ duration_cast< milliseconds >( now - start ) };
 
+    constexpr glm::vec3 xAxis{ 1.0F, 0.0F, 0.0F };
     constexpr glm::vec3 zAxis{ 0.0F, 0.0F, 1.0F };
-    m_sceneData.model = glm::scale( glm::mat4{ 1.0F }, glm::vec3{ 1.0F, 1.0F, 1.0F } ) *
-                        glm::rotate( glm::mat4( 1.0F ), elapsed.count() * glm::radians( 90.0F ) / 1000, zAxis );
+    m_sceneData.model = glm::translate( glm::mat4{ 1.0F }, glm::vec3{ 0.0F, -0.3F, 0.0F } ) *
+                        glm::scale( glm::mat4{ 1.0F }, glm::vec3{ 1.0F, 1.0F, 1.0F } ) *
+                        glm::rotate( glm::mat4{ 1.0F }, glm::radians( -80.0F ), xAxis ) *
+                        glm::rotate( glm::mat4{ 1.0F }, elapsed.count() * glm::radians( 90.0F ) / 1000, zAxis );
 
-    constexpr glm::vec3 cameraPos{ 2.0F, 4.0F, 2.0F };
-    constexpr glm::vec3 centerPos{};
-    constexpr glm::vec3 up{ 0.0F, 0.0F, 1.0F };
-    m_sceneData.view = glm::lookAt( cameraPos, centerPos, up );
+    if ( m_camera != nullptr )
+        m_sceneData.view = m_camera->getViewMartix();
 
     static const auto& extent{ m_swapchain.getExtent() };
     constexpr float angle{ 45.0F };
@@ -413,14 +428,11 @@ void Engine::updateScene() {
     constexpr float farPlane{ 500.0F };
     m_sceneData.projection = glm::perspective(
         glm::radians( angle ), static_cast< float >( extent.width ) / extent.height, nearPlane, farPlane );
+
     m_sceneData.projection[ 1 ][ 1 ] *= -1;
 
-    std::ranges::for_each( m_nodes | std::views::values, [ this ]( auto& meshNode ) {
-        meshNode->render( glm::mat4{ 1.0F }, m_mainRenderContext );
-        glm::mat4 translation{ glm::translate( glm::mat4{ 1.0F }, glm::vec3{ 2, 0, 0 } ) };
-        glm::mat4 scale{ glm::scale( glm::mat4{ 1.0F }, glm::vec3{ 0.5F } ) };
-        meshNode->render( translation * scale, m_mainRenderContext );
-    } );
+    std::ranges::for_each( m_nodes | std::views::values,
+                           [ this ]( auto& meshNode ) { meshNode->render( glm::mat4{ 1.0F }, m_mainRenderContext ); } );
 }
 
 void Engine::initDefaultData() {

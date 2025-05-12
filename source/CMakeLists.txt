@@ -49,6 +49,7 @@ set(CORE
     core/Node.hpp                  core/Node.cpp
     core/Material.hpp              core/Material.cpp
     core/Mesh.hpp
+    core/Camera.hpp                core/Camera.cpp
 )
 
 set(UTILS
