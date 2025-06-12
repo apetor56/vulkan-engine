@@ -1,6 +1,6 @@
 #pragma once
 
-namespace utils {
+namespace ve::utils {
 
 class NonMovable {
 public:
@@ -9,4 +9,4 @@ public:
     NonMovable& operator=( NonMovable&& other ) = delete;
 };
 
-} // namespace utils
+} // namespace ve::utils

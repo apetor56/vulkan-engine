@@ -30,14 +30,10 @@ Engine::Engine()
       m_descriptorSetLayout{ m_logicalDevice },
       m_loader{ *this, m_memoryAllocator },
       m_descriptorWriter{ m_logicalDevice },
-      m_metalRoughMaterial{ m_logicalDevice },
+      m_metalRough{ m_logicalDevice },
       m_globalDescriptorAllocator{ m_logicalDevice, 10U, g_poolSizes },
       m_camera{ std::make_shared< ve::Camera >() } {
     init();
-}
-
-Engine::~Engine() {
-    m_logicalDevice.get().destroySampler( m_textureSampler );
 }
 
 void Engine::init() {
@@ -208,7 +204,8 @@ void Engine::createFramebuffers() {
 }
 
 void Engine::preparePipelines() {
-    m_descriptorSetLayout.addBinding( 0U, vk::DescriptorType::eUniformBuffer, vk::ShaderStageFlagBits::eVertex );
+    m_descriptorSetLayout.addBinding( 0U, vk::DescriptorType::eUniformBuffer,
+                                      vk::ShaderStageFlagBits::eVertex | vk::ShaderStageFlagBits::eFragment );
     m_descriptorSetLayout.create();
     const auto layoutVk{ m_descriptorSetLayout.get() };
 
@@ -225,7 +222,7 @@ void Engine::preparePipelines() {
     m_pipelineBuilder.setLayout( m_pipelineLayout.value() );
     m_pipeline.emplace( m_pipelineBuilder, m_renderPass.value() );
 
-    m_metalRoughMaterial.buildPipelines( m_descriptorSetLayout, m_renderPass.value() );
+    m_metalRough.buildPipelines( m_descriptorSetLayout, m_renderPass.value() );
 }
 
 void Engine::createFrameResoures() {
@@ -314,7 +311,7 @@ void Engine::prepareTexture() {
     int width;
     int height;
     int channels;
-    const auto fullTexturePath{ cfg::directory::assets / "viking_room.png" };
+    const auto fullTexturePath{ cfg::directory::assets / "gachi.jpg" };
 
     stbi_uc *pixels{ stbi_load( fullTexturePath.string().c_str(), &width, &height, &channels, STBI_rgb_alpha ) };
 
@@ -340,36 +337,14 @@ void Engine::prepareTexture() {
 }
 
 void Engine::createTextureSampler() {
-    vk::SamplerCreateInfo samplerInfo{};
-    samplerInfo.magFilter               = vk::Filter::eLinear;
-    samplerInfo.minFilter               = vk::Filter::eLinear;
-    samplerInfo.addressModeU            = vk::SamplerAddressMode::eRepeat;
-    samplerInfo.addressModeV            = vk::SamplerAddressMode::eRepeat;
-    samplerInfo.addressModeW            = vk::SamplerAddressMode::eRepeat;
-    samplerInfo.anisotropyEnable        = vk::True;
-    samplerInfo.borderColor             = vk::BorderColor::eIntOpaqueBlack;
-    samplerInfo.unnormalizedCoordinates = vk::False;
-    samplerInfo.compareEnable           = vk::False;
-    samplerInfo.compareOp               = vk::CompareOp::eAlways;
-    samplerInfo.mipmapMode              = vk::SamplerMipmapMode::eLinear;
-    samplerInfo.mipLodBias              = 0.0F;
-    samplerInfo.minLod                  = 0.0F;
-    samplerInfo.maxLod                  = 0.0F;
-
     const auto physicalDeviceProperties{ m_physicalDevice.get().getProperties() };
-    samplerInfo.maxAnisotropy = physicalDeviceProperties.limits.maxSamplerAnisotropy;
-
-    m_textureSampler = m_logicalDevice.get().createSampler( samplerInfo );
+    m_textureSampler.emplace( m_logicalDevice, physicalDeviceProperties.limits.maxSamplerAnisotropy );
 }
 
 void Engine::loadMeshes() {
-    m_modelMeshes = m_loader.loadMeshes( cfg::directory::assets / "viking_room.obj" );
-
-    std::ranges::for_each( m_modelMeshes, [ this ]( auto& meshAsset ) {
-        std::shared_ptr< MeshNode > meshNode{ std::make_shared< MeshNode >( meshAsset ) };
-        meshAsset.surface.material = std::make_shared< GltfMaterial >( m_defaultMaterial.value() );
-        m_nodes.emplace( meshAsset.name, std::move( meshNode ) );
-    } );
+    const auto scene{ m_loader.load( cfg::directory::assets / "structure.glb" ) };
+    if ( scene.has_value() )
+        m_scenes.emplace( "sampleScene", scene.value() );
 }
 
 void Engine::handleWindowResising() {
@@ -416,8 +391,9 @@ void Engine::updateScene( float deltaTime ) {
     constexpr glm::vec3 zAxis{ 0.0F, 0.0F, 1.0F };
     m_sceneData.model = glm::translate( glm::mat4{ 1.0F }, glm::vec3{ 0.0F, -0.3F, 0.0F } ) *
                         glm::scale( glm::mat4{ 1.0F }, glm::vec3{ 1.0F, 1.0F, 1.0F } ) *
-                        glm::rotate( glm::mat4{ 1.0F }, glm::radians( -80.0F ), xAxis ) *
-                        glm::rotate( glm::mat4{ 1.0F }, elapsed.count() * glm::radians( 90.0F ) / 1000, zAxis );
+                        glm::rotate( glm::mat4{ 1.0F }, glm::radians( -80.0F ), xAxis ) /* *
+                         glm::rotate( glm::mat4{ 1.0F }, 1 * glm::radians( 90.0F ) / 1000, zAxis )*/
+        ;
 
     if ( m_camera != nullptr )
         m_sceneData.view = m_camera->getViewMartix();
@@ -430,24 +406,35 @@ void Engine::updateScene( float deltaTime ) {
         glm::radians( angle ), static_cast< float >( extent.width ) / extent.height, nearPlane, farPlane );
 
     m_sceneData.projection[ 1 ][ 1 ] *= -1;
+    // static const auto& extent{ m_swapchain.getExtent() };
+    // constexpr float angle{ 70.0F };
+    // constexpr float nearPlane{ 0.1F };
+    // constexpr float farPlane{ 10000.0F };
 
-    std::ranges::for_each( m_nodes | std::views::values,
-                           [ this ]( auto& meshNode ) { meshNode->render( glm::mat4{ 1.0F }, m_mainRenderContext ); } );
+    // m_sceneData.model      = glm::mat4{ 1.0F };
+    // m_sceneData.view       = m_camera->getViewMartix();
+    // m_sceneData.projection = glm::perspective(
+    //     glm::radians( angle ), static_cast< float >( extent.width ) / extent.height, farPlane, nearPlane );
+    // m_sceneData.projection[ 1 ][ 1 ] *= -1;
+
+    std::ranges::for_each( m_scenes | std::views::values,
+                           [ this ]( auto& scene ) { scene->render( glm::mat4{ 1.0F }, m_mainRenderContext ); } );
 }
 
 void Engine::initDefaultData() {
-    m_materialConstantsUniformBuffer.emplace( m_memoryAllocator, sizeof( GltfMetalicRoughness::Constants ) );
-    GltfMetalicRoughness::Constants *materialConstants{
-        static_cast< GltfMetalicRoughness::Constants * >( m_materialConstantsUniformBuffer->getMappedMemory() ) };
-    materialConstants->colorFactors            = glm::vec4{ 1.0F, 1.0F, 1.0F, 1.0F };
-    materialConstants->metalicRoughnessFactors = glm::vec4{ 1.0F, 0.0F, 0.0F, 0.0F };
+    using Constants = ve::gltf::MetalicRoughness::Constants;
+
+    m_constantsBuffer.emplace( m_memoryAllocator, sizeof( Constants ) );
+    Constants *constants{ static_cast< Constants * >( m_constantsBuffer->getMappedMemory() ) };
+    constants->colorFactors            = glm::vec4{ 1.0F, 1.0F, 1.0F, 1.0F };
+    constants->metalicRoughnessFactors = glm::vec4{ 1.0F, 0.0F, 0.0F, 0.0F };
 
     static constexpr uint32_t offset{ 0U };
-    m_defaultResources.emplace( m_textureImage->getImageView(), m_textureImage->getImageView(), m_textureSampler,
-                                m_textureSampler, m_materialConstantsUniformBuffer->get(), offset );
+    m_defaultResources.emplace( m_textureImage->getImageView(), m_textureImage->getImageView(), m_textureSampler->get(),
+                                m_textureSampler->get(), m_constantsBuffer->get(), offset );
 
-    m_defaultMaterial.emplace( m_metalRoughMaterial.writeMaterial(
-        Material::Type::eMainColor, m_defaultResources.value(), m_globalDescriptorAllocator ) );
+    m_defaultMaterial.emplace( m_metalRough.writeMaterial( ve::Material::Type::eMainColor, m_defaultResources.value(),
+                                                           m_globalDescriptorAllocator ) );
 }
 
 } // namespace ve

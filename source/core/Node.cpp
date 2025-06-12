@@ -11,15 +11,36 @@ void Node::refreshWorldTransform( const glm::mat4& parentMatrix ) {
     std::ranges::for_each( m_children, [ this ]( auto& child ) { child->refreshWorldTransform( m_worldTransform ); } );
 }
 
+void Node::setLocalTransform( const glm::mat4& transform ) {
+    m_localTransform = transform;
+}
+
+void Node::addChild( std::shared_ptr< Node > child ) {
+    m_children.emplace_back( child );
+}
+
+void Node::setParent( std::shared_ptr< Node > parent ) {
+    m_parent = parent;
+}
+
 void MeshNode::render( const glm::mat4& topMatrix, RenderContext& renderContext ) {
     const glm::mat4 nodeMatrix{ topMatrix * m_worldTransform };
-    const auto& surface{ m_asset.surface };
     const auto& buffers{ m_asset.buffers };
 
-    renderContext.opaqueSurfaces.emplace_back( nodeMatrix, buffers.indexBuffer->get(), surface.material->data,
-                                               buffers.vertexBufferAddress, surface.count, surface.startIndex );
+    std::ranges::for_each( m_asset.surfaces, [ &buffers, &renderContext, &nodeMatrix ]( const auto& surface ) {
+        renderContext.opaqueSurfaces.emplace_back( nodeMatrix, buffers.indexBuffer->get(), surface.material->data,
+                                                   buffers.vertexBufferAddress, surface.count, surface.startIndex );
+    } );
 
     Node::render( topMatrix, renderContext );
 }
 
 } // namespace ve
+
+namespace ve::gltf {
+
+void Scene::render( const glm::mat4& topMatrix, ve::RenderContext& renderContext ) {
+    std::ranges::for_each( topNodes, [ & ]( auto& topNode ) { topNode->render( topMatrix, renderContext ); } );
+}
+
+} // namespace ve::gltf

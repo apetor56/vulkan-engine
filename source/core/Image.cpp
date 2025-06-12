@@ -1,5 +1,7 @@
 #include "Image.hpp"
 
+#include <spdlog/spdlog.h>
+
 namespace ve {
 
 Image::Image( const ve::MemoryAllocator& allocator, const ve::LogicalDevice& logicalDevice, const vk::Extent2D extent,

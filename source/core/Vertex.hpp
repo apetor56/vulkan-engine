@@ -1,40 +1,16 @@
 #pragma once
 
-#include <vulkan/vulkan.hpp>
 #include <glm/vec4.hpp>
-#include <glm/vec2.hpp>
-
-#include <array>
+#include <glm/vec3.hpp>
 
 namespace ve {
 
 struct Vertex {
-    glm::vec4 position;
-    glm::vec4 color;
-    glm::vec2 texCoord;
-    glm::vec2 uv;
-
-    static constexpr vk::VertexInputBindingDescription getBindingDescription() noexcept {
-        constexpr auto bindingPoint{ 0U };
-        constexpr auto stride{ sizeof( Vertex ) };
-        constexpr auto inputRate{ vk::VertexInputRate::eVertex };
-
-        return { bindingPoint, stride, inputRate };
-    }
-
-    static const std::array< vk::VertexInputAttributeDescription, 3U > getAttributeDescripstions() noexcept {
-        constexpr auto bindingPoint{ 0U };
-        constexpr auto positionLocation{ 0U };
-        constexpr auto colorLocation{ 1U };
-        constexpr auto texCoordLocation{ 2U };
-
-        return { vk::VertexInputAttributeDescription{ positionLocation, bindingPoint, vk::Format::eR32G32B32Sfloat,
-                                                      offsetof( Vertex, position ) },
-                 vk::VertexInputAttributeDescription{ colorLocation, bindingPoint, vk::Format::eR32G32B32Sfloat,
-                                                      offsetof( Vertex, color ) },
-                 vk::VertexInputAttributeDescription{ texCoordLocation, bindingPoint, vk::Format::eR32G32Sfloat,
-                                                      offsetof( Vertex, texCoord ) } };
-    }
+    glm::vec3 position{};
+    float uv_x{};
+    glm::vec3 normal{};
+    float uv_y{};
+    glm::vec4 color{};
 };
 
 } // namespace ve

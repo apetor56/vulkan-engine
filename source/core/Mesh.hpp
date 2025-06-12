@@ -26,12 +26,12 @@ struct PushConstants {
 struct Surface {
     uint32_t startIndex{};
     uint32_t count{};
-    std::shared_ptr< GltfMaterial > material{};
+    std::optional< ve::gltf::Material > material;
 };
 
 struct MeshAsset {
-    Surface surface;
-    MeshBuffers buffers{};
+    std::vector< ve::Surface > surfaces;
+    ve::MeshBuffers buffers{};
     std::string name{};
 };
 

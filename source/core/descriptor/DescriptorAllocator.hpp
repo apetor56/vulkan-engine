@@ -13,7 +13,7 @@ public:
     };
 
     DescriptorAllocator( const ve::LogicalDevice& logicalDevice, const uint32_t maxSets,
-                         std::span< PoolSizeRatio > poolSizeRatios );
+                         std::span< const PoolSizeRatio > poolSizeRatios );
 
     ~DescriptorAllocator();
 

@@ -32,22 +32,28 @@ namespace ve {
 class Engine {
 public:
     Engine();
-    ~Engine();
 
     void init();
     void run();
 
     MeshBuffers uploadMeshBuffers( std::span< Vertex > vertices, std::span< uint32_t > indices ) const;
+    const ve::LogicalDevice& getLogicalDevice() const noexcept { return m_logicalDevice; }
+    const ve::Image& getDefaultImage() const noexcept { return m_textureImage.value(); }
+    const ve::Sampler& getDefaultSampler() const noexcept { return m_textureSampler.value(); }
+    ve::gltf::MetalicRoughness& getMaterialBuiler() noexcept { return m_metalRough; }
 
 private:
     using FrameResources = std::array< std::optional< ve::FrameData >, g_maxFramesInFlight >;
     using Framebuffers   = std::vector< std::optional< ve::Framebuffer > >;
-    using Nodes          = std::unordered_map< std::string, std::shared_ptr< Node > >;
+    using Scenes         = std::unordered_map< std::string, std::shared_ptr< ve::gltf::Scene > >;
 
     struct SceneData {
-        glm::mat4 model;
-        glm::mat4 view;
-        glm::mat4 projection;
+        glm::mat4 model{ 1.0F };
+        glm::mat4 view{ 1.0F };
+        glm::mat4 projection{ 1.0F };
+        glm::vec4 ambientColor{ 1.0F };
+        glm::vec4 sunlightDirection{ 1.0F };
+        glm::vec4 sunlightColor{ 1.0F };
     };
 
     ve::VulkanInstance m_vulkanInstance{};
@@ -74,19 +80,19 @@ private:
     FrameResources m_frameResources;
     FrameResources::iterator m_currentFrameIt{ nullptr };
     std::optional< ve::Image > m_textureImage{};
-    vk::Sampler m_textureSampler;
-    ve::Loader m_loader;
+    std::optional< ve::Sampler > m_textureSampler;
+    ve::gltf::Loader m_loader;
     std::vector< ve::MeshAsset > m_modelMeshes;
     ve::DescriptorWriter m_descriptorWriter;
     std::optional< ve::Material > m_material;
-    ve::GltfMetalicRoughness m_metalRoughMaterial;
+    ve::gltf::MetalicRoughness m_metalRough;
     ve::DescriptorAllocator m_globalDescriptorAllocator;
     std::optional< ve::Material > m_defaultMaterial;
-    std::optional< GltfMetalicRoughness::Resources > m_defaultResources;
-    std::optional< ve::UniformBuffer > m_materialConstantsUniformBuffer;
+    std::optional< ve::gltf::MetalicRoughness::Resources > m_defaultResources;
+    std::optional< ve::UniformBuffer > m_constantsBuffer;
     ve::RenderContext m_mainRenderContext;
     SceneData m_sceneData{};
-    Nodes m_nodes;
+    Scenes m_scenes;
     std::shared_ptr< ve::Camera > m_camera{};
 
     void createDepthBuffer();

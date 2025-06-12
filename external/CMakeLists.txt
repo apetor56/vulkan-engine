@@ -6,15 +6,6 @@ option(GLFW_BUILD_DOCS "Build GLFW documentation" OFF)
 option(GLFW_BUILD_TESTS "Build GLFW tests" OFF)
 option(GLFW_BUILD_EXAMPLES "Build GLFW examples" OFF)
 
-option(BUILD_SHARED_LIBS "Build shared libraries" OFF)
-option(ASSIMP_BUILD_ALL_IMPORTERS_BY_DEFAULT "" OFF)
-option(ASSIMP_BUILD_OBJ_IMPORTER "Enable OBJ importer" ON)
-option(ASSIMP_BUILD_GLTF_IMPORTER "Enable GLTF importer" ON)
-option(ASSIMP_NO_EXPORT "Disable assimp exporter" ON)
-option(ASSIMP_BUILD_SAMPLES "Build Assimp sample applications" OFF)
-option(ASSIMP_BUILD_TESTS "Build Assimp unit tests" OFF)
-option(ASSIMP_BUILD_ASSIMP_TOOLS "Build Assimp tools" OFF)
-
 FetchContent_Declare(
     glfw
     GIT_REPOSITORY https://github.com/glfw/glfw.git
@@ -31,9 +22,9 @@ FetchContent_Declare(
     GIT_TAG        master
 )
 FetchContent_Declare(
-    assimp
-    GIT_REPOSITORY https://github.com/assimp/assimp.git
-    GIT_TAG        v5.4.3
+    fastgltf
+    GIT_REPOSITORY https://github.com/spnda/fastgltf.git
+    GIT_TAG        main
 )
 FetchContent_Declare(
     vma
@@ -49,21 +40,19 @@ FetchContent_Declare(
 FetchContent_MakeAvailable(glfw)
 FetchContent_MakeAvailable(spdlog)
 FetchContent_MakeAvailable(stb)
-FetchContent_MakeAvailable(assimp)
+FetchContent_MakeAvailable(fastgltf)
 FetchContent_MakeAvailable(vma)
 FetchContent_MakeAvailable(glm)
 
 target_include_directories(${PROJECT_NAME} PRIVATE
-    ${Vulkan_INCLUDE_DIR}
-    ${glfw_SOURCE_DIR}/include
-    ${spdlog_SOURCE_DIR}/include
     ${CMAKE_BINARY_DIR}/_deps/stb-src
-    ${vma_SOURCE_DIR}
 )
 
 target_link_libraries(${PROJECT_NAME} PRIVATE
     Vulkan::Vulkan
     glfw
-    assimp
-    glm
+    spdlog::spdlog_header_only
+    fastgltf::fastgltf
+    glm::glm-header-only
 )
+

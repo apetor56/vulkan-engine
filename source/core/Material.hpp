@@ -3,6 +3,7 @@
 #include "Pipeline.hpp"
 #include "Image.hpp"
 #include "Buffer.hpp"
+
 #include "descriptor/DescriptorWriter.hpp"
 
 namespace ve {
@@ -19,12 +20,16 @@ struct Material {
     const Type type{};
 };
 
-struct GltfMaterial {
-    Material data;
+} // namespace ve
+
+namespace ve::gltf {
+
+struct Material {
+    ve::Material data;
 };
 
-struct GltfMetalicRoughness {
-    GltfMetalicRoughness( const ve::LogicalDevice& logicalDevice )
+struct MetalicRoughness {
+    MetalicRoughness( const ve::LogicalDevice& logicalDevice )
         : m_logicalDevice{ logicalDevice }, descriptorWriter{ logicalDevice } {}
 
     struct Constants {
@@ -34,18 +39,18 @@ struct GltfMetalicRoughness {
     };
 
     struct Resources {
-        const vk::ImageView textureImageView;
-        const vk::ImageView metalicRoughnessImageView;
-        const vk::Sampler textureSampler;
-        const vk::Sampler metalicRoughnessSampler;
-        const vk::Buffer dataBuffer;
-        const uint32_t dataBufferOffset;
+        vk::ImageView colorImageView;
+        vk::ImageView metalicRoughnessImageView;
+        vk::Sampler colorSampler;
+        vk::Sampler metalicRoughnessSampler;
+        vk::Buffer dataBuffer;
+        uint32_t dataBufferOffset;
     };
 
     void buildPipelines( const ve::DescriptorSetLayout& layout, const ve::RenderPass& renderPass );
     void clearResources();
-    Material writeMaterial( const Material::Type materialType, const Resources& resources,
-                            ve::DescriptorAllocator& descriptorAllocator );
+    ve::Material writeMaterial( const ve::Material::Type materialType, const Resources& resources,
+                                ve::DescriptorAllocator& descriptorAllocator );
 
     ve::DescriptorWriter descriptorWriter;
     std::optional< ve::Pipeline > opaquePipeline;
@@ -57,4 +62,4 @@ private:
     const ve::LogicalDevice& m_logicalDevice;
 };
 
-} // namespace ve
+} // namespace ve::gltf

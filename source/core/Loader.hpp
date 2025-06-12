@@ -1,37 +1,61 @@
 #pragma once
 
-#include "Buffer.hpp"
-#include "MemoryAllocator.hpp"
-#include "Mesh.hpp"
+#include "Node.hpp"
 
-#include <assimp/Importer.hpp>
-#include <assimp/mesh.h>
+#include "utils/NonCopyable.hpp"
+#include "utils/NonMovable.hpp"
 
-#include <vector>
-#include <optional>
+#include <fastgltf/core.hpp>
+
 #include <filesystem>
-#include <iostream>
-
-struct aiNode;
-struct aiScene;
 
 namespace ve {
-
 class Engine;
+class MemoryAllocator;
+} // namespace ve
+
+namespace fastgltf {
+class Asset;
+}
+
+namespace ve::gltf {
 
 class Loader : public utils::NonCopyable,
                public utils::NonMovable {
 public:
-    Loader( const ve::Engine& engine, const ve::MemoryAllocator& allocator );
-    std::vector< MeshAsset > loadMeshes( const std::filesystem::path& path );
+    Loader( ve::Engine& engine, const ve::MemoryAllocator& allocator );
+
+    std::optional< std::shared_ptr< ve::gltf::Scene > > load( const std::filesystem::path& path );
 
 private:
-    Assimp::Importer m_importer;
-    const ve::Engine& m_engine;
+    using Constants = ve::gltf::MetalicRoughness::Constants;
+    using Resources = ve::gltf::MetalicRoughness::Resources;
+
+    fastgltf::Parser m_parser{};
+    ve::Engine& m_engine;
     const ve::MemoryAllocator& m_memoryAllocator;
 
-    void processNode( aiNode *const node, const aiScene *scene, std::vector< MeshAsset >& meshAssets );
-    MeshAsset processMesh( aiMesh *const mesh );
+    std::optional< fastgltf::Asset > getAsset( const std::filesystem::path& path );
+    std::vector< vk::ImageView > loadImages( const fastgltf::Asset& asset );
+    std::vector< ve::gltf::Material * > loadMeterials( const fastgltf::Asset& asset, ve::gltf::Scene& scene );
+    std::vector< ve::MeshAsset * > loadMeshes( const fastgltf::Asset& asset, ve::gltf::Scene& scene );
+    std::vector< std::shared_ptr< ve::Node > > loadNodes( const fastgltf::Asset& asset, ve::gltf::Scene& scene );
+    void setNodesRalationship( const fastgltf::Asset& asset, ve::gltf::Scene& scene );
+
+    Constants loadConstanst( const fastgltf::Material& material );
+    Resources loadResources( const size_t index, ve::gltf::Scene& scene, const fastgltf::Asset& asset,
+                             const fastgltf::Material& material, std::span< const vk::ImageView > images );
+
+    void loadIndices( const size_t initialIndex, std::vector< uint32_t >& indices, const fastgltf::Asset& asset,
+                      const fastgltf::Primitive& primitive );
+    void loadVertices( const size_t initialIndex, std::vector< ve::Vertex >& vertices, const fastgltf::Asset& asset,
+                       const fastgltf::Primitive& primitive );
+    void loadNormals( const size_t initialIndex, std::vector< ve::Vertex >& vertices, const fastgltf::Asset& asset,
+                      const fastgltf::Primitive& primitive );
+    void loadTextureCoord( const size_t initialIndex, std::vector< ve::Vertex >& vertices, const fastgltf::Asset& asset,
+                           const fastgltf::Primitive& primitive );
+    void loadColor( const size_t initialIndex, std::vector< ve::Vertex >& vertices, const fastgltf::Asset& asset,
+                    const fastgltf::Primitive& primitive );
 };
 
-} // namespace ve
+} // namespace ve::gltf

@@ -2,6 +2,9 @@
 
 #include "Material.hpp"
 #include "Mesh.hpp"
+#include "Sampler.hpp"
+
+#include "descriptor/DescriptorAllocator.hpp"
 
 namespace ve {
 
@@ -29,6 +32,13 @@ public:
     virtual void render( const glm::mat4& topMatrix, RenderContext& renderContext ) override;
     void refreshWorldTransform( const glm::mat4& parentMatrix );
 
+    void setLocalTransform( const glm::mat4& transform );
+    void addChild( std::shared_ptr< Node > child );
+    void setParent( std::shared_ptr< Node > parent );
+
+    std::weak_ptr< Node > getParent() const noexcept { return m_parent; }
+    glm::mat4& getLocalTransform() noexcept { return m_localTransform; }
+
 protected:
     glm::mat4 m_localTransform{ 1.0F };
     glm::mat4 m_worldTransform{ 1.0F };
@@ -38,12 +48,36 @@ protected:
 
 class MeshNode : public Node {
 public:
-    MeshNode( const MeshAsset& meshAsset ) : m_asset{ meshAsset } {}
+    MeshNode( const ve::MeshAsset& meshAsset ) : m_asset{ meshAsset } {}
 
     virtual void render( const glm::mat4& topMatrix, RenderContext& renderContext ) override;
 
 private:
-    const MeshAsset& m_asset;
+    const ve::MeshAsset& m_asset;
 };
 
 } // namespace ve
+
+namespace ve::gltf {
+
+struct Scene : public ve::Renderable {
+    ~Scene() {}
+
+    using MeshMap     = std::unordered_map< std::string, ve::MeshAsset >;
+    using NodeMap     = std::unordered_map< std::string, std::shared_ptr< ve::Node > >;
+    using ImageMap    = std::unordered_map< std::string, ve::Image >;
+    using MaterialMap = std::unordered_map< std::string, ve::gltf::Material >;
+
+    virtual void render( const glm::mat4& topMatrix, ve::RenderContext& renderContext ) override;
+
+    MeshMap meshes;
+    NodeMap nodes;
+    ImageMap images;
+    MaterialMap materials;
+    std::vector< std::shared_ptr< ve::Node > > topNodes;
+    std::vector< ve::Sampler > samplers;
+    std::optional< ve::DescriptorAllocator > descriptorAllocator;
+    std::optional< ve::UniformBuffer > materialDataBuffer;
+};
+
+} // namespace ve::gltf

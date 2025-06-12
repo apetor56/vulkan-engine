@@ -35,7 +35,7 @@ void PhysicalDevice::pickPhysicalDevice( const ve::VulkanInstance& instance, con
     m_queueFamilies  = ve::QueueFamilyIDs::findQueueFamilies( m_physicalDevice, window.getSurface() );
 
     const auto deviceProperties{ m_physicalDevice.getProperties() };
-    SPDLOG_INFO( "Picked GPU: {}", deviceProperties.deviceName.data() );
+    spdlog::info( "Picked GPU: {}", deviceProperties.deviceName.data() );
 }
 
 uint32_t PhysicalDevice::rate( const vk::PhysicalDevice physicalDevice, const VkSurfaceKHR surface ) const noexcept {

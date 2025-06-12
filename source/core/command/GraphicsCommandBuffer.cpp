@@ -1,7 +1,7 @@
 #include "GraphicsCommandBuffer.hpp"
 #include "QueueFamilyIDs.hpp"
 #include "LogicalDevice.hpp"
-#include "Loader.hpp"
+#include "Mesh.hpp"
 
 namespace {
 constexpr uint32_t g_firstVertex{ 0U };

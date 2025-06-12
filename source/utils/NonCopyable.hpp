@@ -1,6 +1,6 @@
 #pragma once
 
-namespace utils {
+namespace ve::utils {
 
 class NonCopyable {
 public:
@@ -9,4 +9,4 @@ public:
     NonCopyable& operator=( const NonCopyable& other ) = delete;
 };
 
-} // namespace utils
+} // namespace ve::utils

@@ -50,6 +50,7 @@ set(CORE
     core/Material.hpp              core/Material.cpp
     core/Mesh.hpp
     core/Camera.hpp                core/Camera.cpp
+    core/Sampler.hpp               core/Sampler.cpp
 )
 
 set(UTILS
@@ -95,6 +96,7 @@ target_sources(${PROJECT_NAME} PRIVATE
     "${CORE}"
     "${COMMAND}"
     "${DESCRIPTOR}"
+    "${UTILS}"
 )
 target_include_directories(${PROJECT_NAME} PRIVATE
     "${CMAKE_CURRENT_SOURCE_DIR}"
