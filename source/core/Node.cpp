@@ -1,5 +1,7 @@
 #include "Node.hpp"
 
+#include <spdlog/spdlog.h>
+
 namespace ve {
 
 void Node::render( const glm::mat4& topMatrix, RenderContext& renderContext ) {
@@ -28,8 +30,25 @@ void MeshNode::render( const glm::mat4& topMatrix, RenderContext& renderContext 
     const auto& buffers{ m_asset.buffers };
 
     std::ranges::for_each( m_asset.surfaces, [ &buffers, &renderContext, &nodeMatrix ]( const auto& surface ) {
-        renderContext.opaqueSurfaces.emplace_back( nodeMatrix, buffers.indexBuffer->get(), surface.material->data,
-                                                   buffers.vertexBufferAddress, surface.count, surface.startIndex );
+        switch ( surface.material->data.type ) {
+        case ve::Material::Type::eMainColor: {
+            renderContext.opaqueSurfaces.emplace_back( nodeMatrix, buffers.indexBuffer->get(), surface.material->data,
+                                                       buffers.vertexBufferAddress, surface.count, surface.startIndex );
+            break;
+        }
+
+        case ve::Material::Type::eTransparent: {
+            renderContext.transparentSurfaces.emplace_back( nodeMatrix, buffers.indexBuffer->get(),
+                                                            surface.material->data, buffers.vertexBufferAddress,
+                                                            surface.count, surface.startIndex );
+            break;
+        }
+
+        default: {
+            spdlog::warn( "Material type with value {} not handled.",
+                          static_cast< int >( surface.material->data.type ) );
+        }
+        }
     } );
 
     Node::render( topMatrix, renderContext );

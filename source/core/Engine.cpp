@@ -43,8 +43,8 @@ void Engine::init() {
     createFramebuffers();
     preparePipelines();
     createFrameResoures();
-    prepareTexture();
-    createTextureSampler();
+    prepareDefaultTexture();
+    createDefaultTextureSampler();
     configureDescriptorSets();
     initDefaultData();
     loadMeshes();
@@ -127,20 +127,24 @@ void Engine::draw( const uint32_t imageIndex ) {
 
     auto currentDescriptorSet{ currentFrame.descriptorSet };
 
-    std::ranges::for_each(
-        m_mainRenderContext.opaqueSurfaces, [ &commandBuffer, currentDescriptorSet, this ]( const auto& renderObject ) {
-            commandBuffer.bindPipeline( renderObject.material.pipeline.get() );
-            commandBuffer.bindDescriptorSet( renderObject.material.pipeline.getLayout(), currentDescriptorSet, 0U );
-            commandBuffer.bindDescriptorSet( renderObject.material.pipeline.getLayout(),
-                                             renderObject.material.descriptorSet, 1U );
-            commandBuffer.bindIndexBuffer( renderObject.indexBuffer );
+    auto draw{ [ &commandBuffer, &currentDescriptorSet ]( const auto& renderObject ) {
+        commandBuffer.bindPipeline( renderObject.material.pipeline.get() );
+        commandBuffer.bindDescriptorSet( renderObject.material.pipeline.getLayout(), currentDescriptorSet, 0U );
+        commandBuffer.bindDescriptorSet( renderObject.material.pipeline.getLayout(),
+                                         renderObject.material.descriptorSet, 1U );
+        commandBuffer.bindIndexBuffer( renderObject.indexBuffer );
 
-            const ve::PushConstants pushConstants{ .worldMatrix{ renderObject.transform },
-                                                   .vertexBufferAddress{ renderObject.vertexBufferAddress } };
-            commandBuffer.pushConstants( renderObject.material.pipeline.getLayout(), vk::ShaderStageFlagBits::eVertex,
-                                         pushConstants );
-            commandBuffer.drawIndices( renderObject.firstIndex, renderObject.indexCount );
-        } );
+        const ve::PushConstants pushConstants{ .worldMatrix{ renderObject.transform },
+                                               .vertexBufferAddress{ renderObject.vertexBufferAddress } };
+        commandBuffer.pushConstants( renderObject.material.pipeline.getLayout(), vk::ShaderStageFlagBits::eVertex,
+                                     pushConstants );
+        commandBuffer.drawIndices( renderObject.firstIndex, renderObject.indexCount );
+    } };
+
+    std::ranges::for_each( m_mainRenderContext.opaqueSurfaces,
+                           [ &draw ]( const auto& renderObject ) { draw( renderObject ); } );
+    std::ranges::for_each( m_mainRenderContext.transparentSurfaces,
+                           [ &draw ]( const auto& renderObject ) { draw( renderObject ); } );
 
     commandBuffer.endRenderPass();
     commandBuffer.end();
@@ -307,11 +311,11 @@ MeshBuffers Engine::uploadMeshBuffers( std::span< Vertex > vertices, std::span< 
     return newMeshBuffers;
 }
 
-void Engine::prepareTexture() {
+void Engine::prepareDefaultTexture() {
     int width;
     int height;
     int channels;
-    const auto fullTexturePath{ cfg::directory::assets / "gachi.jpg" };
+    const auto fullTexturePath{ cfg::directory::assets / "white.png" };
 
     stbi_uc *pixels{ stbi_load( fullTexturePath.string().c_str(), &width, &height, &channels, STBI_rgb_alpha ) };
 
@@ -323,26 +327,26 @@ void Engine::prepareTexture() {
     memcpy( stagingBuffer.getMappedMemory(), pixels, bufferSize );
 
     const vk::Extent2D imageExtent{ static_cast< uint32_t >( width ), static_cast< uint32_t >( height ) };
-    m_textureImage.emplace( m_memoryAllocator, m_logicalDevice, imageExtent, vk::Format::eR8G8B8A8Srgb,
-                            vk::ImageUsageFlagBits::eTransferDst | vk::ImageUsageFlagBits::eSampled,
-                            vk::ImageAspectFlagBits::eColor );
+    m_defaultWhiteImage.emplace( m_memoryAllocator, m_logicalDevice, imageExtent, vk::Format::eR8G8B8A8Srgb,
+                                 vk::ImageUsageFlagBits::eTransferDst | vk::ImageUsageFlagBits::eSampled,
+                                 vk::ImageAspectFlagBits::eColor );
 
     immediateSubmit( [ &stagingBuffer, this ]( ve::GraphicsCommandBuffer cmd ) {
-        cmd.transitionImageBuffer( m_textureImage->get(), vk::Format::eR8G8B8A8Srgb, vk::ImageLayout::eUndefined,
+        cmd.transitionImageBuffer( m_defaultWhiteImage->get(), vk::Format::eR8G8B8A8Srgb, vk::ImageLayout::eUndefined,
                                    vk::ImageLayout::eTransferDstOptimal );
-        cmd.copyBufferToImage( stagingBuffer.get(), m_textureImage->get(), m_textureImage->getExtent() );
-        cmd.transitionImageBuffer( m_textureImage->get(), vk::Format::eR8G8B8A8Srgb,
+        cmd.copyBufferToImage( stagingBuffer.get(), m_defaultWhiteImage->get(), m_defaultWhiteImage->getExtent() );
+        cmd.transitionImageBuffer( m_defaultWhiteImage->get(), vk::Format::eR8G8B8A8Srgb,
                                    vk::ImageLayout::eTransferDstOptimal, vk::ImageLayout::eShaderReadOnlyOptimal );
     } );
 }
 
-void Engine::createTextureSampler() {
+void Engine::createDefaultTextureSampler() {
     const auto physicalDeviceProperties{ m_physicalDevice.get().getProperties() };
-    m_textureSampler.emplace( m_logicalDevice, physicalDeviceProperties.limits.maxSamplerAnisotropy );
+    m_defaultTextureSampler.emplace( m_logicalDevice, physicalDeviceProperties.limits.maxSamplerAnisotropy );
 }
 
 void Engine::loadMeshes() {
-    const auto scene{ m_loader.load( cfg::directory::assets / "structure.glb" ) };
+    const auto scene{ m_loader.load( cfg::directory::assets / "sponza/Sponza.gltf" ) };
     if ( scene.has_value() )
         m_scenes.emplace( "sampleScene", scene.value() );
 }
@@ -376,46 +380,28 @@ void Engine::immediateSubmit( const std::function< void( ve::GraphicsCommandBuff
 }
 
 void Engine::updateScene( float deltaTime ) {
-    using namespace std::chrono_literals;
     m_mainRenderContext.opaqueSurfaces.clear();
+    m_mainRenderContext.transparentSurfaces.clear();
 
     if ( m_camera != nullptr )
         m_camera->update( deltaTime );
 
-    using namespace std::chrono;
-    static auto start{ high_resolution_clock::now() };
-    auto now{ high_resolution_clock::now() };
-    milliseconds elapsed{ duration_cast< milliseconds >( now - start ) };
-
     constexpr glm::vec3 xAxis{ 1.0F, 0.0F, 0.0F };
     constexpr glm::vec3 zAxis{ 0.0F, 0.0F, 1.0F };
-    m_sceneData.model = glm::translate( glm::mat4{ 1.0F }, glm::vec3{ 0.0F, -0.3F, 0.0F } ) *
-                        glm::scale( glm::mat4{ 1.0F }, glm::vec3{ 1.0F, 1.0F, 1.0F } ) *
-                        glm::rotate( glm::mat4{ 1.0F }, glm::radians( -80.0F ), xAxis ) /* *
-                         glm::rotate( glm::mat4{ 1.0F }, 1 * glm::radians( 90.0F ) / 1000, zAxis )*/
-        ;
+    const auto& extent{ m_swapchain.getExtent() };
+    constexpr float angle{ 45.0F };
+    constexpr float nearPlane{ 0.1F };
+    constexpr float farPlane{ 1000.0F };
+
+    m_sceneData.model = glm::mat4( 1.0F );
 
     if ( m_camera != nullptr )
         m_sceneData.view = m_camera->getViewMartix();
 
-    static const auto& extent{ m_swapchain.getExtent() };
-    constexpr float angle{ 45.0F };
-    constexpr float nearPlane{ 0.1F };
-    constexpr float farPlane{ 500.0F };
     m_sceneData.projection = glm::perspective(
         glm::radians( angle ), static_cast< float >( extent.width ) / extent.height, nearPlane, farPlane );
 
     m_sceneData.projection[ 1 ][ 1 ] *= -1;
-    // static const auto& extent{ m_swapchain.getExtent() };
-    // constexpr float angle{ 70.0F };
-    // constexpr float nearPlane{ 0.1F };
-    // constexpr float farPlane{ 10000.0F };
-
-    // m_sceneData.model      = glm::mat4{ 1.0F };
-    // m_sceneData.view       = m_camera->getViewMartix();
-    // m_sceneData.projection = glm::perspective(
-    //     glm::radians( angle ), static_cast< float >( extent.width ) / extent.height, farPlane, nearPlane );
-    // m_sceneData.projection[ 1 ][ 1 ] *= -1;
 
     std::ranges::for_each( m_scenes | std::views::values,
                            [ this ]( auto& scene ) { scene->render( glm::mat4{ 1.0F }, m_mainRenderContext ); } );
@@ -430,11 +416,33 @@ void Engine::initDefaultData() {
     constants->metalicRoughnessFactors = glm::vec4{ 1.0F, 0.0F, 0.0F, 0.0F };
 
     static constexpr uint32_t offset{ 0U };
-    m_defaultResources.emplace( m_textureImage->getImageView(), m_textureImage->getImageView(), m_textureSampler->get(),
-                                m_textureSampler->get(), m_constantsBuffer->get(), offset );
+    m_defaultResources.emplace( m_defaultWhiteImage->getImageView(), m_defaultWhiteImage->getImageView(),
+                                m_defaultTextureSampler->get(), m_defaultTextureSampler->get(),
+                                m_constantsBuffer->get(), offset );
 
     m_defaultMaterial.emplace( m_metalRough.writeMaterial( ve::Material::Type::eMainColor, m_defaultResources.value(),
                                                            m_globalDescriptorAllocator ) );
+}
+
+ve::Image Engine::createImage( void *data, const vk::Extent2D size, const vk::Format format,
+                               const vk::ImageUsageFlags usage ) {
+    const auto& [ width, height ]{ size };
+    const vk::DeviceSize bufferSize{ static_cast< vk::DeviceSize >( width ) * height * 4 };
+    ve::StagingBuffer stagingBuffer{ m_memoryAllocator, bufferSize };
+    memcpy( stagingBuffer.getMappedMemory(), data, bufferSize );
+
+    const vk::Extent2D imageExtent{ static_cast< uint32_t >( width ), static_cast< uint32_t >( height ) };
+    ve::Image image{ m_memoryAllocator, m_logicalDevice, imageExtent, format, usage, vk::ImageAspectFlagBits::eColor };
+
+    immediateSubmit( [ &stagingBuffer, &image ]( ve::GraphicsCommandBuffer cmd ) {
+        cmd.transitionImageBuffer( image.get(), image.getFormat(), vk::ImageLayout::eUndefined,
+                                   vk::ImageLayout::eTransferDstOptimal );
+        cmd.copyBufferToImage( stagingBuffer.get(), image.get(), image.getExtent() );
+        cmd.transitionImageBuffer( image.get(), image.getFormat(), vk::ImageLayout::eTransferDstOptimal,
+                                   vk::ImageLayout::eShaderReadOnlyOptimal );
+    } );
+
+    return image;
 }
 
 } // namespace ve

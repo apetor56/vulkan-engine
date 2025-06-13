@@ -28,23 +28,26 @@ public:
     std::optional< std::shared_ptr< ve::gltf::Scene > > load( const std::filesystem::path& path );
 
 private:
-    using Constants = ve::gltf::MetalicRoughness::Constants;
-    using Resources = ve::gltf::MetalicRoughness::Resources;
+    using Constants    = ve::gltf::MetalicRoughness::Constants;
+    using Resources    = ve::gltf::MetalicRoughness::Resources;
+    using MaterialsOpt = std::optional< std::vector< ve::gltf::Material * > >;
 
     fastgltf::Parser m_parser{};
     ve::Engine& m_engine;
     const ve::MemoryAllocator& m_memoryAllocator;
 
     std::optional< fastgltf::Asset > getAsset( const std::filesystem::path& path );
-    std::vector< vk::ImageView > loadImages( const fastgltf::Asset& asset );
-    std::vector< ve::gltf::Material * > loadMeterials( const fastgltf::Asset& asset, ve::gltf::Scene& scene );
+    std::optional< ve::Image > loadImage( const fastgltf::Asset& asset, ve::gltf::Scene& scene,
+                                          const fastgltf::Image& image );
+    void loadImages( const fastgltf::Asset& asset, ve::gltf::Scene& scene );
+    MaterialsOpt loadMeterials( const fastgltf::Asset& asset, ve::gltf::Scene& scene );
     std::vector< ve::MeshAsset * > loadMeshes( const fastgltf::Asset& asset, ve::gltf::Scene& scene );
     std::vector< std::shared_ptr< ve::Node > > loadNodes( const fastgltf::Asset& asset, ve::gltf::Scene& scene );
     void setNodesRalationship( const fastgltf::Asset& asset, ve::gltf::Scene& scene );
 
     Constants loadConstanst( const fastgltf::Material& material );
     Resources loadResources( const size_t index, ve::gltf::Scene& scene, const fastgltf::Asset& asset,
-                             const fastgltf::Material& material, std::span< const vk::ImageView > images );
+                             const fastgltf::Material& material );
 
     void loadIndices( const size_t initialIndex, std::vector< uint32_t >& indices, const fastgltf::Asset& asset,
                       const fastgltf::Primitive& primitive );

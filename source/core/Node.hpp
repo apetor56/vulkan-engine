@@ -19,6 +19,7 @@ struct RenderObject {
 
 struct RenderContext {
     std::vector< RenderObject > opaqueSurfaces;
+    std::vector< RenderObject > transparentSurfaces;
 };
 
 class Renderable {
@@ -65,15 +66,15 @@ struct Scene : public ve::Renderable {
 
     using MeshMap     = std::unordered_map< std::string, ve::MeshAsset >;
     using NodeMap     = std::unordered_map< std::string, std::shared_ptr< ve::Node > >;
-    using ImageMap    = std::unordered_map< std::string, ve::Image >;
     using MaterialMap = std::unordered_map< std::string, ve::gltf::Material >;
 
     virtual void render( const glm::mat4& topMatrix, ve::RenderContext& renderContext ) override;
 
     MeshMap meshes;
     NodeMap nodes;
-    ImageMap images;
     MaterialMap materials;
+    std::filesystem::path path;
+    std::vector< ve::Image > images;
     std::vector< std::shared_ptr< ve::Node > > topNodes;
     std::vector< ve::Sampler > samplers;
     std::optional< ve::DescriptorAllocator > descriptorAllocator;

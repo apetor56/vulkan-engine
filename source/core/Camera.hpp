@@ -18,10 +18,10 @@ public:
     glm::mat4 getViewMartix() const;
 
 private:
-    glm::vec3 m_position{ 0.0F, 0.0F, 3.0F };
+    glm::vec3 m_position{ -9.24F, 1.37F, 0.48F };
     glm::vec3 m_velocity{};
-    float m_pitch{};
-    float m_yaw{};
+    float m_pitch{ 0.03F };
+    float m_yaw{ -23.86F };
 
     glm::mat4 getRotationMatrix() const;
 };

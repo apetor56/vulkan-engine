@@ -8,6 +8,8 @@
 #define GLM_ENABLE_EXPERIMENTAL
 #include <glm/gtx/quaternion.hpp>
 
+#include <stb_image.h>
+
 #include <spdlog/spdlog.h>
 
 #include <variant>
@@ -29,11 +31,13 @@ std::optional< std::shared_ptr< ve::gltf::Scene > > Loader::load( const std::fil
                                              Ratio{ vk::DescriptorType::eStorageBuffer, 1 } };
 
     const auto& logicalDevice{ m_engine.getLogicalDevice() };
-    const uint32_t setsCount{ ve::utils::size( asset->materials ) };
+    const uint32_t setsCount{ ve::utils::size( asset->materials) };
 
     std::shared_ptr< ve::gltf::Scene > scene{ std::make_shared< ve::gltf::Scene >() };
+    scene->path = path;
 
-    scene->descriptorAllocator.emplace( logicalDevice, setsCount, sizes );
+    if ( setsCount != 0U )
+        scene->descriptorAllocator.emplace( logicalDevice, setsCount, sizes );
 
     scene->samplers.reserve( std::size( asset->samplers ) );
     std::ranges::for_each( asset.value().samplers, [ &scene, &logicalDevice ]( const auto& gltfSampler ) {
@@ -45,13 +49,80 @@ std::optional< std::shared_ptr< ve::gltf::Scene > > Loader::load( const std::fil
     return scene;
 }
 
-std::vector< vk::ImageView > Loader::loadImages( const fastgltf::Asset& asset ) {
-    std::vector< vk::ImageView > images( std::size( asset.images ) );
-    std::ranges::for_each( asset.images, [ this, &images ]( const auto& image ) {
-        images.emplace_back( m_engine.getDefaultImage().getImageView() );
-    } );
+std::optional< ve::Image > Loader::loadImage( const fastgltf::Asset& asset, ve::gltf::Scene& scene,
+                                              const fastgltf::Image& image ) {
+    std::optional< ve::Image > newImage{};
+    int width;
+    int height;
+    int nrChannels;
 
-    return images;
+    static const auto createTextureImage{ [ &width, &height, &newImage, this ]( stbi_uc *data ) {
+        if ( data ) {
+            vk::Extent2D imagesize{ static_cast< uint32_t >( width ), static_cast< uint32_t >( height ) };
+            newImage.emplace(
+                m_engine.createImage( data, imagesize, vk::Format::eR8G8B8A8Srgb,
+                                      vk::ImageUsageFlagBits::eTransferDst | vk::ImageUsageFlagBits::eSampled ) );
+            stbi_image_free( data );
+        } else {
+            spdlog::error( "failed to load texture" );
+        }
+    } };
+
+    const auto ignoreRestDataSource{ []( auto& ) {} };
+
+    const auto handleURI{ [ &width, &height, &nrChannels, &scene, this ]( const fastgltf::sources::URI& filePath ) {
+        assert( filePath.fileByteOffset == 0 );
+        assert( filePath.uri.isLocalPath() );
+
+        const auto uriRelativePath{ filePath.uri.fspath() };
+        const auto path( scene.path.parent_path() / uriRelativePath );
+
+        stbi_uc *data{ stbi_load( path.string().c_str(), &width, &height, &nrChannels, STBI_rgb_alpha ) };
+        createTextureImage( data );
+    } };
+
+    const auto handleVector{
+        [ &width, &height, &nrChannels, &newImage, this ]( const fastgltf::sources::Vector& vector ) {
+            stbi_uc *data{ stbi_load_from_memory( reinterpret_cast< const stbi_uc * >( std::data( vector.bytes ) ),
+                                                  static_cast< int >( std::size( vector.bytes ) ), &width, &height,
+                                                  &nrChannels, STBI_rgb_alpha ) };
+            createTextureImage( data );
+        } };
+
+    const auto handleBufferView{ [ & ]( const fastgltf::sources::BufferView& view ) {
+        auto& bufferView{ asset.bufferViews.at( view.bufferViewIndex ) };
+        auto& buffer{ asset.buffers.at( bufferView.bufferIndex ) };
+
+        const auto handleBufferVector{ [ & ]( const fastgltf::sources::Vector& vector ) {
+            stbi_uc *data{ stbi_load_from_memory(
+                reinterpret_cast< const stbi_uc * >( std::data( vector.bytes ) ) + bufferView.byteOffset,
+                static_cast< int >( bufferView.byteLength ), &width, &height, &nrChannels, STBI_rgb_alpha ) };
+            createTextureImage( data );
+        } };
+
+        const auto handleBufferArray{ [ & ]( const fastgltf::sources::Array& array ) {
+            stbi_uc *data{ stbi_load_from_memory(
+                reinterpret_cast< const stbi_uc * >( std::data( array.bytes ) ) + bufferView.byteOffset,
+                static_cast< int >( bufferView.byteLength ), &width, &height, &nrChannels, STBI_rgb_alpha ) };
+            createTextureImage( data );
+        } };
+
+        std::visit( fastgltf::visitor{ handleBufferVector, handleBufferArray, ignoreRestDataSource }, buffer.data );
+    } };
+
+    std::visit( fastgltf::visitor{ handleURI, handleVector, handleBufferView, ignoreRestDataSource }, image.data );
+
+    return newImage;
+}
+
+void Loader::loadImages( const fastgltf::Asset& asset, ve::gltf::Scene& scene ) {
+    scene.images.reserve( std::size( asset.images ) );
+    std::ranges::for_each( asset.images, [ & ]( const auto& image ) {
+        std::optional< ve::Image > loadedImage{ loadImage( asset, scene, image ) };
+        if ( loadedImage.has_value() ) {
+            scene.images.emplace_back( std::move( loadedImage.value() ) );
+        }
+    } );
 }
 
 std::optional< fastgltf::Asset > Loader::getAsset( const std::filesystem::path& path ) {
@@ -82,33 +153,43 @@ std::optional< fastgltf::Asset > Loader::getAsset( const std::filesystem::path& 
         break;
     }
 
-    default:
+    default: {
         spdlog::error( "Failed to determine gltf file type for path: {}", path.string() );
+        return std::nullopt;
+    }
     }
 
     spdlog::error( "Failed to load model: {}", path.string() );
     return std::nullopt;
 }
 
-std::vector< ve::gltf::Material * > Loader::loadMeterials( const fastgltf::Asset& asset, ve::gltf::Scene& scene ) {
-    const auto images{ loadImages( asset ) };
-    std::vector< ve::gltf::Material * > tempMaterials;
-
+Loader::MaterialsOpt Loader::loadMeterials( const fastgltf::Asset& asset, ve::gltf::Scene& scene ) {
     const std::uint64_t bufferSize{ sizeof( Constants ) * ve::utils::size( asset.materials ) };
+    if ( bufferSize == 0U ) {
+        spdlog::info( "Asset <{}> does not contain any materials", scene.path.filename().string() );
+        return std::nullopt;
+    }
+
+    loadImages( asset, scene );
+
+    std::vector< ve::gltf::Material * > tempMaterials;
     scene.materialDataBuffer.emplace( m_memoryAllocator, bufferSize );
 
     Constants *mappedConstanst{ static_cast< Constants * >( scene.materialDataBuffer->getMappedMemory() ) };
     size_t index{};
-    std::ranges::for_each( asset.materials, [ this, &index, &asset, &scene, &images, &tempMaterials,
-                                              mappedConstanst ]( const fastgltf::Material& material ) {
+    std::string materialName{};
+    std::ranges::for_each( asset.materials, [ this, &index, &asset, &scene, &tempMaterials,
+                                              mappedConstanst, &materialName ]( const fastgltf::Material& material ) {
         mappedConstanst[ index ] = loadConstanst( material );
         const auto materialType{ material.alphaMode == fastgltf::AlphaMode::Blend ? ve::Material::Type::eTransparent
                                                                                   : ve::Material::Type::eMainColor };
-        const auto resources{ loadResources( index, scene, asset, material, images ) };
+        const auto resources{ loadResources( index, scene, asset, material ) };
 
         auto& materialBuilder{ m_engine.getMaterialBuiler() };
+        materialName = material.name.empty() ? std::format( "material{}", std::size( scene.materials ) )
+                                                       : material.name.c_str();
         const auto& materialPair{ scene.materials.emplace(
-            material.name.c_str(),
+            materialName,
             materialBuilder.writeMaterial( materialType, resources, scene.descriptorAllocator.value() ) ) };
 
         ve::gltf::Material *tempMaterial{ &materialPair.first->second };
@@ -127,9 +208,12 @@ std::vector< ve::MeshAsset * > Loader::loadMeshes( const fastgltf::Asset& asset,
     std::vector< ve::Vertex > vertices;
 
     std::vector< ve::MeshAsset * > tempMeshes;
+    tempMeshes.reserve( std::size( asset.meshes ) );
 
+    std::string meshName{};
     std::ranges::for_each( asset.meshes, [ & ]( const auto& mesh ) {
-        ve::MeshAsset& newMesh{ scene.meshes.emplace( mesh.name.c_str(), ve::MeshAsset{} ).first->second };
+        meshName = mesh.name.empty() ? std::format( "mesh{}", std::size( scene.meshes ) ) : mesh.name.c_str();
+        ve::MeshAsset& newMesh{ scene.meshes.emplace( meshName, ve::MeshAsset{} ).first->second };
         tempMeshes.emplace_back( &newMesh );
 
         indices.clear();
@@ -148,16 +232,17 @@ std::vector< ve::MeshAsset * > Loader::loadMeshes( const fastgltf::Asset& asset,
             loadTextureCoord( initialIndex, vertices, asset, primitive );
             loadColor( initialIndex, vertices, asset, primitive );
 
-            if ( primitive.materialIndex.has_value() ) {
-                surface.material.emplace( *materials.at( primitive.materialIndex.value() ) );
+            if ( primitive.materialIndex.has_value() && materials.has_value() ) {
+                surface.material.emplace( *materials->at( primitive.materialIndex.value() ) );
             } else {
-                surface.material.emplace( *materials.at( 0 ) );
+                surface.material.emplace( m_engine.getDefaultMaterial() );
             }
 
             newMesh.surfaces.emplace_back( surface );
         } );
 
         newMesh.buffers = m_engine.uploadMeshBuffers( vertices, indices );
+        newMesh.name    = meshName;
     } );
 
     return tempMeshes;
@@ -166,8 +251,10 @@ std::vector< ve::MeshAsset * > Loader::loadMeshes( const fastgltf::Asset& asset,
 std::vector< std::shared_ptr< ve::Node > > Loader::loadNodes( const fastgltf::Asset& asset, ve::gltf::Scene& scene ) {
     const auto meshes{ loadMeshes( asset, scene ) };
     std::vector< std::shared_ptr< ve::Node > > tempNodes;
+    tempNodes.reserve( std::size( asset.nodes ) );
 
-    std::ranges::for_each( asset.nodes, [ &meshes, &tempNodes, &scene ]( const fastgltf::Node& node ) {
+    std::string nodeName{};
+    std::ranges::for_each( asset.nodes, [ &meshes, &tempNodes, &scene, &nodeName ]( const fastgltf::Node& node ) {
         std::shared_ptr< ve::Node > newNode;
         if ( node.meshIndex.has_value() ) {
             const ve::MeshAsset& asset{ *meshes.at( node.meshIndex.value() ) };
@@ -177,7 +264,6 @@ std::vector< std::shared_ptr< ve::Node > > Loader::loadNodes( const fastgltf::As
         }
 
         tempNodes.emplace_back( newNode );
-        // scene.nodes.at( node.name.c_str() );
 
         const auto matrix{ [ &newNode ]( const fastgltf::math::fmat4x4& matrix ) {
             glm::mat4& localTransform{ newNode->getLocalTransform() };
@@ -200,6 +286,10 @@ std::vector< std::shared_ptr< ve::Node > > Loader::loadNodes( const fastgltf::As
 
         const fastgltf::visitor visitor{ matrix, transform };
         std::visit( visitor, node.transform );
+
+        nodeName = node.name.empty() ? std::format( "node{}", std::size( scene.nodes ) )
+                                               : node.name.c_str();
+        scene.nodes.emplace( nodeName, newNode );
     } );
 
     return tempNodes;
@@ -240,7 +330,7 @@ Loader::Constants Loader::loadConstanst( const fastgltf::Material& material ) {
 }
 
 Loader::Resources Loader::loadResources( const size_t index, ve::gltf::Scene& scene, const fastgltf::Asset& asset,
-                                         const fastgltf::Material& material, std::span< const vk::ImageView > images ) {
+                                         const fastgltf::Material& material ) {
     auto defaultImageView{ m_engine.getDefaultImage().getImageView() };
     auto defaultSampler{ m_engine.getDefaultSampler().get() };
     const auto uniformBufferOffset{ index * sizeof( Constants ) };
@@ -256,9 +346,8 @@ Loader::Resources Loader::loadResources( const size_t index, ve::gltf::Scene& sc
         const size_t imageIndex{ asset.textures[ textureIndex ].imageIndex.value() };
         const size_t samplerIndex{ asset.textures[ textureIndex ].samplerIndex.value() };
 
-        resources.colorImageView = defaultImageView;
-        // resources.colorImageView = images[ textureIndex ];
-        resources.colorSampler = scene.samplers.at( samplerIndex ).get();
+        resources.colorImageView = scene.images.at( imageIndex ).getImageView();
+        resources.colorSampler   = scene.samplers.at( samplerIndex ).get();
     } else {
         resources.colorImageView = defaultImageView;
         resources.colorSampler   = defaultSampler;

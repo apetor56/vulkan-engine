@@ -15,6 +15,19 @@ Image::Image( const ve::MemoryAllocator& allocator, const ve::LogicalDevice& log
     createImageView( imageAspect );
 }
 
+Image::Image( Image&& other )
+    : m_image{ other.m_image },
+      m_imageView{ other.m_imageView },
+      m_allocation{ other.m_allocation },
+      m_memoryAllocator{ other.m_memoryAllocator },
+      m_logicalDevice{ other.m_logicalDevice },
+      m_imageExtent{ other.m_imageExtent },
+      m_imageFormat{ other.m_imageFormat } {
+    other.m_image      = nullptr;
+    other.m_imageView  = nullptr;
+    other.m_allocation = nullptr;
+}
+
 Image::~Image() {
     m_logicalDevice.get().destroyImageView( m_imageView );
     vmaDestroyImage( m_memoryAllocator.get(), m_image, m_allocation );

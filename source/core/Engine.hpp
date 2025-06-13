@@ -37,9 +37,13 @@ public:
     void run();
 
     MeshBuffers uploadMeshBuffers( std::span< Vertex > vertices, std::span< uint32_t > indices ) const;
+    ve::Image createImage( void *data, const vk::Extent2D size, const vk::Format format,
+                           const vk::ImageUsageFlags usage );
+
     const ve::LogicalDevice& getLogicalDevice() const noexcept { return m_logicalDevice; }
-    const ve::Image& getDefaultImage() const noexcept { return m_textureImage.value(); }
-    const ve::Sampler& getDefaultSampler() const noexcept { return m_textureSampler.value(); }
+    const ve::Image& getDefaultImage() const noexcept { return m_defaultWhiteImage.value(); }
+    const ve::Sampler& getDefaultSampler() const noexcept { return m_defaultTextureSampler.value(); }
+    const ve::Material& getDefaultMaterial() const noexcept { return m_defaultMaterial.value(); }
     ve::gltf::MetalicRoughness& getMaterialBuiler() noexcept { return m_metalRough; }
 
 private:
@@ -79,8 +83,8 @@ private:
     ve::DescriptorSetLayout m_descriptorSetLayout;
     FrameResources m_frameResources;
     FrameResources::iterator m_currentFrameIt{ nullptr };
-    std::optional< ve::Image > m_textureImage{};
-    std::optional< ve::Sampler > m_textureSampler;
+    std::optional< ve::Image > m_defaultWhiteImage{};
+    std::optional< ve::Sampler > m_defaultTextureSampler;
     ve::gltf::Loader m_loader;
     std::vector< ve::MeshAsset > m_modelMeshes;
     ve::DescriptorWriter m_descriptorWriter;
@@ -102,8 +106,8 @@ private:
     void createFrameResoures();
     void updateUniformBuffer();
     void configureDescriptorSets();
-    void prepareTexture();
-    void createTextureSampler();
+    void prepareDefaultTexture();
+    void createDefaultTextureSampler();
     void loadMeshes();
     void initDefaultData();
 
