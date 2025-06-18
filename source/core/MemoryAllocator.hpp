@@ -3,7 +3,7 @@
 #include "utils/NonCopyable.hpp"
 #include "utils/NonMovable.hpp"
 
-#include <vma/vk_mem_alloc.h>
+#include <vk_mem_alloc.h>
 
 namespace ve {
 

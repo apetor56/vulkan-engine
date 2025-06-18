@@ -27,7 +27,7 @@ FetchContent_Declare(
     GIT_TAG        main
 )
 FetchContent_Declare(
-    vma
+    GPUOpen
     GIT_REPOSITORY https://github.com/GPUOpen-LibrariesAndSDKs/VulkanMemoryAllocator.git
     GIT_TAG        v3.3.0
 )
@@ -41,7 +41,7 @@ FetchContent_MakeAvailable(glfw)
 FetchContent_MakeAvailable(spdlog)
 FetchContent_MakeAvailable(stb)
 FetchContent_MakeAvailable(fastgltf)
-FetchContent_MakeAvailable(vma)
+FetchContent_MakeAvailable(GPUOpen)
 FetchContent_MakeAvailable(glm)
 
 target_include_directories(${PROJECT_NAME} PRIVATE
@@ -54,5 +54,6 @@ target_link_libraries(${PROJECT_NAME} PRIVATE
     spdlog::spdlog_header_only
     fastgltf::fastgltf
     glm::glm-header-only
+    GPUOpen::VulkanMemoryAllocator
 )
 
