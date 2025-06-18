@@ -12,6 +12,7 @@
       "toolset": "v143",
       "binaryDir": "${sourceDir}/build/msvc"
     },
+
     {
       "name": "clang-base",
       "cacheVariables": {
@@ -19,6 +20,7 @@
         "CMAKE_C_COMPILER": "clang"
       }
     },
+
     {
       "name": "clang-debug-base",
       "inherits": "clang-base",
@@ -28,16 +30,19 @@
       },
       "binaryDir": "${sourceDir}/build/clang/debug"
     },
+
     {
       "name": "clang-ninja-debug",
       "inherits": "clang-debug-base",
       "generator": "Ninja"
     },
+
     {
       "name": "clang-mingw-debug",
       "inherits": "clang-debug-base",
       "generator": "MinGW Makefiles"
     },
+
     {
       "name": "clang-release-base",
       "inherits": "clang-base",
@@ -46,30 +51,36 @@
       },
       "binaryDir": "${sourceDir}/build/clang/release"
     },
+
     {
       "name": "clang-ninja-release",
       "inherits": "clang-release-base",
       "generator": "Ninja"
     },
+
     {
       "name": "clang-mingw-release",
       "inherits": "clang-release-base",
       "generator": "MinGW Makefiles"
     }
   ],
+
   "buildPresets": [
     {
       "name": "clang-ninja-debug",
       "configurePreset": "clang-ninja-debug"
     },
+
     {
       "name": "clang-ninja-release",
       "configurePreset": "clang-ninja-release"
     },
+
     {
       "name": "clang-mingw-debug",
       "configurePreset": "clang-mingw-debug"
     },
+
     {
       "name": "clang-mingw-release",
       "configurePreset": "clang-mingw-release"

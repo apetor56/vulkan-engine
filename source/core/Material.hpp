@@ -30,7 +30,7 @@ struct Material {
 
 struct MetalicRoughness {
     MetalicRoughness( const ve::LogicalDevice& logicalDevice )
-        : m_logicalDevice{ logicalDevice }, descriptorWriter{ logicalDevice } {}
+        : descriptorWriter{ logicalDevice }, m_logicalDevice{ logicalDevice } {}
 
     struct Constants {
         glm::vec4 colorFactors{};

@@ -15,9 +15,7 @@ public:
 
     ~Sampler();
 
-    Sampler( ve::Sampler&& other ) noexcept : m_logicalDevice{ other.m_logicalDevice }, m_sampler{ other.m_sampler } {
-        other.m_sampler = nullptr;
-    }
+    Sampler( ve::Sampler&& other ) noexcept;
     Sampler& operator=( ve::Sampler&& other ) = delete;
 
     const vk::Sampler get() const noexcept { return m_sampler; }

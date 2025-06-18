@@ -40,6 +40,11 @@ Sampler::Sampler( const ve::LogicalDevice& logicalDevice, const float maxSampler
     m_sampler = logicalDevice.get().createSampler( samplerInfo );
 }
 
+Sampler::Sampler( ve::Sampler&& other ) noexcept
+    : m_sampler{ other.m_sampler }, m_logicalDevice{ other.m_logicalDevice } {
+    other.m_sampler = nullptr;
+}
+
 Sampler::~Sampler() {
     m_logicalDevice.get().destroySampler( m_sampler );
 }

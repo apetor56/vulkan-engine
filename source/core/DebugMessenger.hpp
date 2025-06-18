@@ -1,7 +1,7 @@
 #pragma once
 
 #include "utils/NonCopyable.hpp"
-#include "utils/Nonmovable.hpp"
+#include "utils/NonMovable.hpp"
 
 #include <vulkan/vulkan.h>
 

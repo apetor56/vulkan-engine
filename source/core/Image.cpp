@@ -15,7 +15,7 @@ Image::Image( const ve::MemoryAllocator& allocator, const ve::LogicalDevice& log
     createImageView( imageAspect );
 }
 
-Image::Image( Image&& other )
+Image::Image( Image&& other ) noexcept
     : m_image{ other.m_image },
       m_imageView{ other.m_imageView },
       m_allocation{ other.m_allocation },

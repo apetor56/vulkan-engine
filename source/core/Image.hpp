@@ -15,7 +15,7 @@ public:
 
     ~Image();
 
-    Image( Image&& other );
+    Image( Image&& other ) noexcept;
     Image& operator=( Image&& other ) = delete;
 
     vk::Image get() const noexcept { return m_image; }

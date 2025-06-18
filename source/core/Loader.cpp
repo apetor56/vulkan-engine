@@ -31,7 +31,7 @@ std::optional< std::shared_ptr< ve::gltf::Scene > > Loader::load( const std::fil
                                              Ratio{ vk::DescriptorType::eStorageBuffer, 1 } };
 
     const auto& logicalDevice{ m_engine.getLogicalDevice() };
-    const uint32_t setsCount{ ve::utils::size( asset->materials) };
+    const uint32_t setsCount{ ve::utils::size( asset->materials ) };
 
     std::shared_ptr< ve::gltf::Scene > scene{ std::make_shared< ve::gltf::Scene >() };
     scene->path = path;
@@ -70,7 +70,7 @@ std::optional< ve::Image > Loader::loadImage( const fastgltf::Asset& asset, ve::
 
     const auto ignoreRestDataSource{ []( auto& ) {} };
 
-    const auto handleURI{ [ &width, &height, &nrChannels, &scene, this ]( const fastgltf::sources::URI& filePath ) {
+    const auto handleURI{ [ &width, &height, &nrChannels, &scene ]( const fastgltf::sources::URI& filePath ) {
         assert( filePath.fileByteOffset == 0 );
         assert( filePath.uri.isLocalPath() );
 
@@ -81,13 +81,12 @@ std::optional< ve::Image > Loader::loadImage( const fastgltf::Asset& asset, ve::
         createTextureImage( data );
     } };
 
-    const auto handleVector{
-        [ &width, &height, &nrChannels, &newImage, this ]( const fastgltf::sources::Vector& vector ) {
-            stbi_uc *data{ stbi_load_from_memory( reinterpret_cast< const stbi_uc * >( std::data( vector.bytes ) ),
-                                                  static_cast< int >( std::size( vector.bytes ) ), &width, &height,
-                                                  &nrChannels, STBI_rgb_alpha ) };
-            createTextureImage( data );
-        } };
+    const auto handleVector{ [ &width, &height, &nrChannels ]( const fastgltf::sources::Vector& vector ) {
+        stbi_uc *data{ stbi_load_from_memory( reinterpret_cast< const stbi_uc * >( std::data( vector.bytes ) ),
+                                              static_cast< int >( std::size( vector.bytes ) ), &width, &height,
+                                              &nrChannels, STBI_rgb_alpha ) };
+        createTextureImage( data );
+    } };
 
     const auto handleBufferView{ [ & ]( const fastgltf::sources::BufferView& view ) {
         auto& bufferView{ asset.bufferViews.at( view.bufferViewIndex ) };
@@ -178,16 +177,16 @@ Loader::MaterialsOpt Loader::loadMeterials( const fastgltf::Asset& asset, ve::gl
     Constants *mappedConstanst{ static_cast< Constants * >( scene.materialDataBuffer->getMappedMemory() ) };
     size_t index{};
     std::string materialName{};
-    std::ranges::for_each( asset.materials, [ this, &index, &asset, &scene, &tempMaterials,
-                                              mappedConstanst, &materialName ]( const fastgltf::Material& material ) {
+    std::ranges::for_each( asset.materials, [ this, &index, &asset, &scene, &tempMaterials, mappedConstanst,
+                                              &materialName ]( const fastgltf::Material& material ) {
         mappedConstanst[ index ] = loadConstanst( material );
         const auto materialType{ material.alphaMode == fastgltf::AlphaMode::Blend ? ve::Material::Type::eTransparent
                                                                                   : ve::Material::Type::eMainColor };
         const auto resources{ loadResources( index, scene, asset, material ) };
 
         auto& materialBuilder{ m_engine.getMaterialBuiler() };
-        materialName = material.name.empty() ? std::format( "material{}", std::size( scene.materials ) )
-                                                       : material.name.c_str();
+        materialName =
+            material.name.empty() ? std::format( "material{}", std::size( scene.materials ) ) : material.name.c_str();
         const auto& materialPair{ scene.materials.emplace(
             materialName,
             materialBuilder.writeMaterial( materialType, resources, scene.descriptorAllocator.value() ) ) };
@@ -287,8 +286,7 @@ std::vector< std::shared_ptr< ve::Node > > Loader::loadNodes( const fastgltf::As
         const fastgltf::visitor visitor{ matrix, transform };
         std::visit( visitor, node.transform );
 
-        nodeName = node.name.empty() ? std::format( "node{}", std::size( scene.nodes ) )
-                                               : node.name.c_str();
+        nodeName = node.name.empty() ? std::format( "node{}", std::size( scene.nodes ) ) : node.name.c_str();
         scene.nodes.emplace( nodeName, newNode );
     } );
 
