@@ -386,8 +386,6 @@ void Engine::updateScene( float deltaTime ) {
     if ( m_camera != nullptr )
         m_camera->update( deltaTime );
 
-    constexpr glm::vec3 xAxis{ 1.0F, 0.0F, 0.0F };
-    constexpr glm::vec3 zAxis{ 0.0F, 0.0F, 1.0F };
     const auto& extent{ m_swapchain.getExtent() };
     constexpr float angle{ 45.0F };
     constexpr float nearPlane{ 0.1F };
@@ -402,6 +400,8 @@ void Engine::updateScene( float deltaTime ) {
         glm::radians( angle ), static_cast< float >( extent.width ) / extent.height, nearPlane, farPlane );
 
     m_sceneData.projection[ 1 ][ 1 ] *= -1;
+    m_sceneData.directionToLight = glm::vec4{ -1.6F, 0.9F, 0.4F, 0.0F };
+    m_sceneData.lightColor       = glm::vec4{ 0.7F, 0.5F, 0.5F, 0.0F };
 
     std::ranges::for_each( m_scenes | std::views::values,
                            [ this ]( auto& scene ) { scene->render( glm::mat4{ 1.0F }, m_mainRenderContext ); } );

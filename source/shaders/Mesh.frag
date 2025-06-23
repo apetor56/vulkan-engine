@@ -4,16 +4,17 @@
 #include "Structures.glsl"
 
 layout( location = 0 ) in vec3 inColor;
-layout( location = 1 ) in vec3 inNormal;
+layout( location = 1 ) in vec3 inWorldNormal;
 layout( location = 2 ) in vec2 inTexCoord;
 
 layout( location = 0 ) out vec4 outFragColor;
 
 void main() {
-    float lightValue = max( dot( inNormal, sceneData.sunlightDirection.xyz ), 0.1f );
-    vec3 color       = inColor * texture( colorTex, inTexCoord ).xyz;
-    vec3 ambient     = color * sceneData.ambientColor.xyz;
-    // outFragColor     = vec4( 1.0, 0.0, 0.0, 1.0 );
+    float lightIntensity  = max( dot( inWorldNormal, normalize( sceneData.directionToLight.xyz ) ), 0.0f );
+    float ambientStrenght = 0.1;
+    vec3 ambient          = ambientStrenght * sceneData.lightColor.xyz;
+    vec3 diffuse          = lightIntensity * sceneData.lightColor.xyz;
+    vec3 color            = inColor * texture( colorTex, inTexCoord ).xyz;
 
-    outFragColor = vec4( color * lightValue * sceneData.sunlightColor.w + ambient, 1.0f );
+    outFragColor = vec4( ( ambient + diffuse ) * color, 1.0f );
 }

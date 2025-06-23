@@ -6,7 +6,7 @@
 #include "Structures.glsl"
 
 layout( location = 0 ) out vec3 outColor;
-layout( location = 1 ) out vec3 outNormal;
+layout( location = 1 ) out vec3 outWorldNormal;
 layout( location = 2 ) out vec2 outTexCoord;
 
 struct Vertex {
@@ -33,7 +33,7 @@ void main() {
     gl_Position = sceneData.projection * sceneData.view * sceneData.model * PushConstants.renderMartix *
                   vec4( vertex.position, 1.0 );
 
-    outColor    = materialData.colorFactors.xyz;
-    outNormal   = ( PushConstants.renderMartix * vec4( vertex.normal, 0.0 ) ).xyz;
-    outTexCoord = vec2( vertex.uv_x, vertex.uv_y );
+    outColor       = vertex.color.xyz * materialData.colorFactors.xyz;
+    outWorldNormal = normalize( ( mat3( PushConstants.renderMartix * sceneData.model ) * vertex.normal ).xyz );
+    outTexCoord    = vec2( vertex.uv_x, vertex.uv_y );
 }

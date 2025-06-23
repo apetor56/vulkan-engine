@@ -56,8 +56,8 @@ private:
         glm::mat4 view{ 1.0F };
         glm::mat4 projection{ 1.0F };
         glm::vec4 ambientColor{ 1.0F };
-        glm::vec4 sunlightDirection{ 1.0F };
-        glm::vec4 sunlightColor{ 1.0F };
+        glm::vec4 directionToLight{ 1.0F };
+        glm::vec4 lightColor{ 1.0F };
     };
 
     ve::VulkanInstance m_vulkanInstance{};
