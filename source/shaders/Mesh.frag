@@ -10,11 +10,14 @@ layout( location = 2 ) in vec2 inTexCoord;
 layout( location = 0 ) out vec4 outFragColor;
 
 void main() {
-    float lightIntensity  = max( dot( inWorldNormal, normalize( sceneData.directionToLight.xyz ) ), 0.0f );
-    float ambientStrenght = 0.1;
-    vec3 ambient          = ambientStrenght * sceneData.lightColor.xyz;
-    vec3 diffuse          = lightIntensity * sceneData.lightColor.xyz;
-    vec3 color            = inColor * texture( colorTex, inTexCoord ).xyz;
+    vec3 unitDirectionToLight = normalize( sceneData.directionToLight.xyz );
+    vec3 objectColor          = inColor * texture( colorTex, inTexCoord ).xyz;
 
-    outFragColor = vec4( ( ambient + diffuse ) * color, 1.0f );
+    float ambientStrenght = 0.1f;
+    vec3 ambient          = ambientStrenght * sceneData.lightColor.xyz;
+
+    float lightIntensity = max( dot( inWorldNormal, unitDirectionToLight ), 0.0f );
+    vec3 diffuse         = lightIntensity * sceneData.lightColor.xyz;
+
+    outFragColor = vec4( ( ambient + diffuse ) * objectColor, 1.0f );
 }

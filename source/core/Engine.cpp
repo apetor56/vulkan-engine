@@ -66,12 +66,11 @@ void Engine::run() {
         const auto& currentFrame{ m_currentFrameIt->value() };
         [[maybe_unused]] const auto waitForFencesResult{
             m_logicalDevice.get().waitForFences( currentFrame.renderFence.get(), g_waitForAllFences, g_timeoutOff ) };
+        m_logicalDevice.get().resetFences( currentFrame.renderFence.get() );
 
         const auto imageIndex{ acquireNextImage() };
         if ( !imageIndex.has_value() )
             return;
-
-        m_logicalDevice.get().resetFences( currentFrame.renderFence.get() );
 
         draw( imageIndex.value() );
         present( imageIndex.value() );
