@@ -49,15 +49,17 @@ public:
 private:
     using FrameResources = std::array< std::optional< ve::FrameData >, g_maxFramesInFlight >;
     using Framebuffers   = std::vector< std::optional< ve::Framebuffer > >;
-    using Scenes         = std::unordered_map< std::string, std::shared_ptr< ve::gltf::Scene > >;
+    using Scene          = std::unordered_map< std::string, std::shared_ptr< ve::gltf::Scene > >;
 
     struct SceneData {
         glm::mat4 model{ 1.0F };
         glm::mat4 view{ 1.0F };
         glm::mat4 projection{ 1.0F };
-        glm::vec4 ambientColor{ 1.0F };
-        glm::vec4 directionToLight{ 1.0F };
-        glm::vec4 lightColor{ 1.0F };
+        glm::vec4 lightColor{};
+        glm::vec3 lightPosition{};
+        int allignement01;
+        glm::vec3 cameraPosition;
+        int allignment02;
     };
 
     ve::VulkanInstance m_vulkanInstance{};
@@ -92,11 +94,11 @@ private:
     ve::gltf::MetalicRoughness m_metalRough;
     ve::DescriptorAllocator m_globalDescriptorAllocator;
     std::optional< ve::Material > m_defaultMaterial;
-    std::optional< ve::gltf::MetalicRoughness::Resources > m_defaultResources;
+    ve::gltf::MetalicRoughness::Resources m_defaultResources;
     std::optional< ve::UniformBuffer > m_constantsBuffer;
     ve::RenderContext m_mainRenderContext;
     SceneData m_sceneData{};
-    Scenes m_scenes;
+    Scene m_scene;
     std::shared_ptr< ve::Camera > m_camera{};
 
     void createDepthBuffer();

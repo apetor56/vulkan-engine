@@ -11,7 +11,8 @@ namespace ve {
 
 void Camera::update( float deltaTime ) {
     static constexpr float velocityFactor{ 0.02F };
-    m_position += glm::vec3{ getRotationMatrix() * glm::vec4{ m_velocity * velocityFactor, 0.0F } } * deltaTime;
+    m_position +=
+        glm::vec3{ getRotationMatrix() * glm::vec4{ m_velocity * velocityFactor, 0.0F } } * deltaTime * m_speed;
 }
 
 glm::mat4 Camera::getViewMartix() const {

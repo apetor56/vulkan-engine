@@ -5,9 +5,9 @@
 
 #include "Structures.glsl"
 
-layout( location = 0 ) out vec3 outColor;
-layout( location = 1 ) out vec3 outWorldNormal;
-layout( location = 2 ) out vec2 outTexCoord;
+layout( location = 0 ) out vec3 outWorldPos;
+layout( location = 1 ) out vec3 outNormal;
+layout( location = 2 ) out vec2 outTexCoords;
 
 struct Vertex {
     vec3 position;
@@ -15,6 +15,7 @@ struct Vertex {
     vec3 normal;
     float uv_y;
     vec4 color;
+    vec4 tangent;
 };
 
 layout( buffer_reference, std430 ) readonly buffer VertexBuffer {
@@ -25,15 +26,17 @@ layout( push_constant ) uniform constants {
     mat4 renderMartix;
     VertexBuffer vertexBuffer;
 }
-PushConstants;
+pushConstants;
 
 void main() {
-    Vertex vertex = PushConstants.vertexBuffer.vertices[ gl_VertexIndex ];
+    Vertex vertex = pushConstants.vertexBuffer.vertices[ gl_VertexIndex ];
 
-    gl_Position = sceneData.projection * sceneData.view * sceneData.model * PushConstants.renderMartix *
-                  vec4( vertex.position, 1.0 );
+    outWorldPos  = mat3( sceneData.model * pushConstants.renderMartix ) * vertex.position;
+    
+    //only for uniform scaling
+    outNormal    = mat3( sceneData.model * pushConstants.renderMartix ) * vertex.normal;
+    outTexCoords = vec2( vertex.uv_x, vertex.uv_y );
 
-    outColor       = vertex.color.xyz * materialData.colorFactors.xyz;
-    outWorldNormal = normalize( ( mat3( PushConstants.renderMartix * sceneData.model ) * vertex.normal ).xyz );
-    outTexCoord    = vec2( vertex.uv_x, vertex.uv_y );
+    gl_Position = sceneData.projection * sceneData.view * sceneData.model * pushConstants.renderMartix *
+                  vec4( vertex.position, 1.0f );
 }

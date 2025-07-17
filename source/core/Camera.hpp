@@ -15,13 +15,16 @@ public:
 
     void processKey( int key, int action );
     void processMouse( double xpos, double ypos, int button, int mode );
+
     glm::mat4 getViewMartix() const;
+    glm::vec3 getPosition() const noexcept { return m_position; }
 
 private:
-    glm::vec3 m_position{ -9.24F, 1.37F, 0.48F };
+    glm::vec3 m_position{ 0.0F, 0.0F, 5.0F };
     glm::vec3 m_velocity{};
-    float m_pitch{ 0.03F };
-    float m_yaw{ -23.86F };
+    float m_pitch{ 0.0F };
+    float m_yaw{ 0.0F };
+    float m_speed{ 0.7f };
 
     glm::mat4 getRotationMatrix() const;
 };

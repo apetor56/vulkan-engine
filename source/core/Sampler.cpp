@@ -6,38 +6,16 @@ namespace ve {
 
 Sampler::Sampler( const ve::LogicalDevice& logicalDevice, const fastgltf::Sampler& gltfSampler )
     : m_logicalDevice{ logicalDevice } {
-    vk::SamplerCreateInfo createInfo{};
-    createInfo.sType      = vk::StructureType::eSamplerCreateInfo;
-    createInfo.pNext      = nullptr;
-    createInfo.maxLod     = vk::LodClampNone;
-    createInfo.minLod     = 0U;
-    createInfo.magFilter  = extractFilter( gltfSampler.magFilter.value_or( fastgltf::Filter::Nearest ) );
-    createInfo.minFilter  = extractFilter( gltfSampler.minFilter.value_or( fastgltf::Filter::Nearest ) );
-    createInfo.mipmapMode = extractMipmapMode( gltfSampler.minFilter.value_or( fastgltf::Filter::Nearest ) );
-
-    m_sampler = logicalDevice.get().createSampler( createInfo );
-}
-
-Sampler::Sampler( const ve::LogicalDevice& logicalDevice, const float maxSamplerAnisotropy )
-    : m_logicalDevice{ logicalDevice } {
-    vk::SamplerCreateInfo samplerInfo{};
-    samplerInfo.magFilter               = vk::Filter::eLinear;
-    samplerInfo.minFilter               = vk::Filter::eLinear;
-    samplerInfo.addressModeU            = vk::SamplerAddressMode::eRepeat;
-    samplerInfo.addressModeV            = vk::SamplerAddressMode::eRepeat;
-    samplerInfo.addressModeW            = vk::SamplerAddressMode::eRepeat;
-    samplerInfo.anisotropyEnable        = vk::True;
-    samplerInfo.borderColor             = vk::BorderColor::eIntOpaqueBlack;
-    samplerInfo.unnormalizedCoordinates = vk::False;
-    samplerInfo.compareEnable           = vk::False;
-    samplerInfo.compareOp               = vk::CompareOp::eAlways;
-    samplerInfo.mipmapMode              = vk::SamplerMipmapMode::eLinear;
-    samplerInfo.mipLodBias              = 0.0F;
-    samplerInfo.minLod                  = 0.0F;
-    samplerInfo.maxLod                  = 0.0F;
-    samplerInfo.maxAnisotropy           = maxSamplerAnisotropy;
+    vk::SamplerCreateInfo samplerInfo{ getDefaultInfo() };
+    samplerInfo.magFilter  = extractFilter( gltfSampler.magFilter.value_or( fastgltf::Filter::Linear ) );
+    samplerInfo.minFilter  = extractFilter( gltfSampler.minFilter.value_or( fastgltf::Filter::Linear ) );
+    samplerInfo.mipmapMode = extractMipmapMode( gltfSampler.minFilter.value_or( fastgltf::Filter::Linear ) );
 
     m_sampler = logicalDevice.get().createSampler( samplerInfo );
+}
+
+Sampler::Sampler( const ve::LogicalDevice& logicalDevice ) : m_logicalDevice{ logicalDevice } {
+    m_sampler = logicalDevice.get().createSampler( getDefaultInfo() );
 }
 
 Sampler::Sampler( ve::Sampler&& other ) noexcept

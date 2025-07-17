@@ -11,6 +11,7 @@ struct Vertex {
     glm::vec3 normal{};
     float uv_y{};
     glm::vec4 color{ 1.0F };
+    glm::vec4 tangent{ 0.0F };
 };
 
 } // namespace ve

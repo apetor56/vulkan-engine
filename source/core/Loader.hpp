@@ -59,6 +59,8 @@ private:
                            const fastgltf::Primitive& primitive );
     void loadColor( const size_t initialIndex, std::vector< ve::Vertex >& vertices, const fastgltf::Asset& asset,
                     const fastgltf::Primitive& primitive );
+    void loadTangent( const size_t initialIndex, std::vector< ve::Vertex >& vertices, const fastgltf::Asset& asset,
+                      const fastgltf::Primitive& primitive );
 };
 
 } // namespace ve::gltf

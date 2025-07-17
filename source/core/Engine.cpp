@@ -3,6 +3,7 @@
 
 #define STB_IMAGE_IMPLEMENTATION
 #include <stb_image.h>
+
 #include <glm/gtc/matrix_transform.hpp>
 
 #include <limits>
@@ -340,14 +341,14 @@ void Engine::prepareDefaultTexture() {
 }
 
 void Engine::createDefaultTextureSampler() {
-    const auto physicalDeviceProperties{ m_physicalDevice.get().getProperties() };
-    m_defaultTextureSampler.emplace( m_logicalDevice, physicalDeviceProperties.limits.maxSamplerAnisotropy );
+    m_defaultTextureSampler.emplace( m_logicalDevice );
 }
 
 void Engine::loadMeshes() {
-    const auto scene{ m_loader.load( cfg::directory::assets / "sponza/Sponza.gltf" ) };
-    if ( scene.has_value() )
-        m_scenes.emplace( "sampleScene", scene.value() );
+    const auto spheres{ m_loader.load( cfg::directory::assets / "sponza/Sponza.gltf" ) };
+
+    if ( spheres.has_value() )
+        m_scene.emplace( "spheres", spheres.value() );
 }
 
 void Engine::handleWindowResising() {
@@ -382,15 +383,17 @@ void Engine::updateScene( float deltaTime ) {
     m_mainRenderContext.opaqueSurfaces.clear();
     m_mainRenderContext.transparentSurfaces.clear();
 
-    if ( m_camera != nullptr )
+    if ( m_camera != nullptr ) {
         m_camera->update( deltaTime );
+        m_sceneData.cameraPosition = m_camera->getPosition();
+    }
 
     const auto& extent{ m_swapchain.getExtent() };
     constexpr float angle{ 45.0F };
     constexpr float nearPlane{ 0.1F };
     constexpr float farPlane{ 1000.0F };
 
-    m_sceneData.model = glm::mat4( 1.0F );
+    m_sceneData.model = glm::mat4{ 1.0F };
 
     if ( m_camera != nullptr )
         m_sceneData.view = m_camera->getViewMartix();
@@ -399,11 +402,9 @@ void Engine::updateScene( float deltaTime ) {
         glm::radians( angle ), static_cast< float >( extent.width ) / extent.height, nearPlane, farPlane );
 
     m_sceneData.projection[ 1 ][ 1 ] *= -1;
-    m_sceneData.directionToLight = glm::vec4{ -1.6F, 0.9F, 0.4F, 0.0F };
-    m_sceneData.lightColor       = glm::vec4{ 0.7F, 0.5F, 0.5F, 0.0F };
 
-    std::ranges::for_each( m_scenes | std::views::values,
-                           [ this ]( auto& scene ) { scene->render( glm::mat4{ 1.0F }, m_mainRenderContext ); } );
+    std::ranges::for_each( m_scene | std::views::values,
+                           [ this ]( auto& object ) { object->render( glm::mat4{ 1.0F }, m_mainRenderContext ); } );
 }
 
 void Engine::initDefaultData() {
@@ -415,12 +416,21 @@ void Engine::initDefaultData() {
     constants->metalicRoughnessFactors = glm::vec4{ 1.0F, 0.0F, 0.0F, 0.0F };
 
     static constexpr uint32_t offset{ 0U };
-    m_defaultResources.emplace( m_defaultWhiteImage->getImageView(), m_defaultWhiteImage->getImageView(),
-                                m_defaultTextureSampler->get(), m_defaultTextureSampler->get(),
-                                m_constantsBuffer->get(), offset );
 
-    m_defaultMaterial.emplace( m_metalRough.writeMaterial( ve::Material::Type::eMainColor, m_defaultResources.value(),
-                                                           m_globalDescriptorAllocator ) );
+    const vk::ImageView defaultImageView{ m_defaultWhiteImage->getImageView() };
+    const vk::Sampler defaultSampler{ m_defaultTextureSampler->get() };
+
+    m_defaultResources.colorImageView            = defaultImageView;
+    m_defaultResources.normalMapView             = defaultImageView;
+    m_defaultResources.metalicRoughnessImageView = defaultImageView;
+    m_defaultResources.colorSampler              = defaultSampler;
+    m_defaultResources.normalSampler             = defaultSampler;
+    m_defaultResources.metalicRoughnessSampler   = defaultSampler;
+    m_defaultResources.dataBuffer                = m_constantsBuffer->get();
+    m_defaultResources.dataBufferOffset          = 0U;
+
+    m_defaultMaterial.emplace(
+        m_metalRough.writeMaterial( ve::Material::Type::eMainColor, m_defaultResources, m_globalDescriptorAllocator ) );
 }
 
 ve::Image Engine::createImage( void *data, const vk::Extent2D size, const vk::Format format,

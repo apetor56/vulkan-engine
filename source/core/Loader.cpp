@@ -56,7 +56,7 @@ std::optional< ve::Image > Loader::loadImage( const fastgltf::Asset& asset, ve::
     int height;
     int nrChannels;
 
-    static const auto createTextureImage{ [ &width, &height, &newImage, this ]( stbi_uc *data ) {
+    const auto createTextureImage{ [ &width, &height, &newImage, this ]( stbi_uc *data ) {
         if ( data ) {
             vk::Extent2D imagesize{ static_cast< uint32_t >( width ), static_cast< uint32_t >( height ) };
             newImage.emplace(
@@ -70,7 +70,7 @@ std::optional< ve::Image > Loader::loadImage( const fastgltf::Asset& asset, ve::
 
     const auto ignoreRestDataSource{ []( auto& ) {} };
 
-    const auto handleURI{ [ &width, &height, &nrChannels, &scene ]( const fastgltf::sources::URI& filePath ) {
+    const auto handleURI{ [ & ]( const fastgltf::sources::URI& filePath ) {
         assert( filePath.fileByteOffset == 0 );
         assert( filePath.uri.isLocalPath() );
 
@@ -81,7 +81,7 @@ std::optional< ve::Image > Loader::loadImage( const fastgltf::Asset& asset, ve::
         createTextureImage( data );
     } };
 
-    const auto handleVector{ [ &width, &height, &nrChannels ]( const fastgltf::sources::Vector& vector ) {
+    const auto handleVector{ [ & ]( const fastgltf::sources::Vector& vector ) {
         stbi_uc *data{ stbi_load_from_memory( reinterpret_cast< const stbi_uc * >( std::data( vector.bytes ) ),
                                               static_cast< int >( std::size( vector.bytes ) ), &width, &height,
                                               &nrChannels, STBI_rgb_alpha ) };
@@ -230,6 +230,7 @@ std::vector< ve::MeshAsset * > Loader::loadMeshes( const fastgltf::Asset& asset,
             loadNormals( initialIndex, vertices, asset, primitive );
             loadTextureCoord( initialIndex, vertices, asset, primitive );
             loadColor( initialIndex, vertices, asset, primitive );
+            loadTangent( initialIndex, vertices, asset, primitive );
 
             if ( primitive.materialIndex.has_value() && materials.has_value() ) {
                 surface.material.emplace( *materials->at( primitive.materialIndex.value() ) );
@@ -329,8 +330,8 @@ Loader::Constants Loader::loadConstanst( const fastgltf::Material& material ) {
 
 Loader::Resources Loader::loadResources( const size_t index, ve::gltf::Scene& scene, const fastgltf::Asset& asset,
                                          const fastgltf::Material& material ) {
-    auto defaultImageView{ m_engine.getDefaultImage().getImageView() };
-    auto defaultSampler{ m_engine.getDefaultSampler().get() };
+    const auto defaultImageView{ m_engine.getDefaultImage().getImageView() };
+    const auto defaultSampler{ m_engine.getDefaultSampler().get() };
     const auto uniformBufferOffset{ index * sizeof( Constants ) };
 
     Resources resources;
@@ -339,17 +340,31 @@ Loader::Resources Loader::loadResources( const size_t index, ve::gltf::Scene& sc
     resources.dataBuffer                = scene.materialDataBuffer->get();
     resources.dataBufferOffset          = uniformBufferOffset;
 
-    if ( material.pbrData.baseColorTexture.has_value() ) {
-        const size_t textureIndex{ material.pbrData.baseColorTexture.value().textureIndex };
-        const size_t imageIndex{ asset.textures[ textureIndex ].imageIndex.value() };
-        const size_t samplerIndex{ asset.textures[ textureIndex ].samplerIndex.value() };
+    const auto getImageViewAndSampler{ [ & ]( const auto& textureInfo ) -> std::pair< vk::ImageView, vk::Sampler > {
+        if ( textureInfo.has_value() ) {
+            const size_t textureIndex{ textureInfo->textureIndex };
+            const size_t imageIndex{ asset.textures.at( textureIndex ).imageIndex.value() };
+            const auto samplerIndexOpt{ asset.textures[ textureIndex ].samplerIndex };
 
-        resources.colorImageView = scene.images.at( imageIndex ).getImageView();
-        resources.colorSampler   = scene.samplers.at( samplerIndex ).get();
-    } else {
-        resources.colorImageView = defaultImageView;
-        resources.colorSampler   = defaultSampler;
-    }
+            return { scene.images.at( imageIndex ).getImageView(),
+                     samplerIndexOpt.has_value() ? scene.samplers.at( samplerIndexOpt.value() ).get()
+                                                 : defaultSampler };
+        }
+
+        return { defaultImageView, defaultSampler };
+    } };
+
+    const auto [ baseColorView, colorSampler ]{ getImageViewAndSampler( material.pbrData.baseColorTexture ) };
+    const auto [ normalView, normalSampler ]{ getImageViewAndSampler( material.normalTexture ) };
+    const auto [ metallicRoughnessView,
+                 metallicRoughnessSampler ]{ getImageViewAndSampler( material.pbrData.metallicRoughnessTexture ) };
+
+    resources.colorImageView            = baseColorView;
+    resources.normalMapView             = normalView;
+    resources.metalicRoughnessImageView = metallicRoughnessView;
+    resources.colorSampler              = colorSampler;
+    resources.normalSampler             = normalSampler;
+    resources.metalicRoughnessSampler   = metallicRoughnessSampler;
 
     return resources;
 }
@@ -401,8 +416,8 @@ void Loader::loadTextureCoord( const size_t initialIndex, std::vector< ve::Verte
         const auto& uvAccessor{ asset.accessors.at( accessorUVIndex ) };
         fastgltf::iterateAccessorWithIndex< glm::vec2 >(
             asset, uvAccessor, [ &initialIndex, &vertices ]( const glm::vec2 uv, const size_t index ) {
-                vertices[ initialIndex + index ].uv_x = uv.x;
-                vertices[ initialIndex + index ].uv_y = uv.y;
+                vertices.at( initialIndex + index ).uv_x = uv.x;
+                vertices.at( initialIndex + index ).uv_y = uv.y;
             } );
     }
 }
@@ -415,7 +430,20 @@ void Loader::loadColor( const size_t initialIndex, std::vector< ve::Vertex >& ve
         const auto& colorAccessor{ asset.accessors.at( accessorColorIndex ) };
         fastgltf::iterateAccessorWithIndex< glm::vec4 >(
             asset, colorAccessor, [ &initialIndex, &vertices ]( const glm::vec4 color, const size_t index ) {
-                vertices[ initialIndex + index ].color = color;
+                vertices.at( initialIndex + index ).color = color;
+            } );
+    }
+}
+
+void Loader::loadTangent( const size_t initialIndex, std::vector< ve::Vertex >& vertices, const fastgltf::Asset& asset,
+                          const fastgltf::Primitive& primitive ) {
+    const auto tangent{ primitive.findAttribute( "TANGENT" ) };
+    if ( tangent != std::end( primitive.attributes ) ) {
+        const auto accessorTangentIndex{ ( *tangent ).accessorIndex };
+        const auto& tagentAccessor{ asset.accessors.at( accessorTangentIndex ) };
+        fastgltf::iterateAccessorWithIndex< glm::vec4 >(
+            asset, tagentAccessor, [ &initialIndex, &vertices ]( const glm::vec4 tangent, const size_t index ) {
+                vertices.at( initialIndex + index ).tangent = tangent;
             } );
     }
 }

@@ -41,14 +41,15 @@ struct MetalicRoughness {
     struct Resources {
         vk::ImageView colorImageView;
         vk::ImageView metalicRoughnessImageView;
+        vk::ImageView normalMapView;
         vk::Sampler colorSampler;
         vk::Sampler metalicRoughnessSampler;
+        vk::Sampler normalSampler;
         vk::Buffer dataBuffer;
         uint32_t dataBufferOffset;
     };
 
     void buildPipelines( const ve::DescriptorSetLayout& layout, const ve::RenderPass& renderPass );
-    void clearResources();
     ve::Material writeMaterial( const ve::Material::Type materialType, const Resources& resources,
                                 ve::DescriptorAllocator& descriptorAllocator );
 

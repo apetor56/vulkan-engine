@@ -22,6 +22,8 @@ void MetalicRoughness::buildPipelines( const ve::DescriptorSetLayout& layout, co
     desMaterialLayout.emplace( m_logicalDevice );
     desMaterialLayout->addBinding( 0U, vk::DescriptorType::eUniformBuffer, shaderStages );
     desMaterialLayout->addBinding( 1U, vk::DescriptorType::eCombinedImageSampler, shaderStages );
+    desMaterialLayout->addBinding( 2U, vk::DescriptorType::eCombinedImageSampler, shaderStages );
+    desMaterialLayout->addBinding( 3U, vk::DescriptorType::eCombinedImageSampler, shaderStages );
     desMaterialLayout->create();
 
     const std::array< vk::DescriptorSetLayout, 2U > layoutsVk{ layout.get(), desMaterialLayout->get() };
@@ -55,7 +57,10 @@ ve::Material MetalicRoughness::writeMaterial( const ve::Material::Type materialT
                                   vk::DescriptorType::eUniformBuffer );
     descriptorWriter.writeImage( 1U, resources.colorImageView, vk::ImageLayout::eShaderReadOnlyOptimal,
                                  resources.colorSampler, vk::DescriptorType::eCombinedImageSampler );
-
+    descriptorWriter.writeImage( 2U, resources.normalMapView, vk::ImageLayout::eShaderReadOnlyOptimal,
+                                 resources.normalSampler, vk::DescriptorType::eCombinedImageSampler );
+    descriptorWriter.writeImage( 3U, resources.metalicRoughnessImageView, vk::ImageLayout::eShaderReadOnlyOptimal,
+                                 resources.metalicRoughnessSampler, vk::DescriptorType::eCombinedImageSampler );
     descriptorWriter.updateSet( set );
 
     if ( materialType == ve::Material::Type::eTransparent )
