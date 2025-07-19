@@ -13,8 +13,9 @@
 
 namespace ve {
 
-std::vector< DescriptorAllocator::PoolSizeRatio > g_poolSizes = { { vk::DescriptorType::eStorageImage, 1 },
-                                                                  { vk::DescriptorType::eUniformBuffer, 1 } };
+std::vector< DescriptorAllocator::PoolSizeRatio > g_poolSizes = { { vk::DescriptorType::eStorageImage, 1.0f },
+                                                                  { vk::DescriptorType::eUniformBuffer, 1.0f },
+                                                                  { vk::DescriptorType::eCombinedImageSampler, 1.0f } };
 
 Engine::Engine()
     : m_window{ WindowInfo{ cfg::window::width, cfg::window::height, "example" }, m_vulkanInstance },
