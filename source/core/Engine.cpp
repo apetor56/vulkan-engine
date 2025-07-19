@@ -329,18 +329,18 @@ void Engine::prepareDefaultTexture() {
     memcpy( stagingBuffer.getMappedMemory(), pixels, bufferSize );
 
     const vk::Extent2D imageExtent{ static_cast< uint32_t >( width ), static_cast< uint32_t >( height ) };
+    const uint32_t mipLevels{ static_cast< uint32_t >( std::floor( std::log2( std::max( width, height ) ) ) ) + 1U };
     m_defaultWhiteImage.emplace( m_memoryAllocator, m_logicalDevice, imageExtent, vk::Format::eR8G8B8A8Srgb,
                                  vk::ImageUsageFlagBits::eTransferSrc | vk::ImageUsageFlagBits::eTransferDst |
                                      vk::ImageUsageFlagBits::eSampled,
-                                 vk::ImageAspectFlagBits::eColor );
+                                 vk::ImageAspectFlagBits::eColor, mipLevels );
 
-    immediateSubmit( [ &stagingBuffer, this ]( ve::GraphicsCommandBuffer cmd ) {
-        cmd.transitionImageBuffer( m_defaultWhiteImage->get(), vk::Format::eR8G8B8A8Srgb, vk::ImageLayout::eUndefined,
-                                   vk::ImageLayout::eTransferDstOptimal );
+    immediateSubmit( [ &stagingBuffer, this, mipLevels ]( ve::GraphicsCommandBuffer cmd ) {
+        cmd.transitionImageBuffer( m_defaultWhiteImage->get(), m_defaultWhiteImage->getFormat(),
+                                   vk::ImageLayout::eUndefined, vk::ImageLayout::eTransferDstOptimal, mipLevels );
         cmd.copyBufferToImage( stagingBuffer.get(), m_defaultWhiteImage->get(), m_defaultWhiteImage->getExtent() );
     } );
 
-    const uint32_t mipLevels{ static_cast< uint32_t >( std::floor( std::log2( std::max( width, height ) ) ) ) + 1U };
     generateMipmaps( m_defaultWhiteImage.value(), width, height, mipLevels );
 }
 
