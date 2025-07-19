@@ -38,7 +38,7 @@ public:
 
     MeshBuffers uploadMeshBuffers( std::span< Vertex > vertices, std::span< uint32_t > indices ) const;
     ve::Image createImage( void *data, const vk::Extent2D size, const vk::Format format,
-                           const vk::ImageUsageFlags usage );
+                           const vk::ImageUsageFlags usage, const uint32_t mipLevels = 1U );
 
     const ve::LogicalDevice& getLogicalDevice() const noexcept { return m_logicalDevice; }
     const ve::Image& getDefaultImage() const noexcept { return m_defaultWhiteImage.value(); }
@@ -112,6 +112,8 @@ private:
     void createDefaultTextureSampler();
     void loadMeshes();
     void initDefaultData();
+    void generateMipmaps( const ve::Image& image, const int32_t texWidth, const int32_t texHeight,
+                          const uint32_t mipLevels );
 
     void updateScene( float deltaTime );
     std::optional< uint32_t > acquireNextImage();

@@ -59,9 +59,13 @@ std::optional< ve::Image > Loader::loadImage( const fastgltf::Asset& asset, ve::
     const auto createTextureImage{ [ &width, &height, &newImage, this ]( stbi_uc *data ) {
         if ( data ) {
             vk::Extent2D imagesize{ static_cast< uint32_t >( width ), static_cast< uint32_t >( height ) };
-            newImage.emplace(
-                m_engine.createImage( data, imagesize, vk::Format::eR8G8B8A8Srgb,
-                                      vk::ImageUsageFlagBits::eTransferDst | vk::ImageUsageFlagBits::eSampled ) );
+            const uint32_t mipLevels{ static_cast< uint32_t >( std::floor( std::log2( std::max( width, height ) ) ) ) +
+                                      1U };
+            newImage.emplace( m_engine.createImage( data, imagesize, vk::Format::eR8G8B8A8Srgb,
+                                                    vk::ImageUsageFlagBits::eTransferSrc |
+                                                        vk::ImageUsageFlagBits::eTransferDst |
+                                                        vk::ImageUsageFlagBits::eSampled,
+                                                    mipLevels ) );
             stbi_image_free( data );
         } else {
             spdlog::error( "failed to load texture" );

@@ -6,13 +6,13 @@ namespace ve {
 
 Image::Image( const ve::MemoryAllocator& allocator, const ve::LogicalDevice& logicalDevice, const vk::Extent2D extent,
               const vk::Format format, const vk::ImageUsageFlags usage, const vk::ImageAspectFlagBits imageAspect,
-              const vk::ImageTiling tiling )
+              const uint32_t mipLevels, const vk::ImageTiling tiling )
     : m_memoryAllocator{ allocator },
       m_logicalDevice{ logicalDevice },
       m_imageExtent{ extent },
       m_imageFormat{ format } {
-    createImage( usage, tiling );
-    createImageView( imageAspect );
+    createImage( usage, tiling, mipLevels );
+    createImageView( imageAspect, mipLevels );
 }
 
 Image::Image( Image&& other ) noexcept
@@ -33,14 +33,14 @@ Image::~Image() {
     vmaDestroyImage( m_memoryAllocator.get(), m_image, m_allocation );
 }
 
-void Image::createImage( const vk::ImageUsageFlags usage, const vk::ImageTiling tiling ) {
+void Image::createImage( const vk::ImageUsageFlags usage, const vk::ImageTiling tiling, const uint32_t mipLevels ) {
     vk::ImageCreateInfo imageInfo{};
     imageInfo.sType         = vk::StructureType::eImageCreateInfo;
     imageInfo.imageType     = vk::ImageType::e2D;
     imageInfo.extent.width  = m_imageExtent.width;
     imageInfo.extent.height = m_imageExtent.height;
     imageInfo.extent.depth  = 1U;
-    imageInfo.mipLevels     = 1U;
+    imageInfo.mipLevels     = mipLevels;
     imageInfo.arrayLayers   = 1U;
     imageInfo.format        = m_imageFormat;
     imageInfo.tiling        = tiling;
@@ -57,14 +57,14 @@ void Image::createImage( const vk::ImageUsageFlags usage, const vk::ImageTiling 
                     &allocationCreateInfo, reinterpret_cast< VkImage * >( &m_image ), &m_allocation, nullptr );
 }
 
-void Image::createImageView( const vk::ImageAspectFlagBits imageAspect ) {
+void Image::createImageView( const vk::ImageAspectFlagBits imageAspect, const uint32_t mipLevels ) {
     vk::ImageViewCreateInfo viewInfo{};
     viewInfo.image                           = m_image;
     viewInfo.viewType                        = vk::ImageViewType::e2D;
     viewInfo.format                          = m_imageFormat;
     viewInfo.subresourceRange.aspectMask     = imageAspect;
     viewInfo.subresourceRange.baseMipLevel   = 0U;
-    viewInfo.subresourceRange.levelCount     = 1U;
+    viewInfo.subresourceRange.levelCount     = mipLevels;
     viewInfo.subresourceRange.baseArrayLayer = 0U;
     viewInfo.subresourceRange.layerCount     = 1U;
 

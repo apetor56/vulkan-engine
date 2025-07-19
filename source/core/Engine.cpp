@@ -6,6 +6,8 @@
 
 #include <glm/gtc/matrix_transform.hpp>
 
+#include <spdlog/spdlog.h>
+
 #include <limits>
 #include <chrono>
 
@@ -328,16 +330,18 @@ void Engine::prepareDefaultTexture() {
 
     const vk::Extent2D imageExtent{ static_cast< uint32_t >( width ), static_cast< uint32_t >( height ) };
     m_defaultWhiteImage.emplace( m_memoryAllocator, m_logicalDevice, imageExtent, vk::Format::eR8G8B8A8Srgb,
-                                 vk::ImageUsageFlagBits::eTransferDst | vk::ImageUsageFlagBits::eSampled,
+                                 vk::ImageUsageFlagBits::eTransferSrc | vk::ImageUsageFlagBits::eTransferDst |
+                                     vk::ImageUsageFlagBits::eSampled,
                                  vk::ImageAspectFlagBits::eColor );
 
     immediateSubmit( [ &stagingBuffer, this ]( ve::GraphicsCommandBuffer cmd ) {
         cmd.transitionImageBuffer( m_defaultWhiteImage->get(), vk::Format::eR8G8B8A8Srgb, vk::ImageLayout::eUndefined,
                                    vk::ImageLayout::eTransferDstOptimal );
         cmd.copyBufferToImage( stagingBuffer.get(), m_defaultWhiteImage->get(), m_defaultWhiteImage->getExtent() );
-        cmd.transitionImageBuffer( m_defaultWhiteImage->get(), vk::Format::eR8G8B8A8Srgb,
-                                   vk::ImageLayout::eTransferDstOptimal, vk::ImageLayout::eShaderReadOnlyOptimal );
     } );
+
+    const uint32_t mipLevels{ static_cast< uint32_t >( std::floor( std::log2( std::max( width, height ) ) ) ) + 1U };
+    generateMipmaps( m_defaultWhiteImage.value(), width, height, mipLevels );
 }
 
 void Engine::createDefaultTextureSampler() {
@@ -434,24 +438,108 @@ void Engine::initDefaultData() {
 }
 
 ve::Image Engine::createImage( void *data, const vk::Extent2D size, const vk::Format format,
-                               const vk::ImageUsageFlags usage ) {
+                               const vk::ImageUsageFlags usage, const uint32_t mipLevels ) {
     const auto& [ width, height ]{ size };
     const vk::DeviceSize bufferSize{ static_cast< vk::DeviceSize >( width ) * height * 4 };
     ve::StagingBuffer stagingBuffer{ m_memoryAllocator, bufferSize };
     memcpy( stagingBuffer.getMappedMemory(), data, bufferSize );
 
     const vk::Extent2D imageExtent{ static_cast< uint32_t >( width ), static_cast< uint32_t >( height ) };
-    ve::Image image{ m_memoryAllocator, m_logicalDevice, imageExtent, format, usage, vk::ImageAspectFlagBits::eColor };
+    ve::Image image{ m_memoryAllocator, m_logicalDevice, imageExtent, format, usage, vk::ImageAspectFlagBits::eColor,
+                     mipLevels };
 
-    immediateSubmit( [ &stagingBuffer, &image ]( ve::GraphicsCommandBuffer cmd ) {
+    immediateSubmit( [ this, &stagingBuffer, &image, mipLevels, size ]( ve::GraphicsCommandBuffer cmd ) {
         cmd.transitionImageBuffer( image.get(), image.getFormat(), vk::ImageLayout::eUndefined,
-                                   vk::ImageLayout::eTransferDstOptimal );
+                                   vk::ImageLayout::eTransferDstOptimal, mipLevels );
         cmd.copyBufferToImage( stagingBuffer.get(), image.get(), image.getExtent() );
-        cmd.transitionImageBuffer( image.get(), image.getFormat(), vk::ImageLayout::eTransferDstOptimal,
-                                   vk::ImageLayout::eShaderReadOnlyOptimal );
     } );
 
+    generateMipmaps( image, size.width, size.height, mipLevels );
+
     return image;
+}
+
+void Engine::generateMipmaps( const ve::Image& image, const int32_t texWidth, const int32_t texHeight,
+                              const uint32_t mipLevels ) {
+    const auto formatProperties{ m_physicalDevice.get().getFormatProperties( image.getFormat() ) };
+    if ( !( formatProperties.optimalTilingFeatures & vk::FormatFeatureFlagBits::eSampledImageFilterLinear ) ) {
+        spdlog::warn( "Image format does not support linear blitting. Mipmapping ommited." );
+        return;
+    }
+
+    immediateSubmit( [ & ]( ve::GraphicsCommandBuffer cmd ) {
+        const auto imageVk{ image.get() };
+        const auto bufferVk{ cmd.get() };
+
+        vk::ImageMemoryBarrier barrier{};
+        barrier.image                           = imageVk;
+        barrier.srcQueueFamilyIndex             = vk::QueueFamilyIgnored;
+        barrier.dstQueueFamilyIndex             = vk::QueueFamilyIgnored;
+        barrier.subresourceRange.aspectMask     = vk::ImageAspectFlagBits::eColor;
+        barrier.subresourceRange.baseArrayLayer = 0U;
+        barrier.subresourceRange.layerCount     = 1U;
+        barrier.subresourceRange.levelCount     = 1U;
+
+        int32_t mipWidth{ texWidth };
+        int32_t mipHeight{ texHeight };
+        vk::Offset3D destinationMipmapSize{};
+        static constexpr int offsetStartID{ 0 };
+        static constexpr int offsetEndID{ 1 };
+
+        for ( uint32_t mipLevel{ 1 }; mipLevel < mipLevels; ++mipLevel ) {
+            barrier.subresourceRange.baseMipLevel = mipLevel - 1U;
+            barrier.oldLayout                     = vk::ImageLayout::eTransferDstOptimal;
+            barrier.newLayout                     = vk::ImageLayout::eTransferSrcOptimal;
+            barrier.srcAccessMask                 = vk::AccessFlagBits::eTransferWrite;
+            barrier.dstAccessMask                 = vk::AccessFlagBits::eTransferRead;
+
+            bufferVk.pipelineBarrier( vk::PipelineStageFlagBits::eTransfer, vk::PipelineStageFlagBits::eTransfer,
+                                      vk::DependencyFlags{}, nullptr, nullptr, barrier );
+
+            vk::ImageBlit blit{};
+            blit.srcOffsets.at( offsetStartID ) = vk::Offset3D{ 0, 0, 0 };
+            blit.srcOffsets.at( offsetEndID )   = vk::Offset3D{ mipWidth, mipHeight, 1 };
+            blit.srcSubresource.aspectMask      = vk::ImageAspectFlagBits::eColor;
+            blit.srcSubresource.mipLevel        = mipLevel - 1U;
+            blit.srcSubresource.baseArrayLayer  = 0U;
+            blit.srcSubresource.layerCount      = 1U;
+
+            destinationMipmapSize =
+                vk::Offset3D{ mipWidth > 1 ? mipWidth / 2 : 1, mipHeight > 1 ? mipHeight / 2 : 1, 1 };
+
+            blit.dstOffsets.at( offsetStartID ) = vk::Offset3D{ 0, 0, 0 };
+            blit.dstOffsets.at( offsetEndID )   = destinationMipmapSize;
+            blit.dstSubresource.aspectMask      = vk::ImageAspectFlagBits::eColor;
+            blit.dstSubresource.mipLevel        = mipLevel;
+            blit.dstSubresource.baseArrayLayer  = 0U;
+            blit.dstSubresource.layerCount      = 1U;
+
+            bufferVk.blitImage( imageVk, vk::ImageLayout::eTransferSrcOptimal, imageVk,
+                                vk::ImageLayout::eTransferDstOptimal, blit, vk::Filter::eLinear );
+
+            barrier.oldLayout     = vk::ImageLayout::eTransferSrcOptimal;
+            barrier.newLayout     = vk::ImageLayout::eShaderReadOnlyOptimal;
+            barrier.srcAccessMask = vk::AccessFlagBits::eTransferRead;
+            barrier.dstAccessMask = vk::AccessFlagBits::eShaderRead;
+
+            bufferVk.pipelineBarrier( vk::PipelineStageFlagBits::eTransfer, vk::PipelineStageFlagBits::eFragmentShader,
+                                      vk::DependencyFlags{}, nullptr, nullptr, barrier );
+
+            if ( mipWidth > 1 )
+                mipWidth /= 2;
+            if ( mipHeight > 1 )
+                mipHeight /= 2;
+        }
+
+        barrier.subresourceRange.baseMipLevel = mipLevels - 1;
+        barrier.oldLayout                     = vk::ImageLayout::eTransferDstOptimal;
+        barrier.newLayout                     = vk::ImageLayout::eShaderReadOnlyOptimal;
+        barrier.srcAccessMask                 = vk::AccessFlagBits::eTransferWrite;
+        barrier.dstAccessMask                 = vk::AccessFlagBits::eShaderRead;
+
+        bufferVk.pipelineBarrier( vk::PipelineStageFlagBits::eTransfer, vk::PipelineStageFlagBits::eFragmentShader,
+                                  vk::DependencyFlags{}, nullptr, nullptr, barrier );
+    } );
 }
 
 } // namespace ve

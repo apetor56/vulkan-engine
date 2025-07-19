@@ -78,7 +78,8 @@ void GraphicsCommandBuffer::endRenderPass() const noexcept {
 }
 
 void GraphicsCommandBuffer::transitionImageBuffer( const vk::Image image, const vk::Format format,
-                                                   const vk::ImageLayout oldLayout, const vk::ImageLayout newLayout ) {
+                                                   const vk::ImageLayout oldLayout, const vk::ImageLayout newLayout,
+                                                   const uint32_t mipLevel ) {
     vk::ImageMemoryBarrier barrier{};
     barrier.sType               = vk::StructureType::eImageMemoryBarrier;
     barrier.oldLayout           = oldLayout;
@@ -89,7 +90,7 @@ void GraphicsCommandBuffer::transitionImageBuffer( const vk::Image image, const 
 
     barrier.subresourceRange.aspectMask     = vk::ImageAspectFlagBits::eColor;
     barrier.subresourceRange.baseMipLevel   = 0U;
-    barrier.subresourceRange.levelCount     = 1U;
+    barrier.subresourceRange.levelCount     = mipLevel;
     barrier.subresourceRange.baseArrayLayer = 0U;
     barrier.subresourceRange.layerCount     = 1U;
 

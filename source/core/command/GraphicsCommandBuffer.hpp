@@ -27,7 +27,7 @@ public:
     void drawIndices( const uint32_t firstIndex, const uint32_t indicesCount ) const noexcept;
     void endRenderPass() const noexcept;
     void transitionImageBuffer( const vk::Image image, const vk::Format format, const vk::ImageLayout oldLayout,
-                                const vk::ImageLayout newLayout );
+                                const vk::ImageLayout newLayout, const uint32_t mipLevel = 1U );
     void copyBufferToImage( const vk::Buffer buffer, const vk::Image image, const vk::Extent2D extent );
     void pushConstants( const vk::PipelineLayout layout, const vk::ShaderStageFlags shaderStages,
                         const ve::PushConstants& pushConstants, const uint32_t offset = 0U ) const noexcept;

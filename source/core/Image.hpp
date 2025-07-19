@@ -11,7 +11,7 @@ class Image : public utils::NonCopyable {
 public:
     Image( const ve::MemoryAllocator& allocator, const ve::LogicalDevice& logicalDevice, const vk::Extent2D extent,
            const vk::Format format, const vk::ImageUsageFlags usage, const vk::ImageAspectFlagBits imageAspect,
-           const vk::ImageTiling tiling = vk::ImageTiling::eOptimal );
+           const uint32_t mipLevels = 1U, const vk::ImageTiling tiling = vk::ImageTiling::eOptimal );
 
     ~Image();
 
@@ -32,8 +32,8 @@ private:
     const vk::Extent2D m_imageExtent{};
     const vk::Format m_imageFormat{};
 
-    void createImage( const vk::ImageUsageFlags usage, const vk::ImageTiling tiling );
-    void createImageView( const vk::ImageAspectFlagBits imageAspect );
+    void createImage( const vk::ImageUsageFlags usage, const vk::ImageTiling tiling, const uint32_t mipLevels );
+    void createImageView( const vk::ImageAspectFlagBits imageAspect, const uint32_t mipLevels );
 };
 
 } // namespace ve
