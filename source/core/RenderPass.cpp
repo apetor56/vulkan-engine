@@ -5,13 +5,16 @@
 namespace ve {
 
 RenderPass::RenderPass( const ve::LogicalDevice& logicalDevice, const vk::Format colorFormat,
-                        const vk::Format depthFormat )
+                        const vk::Format depthFormat, const vk::SampleCountFlagBits sampleCount )
     : m_logicalDevice{ logicalDevice } {
-    createDescription( colorFormat, vk::ImageLayout::ePresentSrcKHR );
-    createDescription( depthFormat, vk::ImageLayout::eDepthStencilAttachmentOptimal );
+    createDescription( colorFormat, vk::ImageLayout::eColorAttachmentOptimal, sampleCount );
+    createDescription( depthFormat, vk::ImageLayout::eDepthStencilAttachmentOptimal, sampleCount );
+    createDescription( colorFormat, vk::ImageLayout::ePresentSrcKHR, vk::SampleCountFlagBits::e1,
+                       vk::AttachmentLoadOp::eDontCare );
 
     createReference( 0U, vk::ImageLayout::eColorAttachmentOptimal );
     createReference( 1U, vk::ImageLayout::eDepthStencilAttachmentOptimal );
+    createReference( 2U, vk::ImageLayout::eColorAttachmentOptimal );
 
     createSubpass();
     createSubpassDependency();
@@ -22,11 +25,12 @@ RenderPass::~RenderPass() {
     m_logicalDevice.get().destroyRenderPass( m_renderPass );
 }
 
-void RenderPass::createDescription( const vk::Format format, const vk::ImageLayout finalLayout ) {
-    m_attachmentDescriptions.emplace_back( vk::AttachmentDescriptionFlags{}, format, vk::SampleCountFlagBits::e1,
-                                           vk::AttachmentLoadOp::eClear, vk::AttachmentStoreOp::eStore,
-                                           vk::AttachmentLoadOp::eDontCare, vk::AttachmentStoreOp::eDontCare,
-                                           vk::ImageLayout::eUndefined, finalLayout );
+void RenderPass::createDescription( const vk::Format format, const vk::ImageLayout finalLayout,
+                                    const vk::SampleCountFlagBits sampleCount,
+                                    const vk::AttachmentLoadOp loadOperation ) {
+    m_attachmentDescriptions.emplace_back( vk::AttachmentDescriptionFlags{}, format, sampleCount, loadOperation,
+                                           vk::AttachmentStoreOp::eStore, vk::AttachmentLoadOp::eDontCare,
+                                           vk::AttachmentStoreOp::eDontCare, vk::ImageLayout::eUndefined, finalLayout );
 }
 
 void RenderPass::createReference( const uint32_t attachmentIndex, const vk::ImageLayout layout ) {
@@ -34,13 +38,15 @@ void RenderPass::createReference( const uint32_t attachmentIndex, const vk::Imag
 }
 
 void RenderPass::createSubpass() {
-    const auto& colorAttachmentRef{ m_attachmentReferences.at( 0 ) };
-    const auto& depthAttachmentRef{ m_attachmentReferences.at( 1 ) };
+    const auto& colorAttachmentRef{ m_attachmentReferences.at( 0U ) };
+    const auto& depthAttachmentRef{ m_attachmentReferences.at( 1U ) };
+    const auto& colorResolveAttachmentRef{ m_attachmentReferences.at( 2U ) };
 
     m_subpass.pipelineBindPoint       = vk::PipelineBindPoint::eGraphics;
     m_subpass.colorAttachmentCount    = 1U;
     m_subpass.pColorAttachments       = &colorAttachmentRef;
     m_subpass.pDepthStencilAttachment = &depthAttachmentRef;
+    m_subpass.pResolveAttachments     = &colorResolveAttachmentRef;
 }
 
 void RenderPass::createSubpassDependency() {

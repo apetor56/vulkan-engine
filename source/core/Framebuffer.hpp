@@ -8,7 +8,7 @@ class RenderPass;
 
 class Framebuffer : public utils::NonCopyable {
 public:
-    using Attachments = std::array< vk::ImageView, 2U >;
+    using Attachments = std::array< vk::ImageView, 3U >;
 
     Framebuffer( const ve::RenderPass& renderPass, const Attachments& attachments, const vk::Extent2D extent );
     ~Framebuffer();

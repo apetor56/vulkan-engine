@@ -17,6 +17,32 @@ PhysicalDevice::PhysicalDevice( const ve::VulkanInstance& instance, const ve::Wi
     pickPhysicalDevice( instance, window );
 }
 
+vk::SampleCountFlagBits PhysicalDevice::getMaxSamplesCount() const noexcept {
+    vk::PhysicalDeviceProperties properties{ m_physicalDevice.getProperties() };
+    const vk::SampleCountFlags maxAvailableSampleCount{ properties.limits.framebufferColorSampleCounts &
+                                                        properties.limits.framebufferDepthSampleCounts };
+
+    if ( maxAvailableSampleCount & vk::SampleCountFlagBits::e64 )
+        return vk::SampleCountFlagBits::e64;
+
+    if ( maxAvailableSampleCount & vk::SampleCountFlagBits::e32 )
+        return vk::SampleCountFlagBits::e32;
+
+    if ( maxAvailableSampleCount & vk::SampleCountFlagBits::e16 )
+        return vk::SampleCountFlagBits::e16;
+
+    if ( maxAvailableSampleCount & vk::SampleCountFlagBits::e8 )
+        return vk::SampleCountFlagBits::e8;
+
+    if ( maxAvailableSampleCount & vk::SampleCountFlagBits::e4 )
+        return vk::SampleCountFlagBits::e4;
+
+    if ( maxAvailableSampleCount & vk::SampleCountFlagBits::e2 )
+        return vk::SampleCountFlagBits::e2;
+
+    return vk::SampleCountFlagBits::e1;
+}
+
 void PhysicalDevice::pickPhysicalDevice( const ve::VulkanInstance& instance, const ve::Window& window ) {
     const auto devices{ instance.get().enumeratePhysicalDevices() };
     if ( std::size( devices ) == 0U )

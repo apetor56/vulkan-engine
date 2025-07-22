@@ -80,7 +80,10 @@ PipelineBuilder::PipelineBuilder( const ve::LogicalDevice& logicalDevice )
       m_colorBlendsState{ defaultColorBlendStateInfo() },
       m_depthStencilState{ defaultDepthStencilInfo() },
       m_colorBlendAttachmentState{ defaultColorBlendAttachmentState() },
-      m_logicalDevice{ logicalDevice } {}
+      m_logicalDevice{ logicalDevice } {
+    setSamplesCount( m_logicalDevice.getParentPhysicalDevice().getMaxSamplesCount() );
+    setSampleShading( 1.0F );
+}
 
 PipelineBuilder::PipelineBuilder( const ve::LogicalDevice& logicalDevice, const ve::ShaderModule& vertexShader,
                                   const ve::ShaderModule& fragmentShader, const ve::PipelineLayout& pipelineLayout )
@@ -106,6 +109,15 @@ void PipelineBuilder::setShaders( const ve::ShaderModule& vertexShader, const ve
 
 void PipelineBuilder::setLayout( const ve::PipelineLayout& pipelineLayout ) {
     m_pipelineLayout.emplace( pipelineLayout.get() );
+}
+
+void PipelineBuilder::setSamplesCount( const vk::SampleCountFlagBits samplesCount ) {
+    m_multisamplingState.rasterizationSamples = samplesCount;
+}
+
+void PipelineBuilder::setSampleShading( const float minSampleShading ) {
+    m_multisamplingState.sampleShadingEnable = vk::True;
+    m_multisamplingState.minSampleShading    = minSampleShading;
 }
 
 [[nodiscard]] ve::Pipeline PipelineBuilder::build( const ve::RenderPass& renderPass ) {

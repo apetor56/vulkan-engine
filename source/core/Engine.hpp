@@ -69,6 +69,7 @@ private:
     ve::MemoryAllocator m_memoryAllocator;
     ve::Swapchain m_swapchain;
     Framebuffers m_framebuffers;
+    std::optional< ve::Image > m_colorImage{};
     std::optional< ve::Image > m_depthBuffer{};
     std::optional< ve::RenderPass > m_renderPass{};
     ve::ShaderModule m_vertexShader;
@@ -101,6 +102,7 @@ private:
     Scene m_scene;
     std::shared_ptr< ve::Camera > m_camera{};
 
+    void createColorResources();
     void createDepthBuffer();
     void createRenderPass();
     void createFramebuffers();

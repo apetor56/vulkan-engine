@@ -7,7 +7,8 @@ namespace ve {
 class RenderPass : public utils::NonCopyable,
                    public utils::NonMovable {
 public:
-    RenderPass( const ve::LogicalDevice& logicalDevice, const vk::Format colorFormat, const vk::Format depthFormat );
+    RenderPass( const ve::LogicalDevice& logicalDevice, const vk::Format colorFormat, const vk::Format depthFormat,
+                const vk::SampleCountFlagBits sampleCount );
     ~RenderPass();
 
     vk::RenderPass get() const noexcept { return m_renderPass; }
@@ -21,7 +22,9 @@ private:
     vk::RenderPass m_renderPass;
     const ve::LogicalDevice& m_logicalDevice;
 
-    void createDescription( const vk::Format format, const vk::ImageLayout finalLayout );
+    void createDescription( const vk::Format format, const vk::ImageLayout finalLayout,
+                            const vk::SampleCountFlagBits sampleCount,
+                            const vk::AttachmentLoadOp loadOperation = vk::AttachmentLoadOp::eClear );
     void createReference( const uint32_t attachmentIndex, const vk::ImageLayout layout );
     void createSubpass();
     void createSubpassDependency();

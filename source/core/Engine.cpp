@@ -42,6 +42,7 @@ Engine::Engine()
 
 void Engine::init() {
     m_window.setCamera( m_camera );
+    createColorResources();
     createDepthBuffer();
     createRenderPass();
     createFramebuffers();
@@ -191,13 +192,24 @@ void Engine::present( const uint32_t imageIndex ) {
     }
 }
 
+void Engine::createColorResources() {
+    static constexpr uint32_t multisampleBufferMipmapLevel{ 1U };
+    m_colorImage.emplace( m_memoryAllocator, m_logicalDevice, m_swapchain.getExtent(), m_swapchain.getFormat(),
+                          vk::ImageUsageFlagBits::eTransientAttachment | vk::ImageUsageFlagBits::eColorAttachment,
+                          vk::ImageAspectFlagBits::eColor, multisampleBufferMipmapLevel,
+                          m_physicalDevice.getMaxSamplesCount() );
+}
+
 void Engine::createDepthBuffer() {
+    static constexpr uint32_t depthMipmapLevel{ 1U };
     m_depthBuffer.emplace( m_memoryAllocator, m_logicalDevice, m_swapchain.getExtent(), vk::Format::eD32Sfloat,
-                           vk::ImageUsageFlagBits::eDepthStencilAttachment, vk::ImageAspectFlagBits::eDepth );
+                           vk::ImageUsageFlagBits::eDepthStencilAttachment, vk::ImageAspectFlagBits::eDepth,
+                           depthMipmapLevel, m_physicalDevice.getMaxSamplesCount() );
 }
 
 void Engine::createRenderPass() {
-    m_renderPass.emplace( m_logicalDevice, m_swapchain.getFormat(), m_depthBuffer->getFormat() );
+    m_renderPass.emplace( m_logicalDevice, m_swapchain.getFormat(), m_depthBuffer->getFormat(),
+                          m_physicalDevice.getMaxSamplesCount() );
 }
 
 void Engine::createFramebuffers() {
@@ -205,7 +217,8 @@ void Engine::createFramebuffers() {
     m_framebuffers.clear();
     m_framebuffers.reserve( std::size( swapchainImageViews ) );
     std::ranges::for_each( swapchainImageViews, [ this ]( const auto swapchainImageView ) {
-        const std::array< vk::ImageView, 2U > attachments{ swapchainImageView, m_depthBuffer->getImageView() };
+        const Framebuffer::Attachments attachments{ m_colorImage->getImageView(), m_depthBuffer->getImageView(),
+                                                    swapchainImageView };
         m_framebuffers.emplace_back( std::in_place, m_renderPass.value(), attachments, m_swapchain.getExtent() );
     } );
 }
@@ -350,8 +363,7 @@ void Engine::createDefaultTextureSampler() {
 }
 
 void Engine::loadMeshes() {
-    const auto spheres{ m_loader.load( cfg::directory::assets / "sponza/Sponza.gltf" ) };
-
+    const auto spheres{ m_loader.load( cfg::directory::assets / "spheres/MetalRoughSpheres.gltf" ) };
     if ( spheres.has_value() )
         m_scene.emplace( "spheres", spheres.value() );
 }
@@ -359,6 +371,7 @@ void Engine::loadMeshes() {
 void Engine::handleWindowResising() {
     m_swapchain.recreate();
     createRenderPass();
+    createColorResources();
     createDepthBuffer();
     createFramebuffers();
 }

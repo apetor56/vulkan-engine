@@ -6,12 +6,12 @@ namespace ve {
 
 Image::Image( const ve::MemoryAllocator& allocator, const ve::LogicalDevice& logicalDevice, const vk::Extent2D extent,
               const vk::Format format, const vk::ImageUsageFlags usage, const vk::ImageAspectFlagBits imageAspect,
-              const uint32_t mipLevels, const vk::ImageTiling tiling )
+              const uint32_t mipLevels, const vk::SampleCountFlagBits samplesCount, const vk::ImageTiling tiling )
     : m_memoryAllocator{ allocator },
       m_logicalDevice{ logicalDevice },
       m_imageExtent{ extent },
       m_imageFormat{ format } {
-    createImage( usage, tiling, mipLevels );
+    createImage( usage, tiling, mipLevels, samplesCount );
     createImageView( imageAspect, mipLevels );
 }
 
@@ -33,7 +33,8 @@ Image::~Image() {
     vmaDestroyImage( m_memoryAllocator.get(), m_image, m_allocation );
 }
 
-void Image::createImage( const vk::ImageUsageFlags usage, const vk::ImageTiling tiling, const uint32_t mipLevels ) {
+void Image::createImage( const vk::ImageUsageFlags usage, const vk::ImageTiling tiling, const uint32_t mipLevels,
+                         const vk::SampleCountFlagBits samplesCount ) {
     vk::ImageCreateInfo imageInfo{};
     imageInfo.sType         = vk::StructureType::eImageCreateInfo;
     imageInfo.imageType     = vk::ImageType::e2D;
@@ -46,7 +47,7 @@ void Image::createImage( const vk::ImageUsageFlags usage, const vk::ImageTiling 
     imageInfo.tiling        = tiling;
     imageInfo.initialLayout = vk::ImageLayout::eUndefined;
     imageInfo.usage         = usage;
-    imageInfo.samples       = vk::SampleCountFlagBits::e1;
+    imageInfo.samples       = samplesCount;
     imageInfo.sharingMode   = vk::SharingMode::eExclusive;
 
     VmaAllocationCreateInfo allocationCreateInfo{};

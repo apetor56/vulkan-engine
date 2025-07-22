@@ -52,6 +52,8 @@ public:
 
     void setShaders( const ve::ShaderModule& vertexShader, const ve::ShaderModule& fragmentShader );
     void setLayout( const ve::PipelineLayout& pipelineLayout );
+    void setSamplesCount( const vk::SampleCountFlagBits samplesCount );
+    void setSampleShading( const float minSampleShading );
 
     [[nodiscard]] ve::Pipeline build( const ve::RenderPass& renderPass );
 

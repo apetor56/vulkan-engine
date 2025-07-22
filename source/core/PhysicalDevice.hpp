@@ -19,6 +19,7 @@ public:
     vk::PhysicalDevice get() const noexcept { return m_physicalDevice; }
     const std::vector< const char * >& getExtensions() const noexcept { return m_deviceExtensions; }
     [[nodiscard]] ve::QueueFamilyMap getQueueFamilyIDs() const noexcept { return m_queueFamilies.getAll(); }
+    vk::SampleCountFlagBits getMaxSamplesCount() const noexcept;
 
 private:
     ve::QueueFamilyIDs m_queueFamilies{};
