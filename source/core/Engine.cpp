@@ -23,8 +23,6 @@ Engine::Engine()
       m_logicalDevice{ m_physicalDevice },
       m_memoryAllocator{ m_vulkanInstance, m_physicalDevice, m_logicalDevice },
       m_swapchain{ m_logicalDevice, m_window },
-      m_vertexShader{ cfg::directory::shaderBinaries / "Simple.vert.spv", m_logicalDevice },
-      m_fragmentShader{ cfg::directory::shaderBinaries / "Simple.frag.spv", m_logicalDevice },
       m_pipelineBuilder{ m_logicalDevice },
       m_graphicsCommandPool{ m_logicalDevice },
       m_immediateSubmitFence{ m_logicalDevice },
@@ -44,8 +42,6 @@ void Engine::init() {
     m_window.setCamera( m_camera );
     createColorResources();
     createDepthBuffer();
-    createRenderPass();
-    createFramebuffers();
     preparePipelines();
     createFrameResoures();
     prepareDefaultTexture();
@@ -119,13 +115,11 @@ void Engine::draw( const uint32_t imageIndex ) {
     commandBuffer.reset();
     commandBuffer.begin();
 
-    if ( !m_renderPass.has_value() )
-        throw std::runtime_error( "renderpass not initialized" );
-    if ( !m_pipeline.has_value() )
-        throw std::runtime_error( "pipeline not initialized" );
+    commandBuffer.transitionImageLayout( m_swapchain.getImage( imageIndex ), m_swapchain.getFormat(),
+                                         vk::ImageLayout::eUndefined, vk::ImageLayout::eColorAttachmentOptimal );
 
-    commandBuffer.beginRenderPass( m_renderPass->get(), m_framebuffers.at( imageIndex )->get(),
-                                   m_swapchain.getExtent() );
+    commandBuffer.beginRendering( m_swapchain.getExtent(), m_colorImage->getImageView(),
+                                  m_swapchain.getImageView( imageIndex ), m_depthBuffer->getImageView() );
     commandBuffer.setViewport( m_swapchain.getViewport() );
     commandBuffer.setScissor( m_swapchain.getScissor() );
 
@@ -150,7 +144,10 @@ void Engine::draw( const uint32_t imageIndex ) {
     std::ranges::for_each( m_mainRenderContext.transparentSurfaces,
                            [ &draw ]( const auto& renderObject ) { draw( renderObject ); } );
 
-    commandBuffer.endRenderPass();
+    commandBuffer.endRendering();
+
+    commandBuffer.transitionImageLayout( m_swapchain.getImage( imageIndex ), m_swapchain.getFormat(),
+                                         vk::ImageLayout::eColorAttachmentOptimal, vk::ImageLayout::ePresentSrcKHR );
     commandBuffer.end();
 
     static constexpr vk::PipelineStageFlags waitStage{ vk::PipelineStageFlagBits::eColorAttachmentOutput };
@@ -207,42 +204,11 @@ void Engine::createDepthBuffer() {
                            depthMipmapLevel, m_physicalDevice.getMaxSamplesCount() );
 }
 
-void Engine::createRenderPass() {
-    m_renderPass.emplace( m_logicalDevice, m_swapchain.getFormat(), m_depthBuffer->getFormat(),
-                          m_physicalDevice.getMaxSamplesCount() );
-}
-
-void Engine::createFramebuffers() {
-    const auto& swapchainImageViews{ m_swapchain.getImageViews() };
-    m_framebuffers.clear();
-    m_framebuffers.reserve( std::size( swapchainImageViews ) );
-    std::ranges::for_each( swapchainImageViews, [ this ]( const auto swapchainImageView ) {
-        const Framebuffer::Attachments attachments{ m_colorImage->getImageView(), m_depthBuffer->getImageView(),
-                                                    swapchainImageView };
-        m_framebuffers.emplace_back( std::in_place, m_renderPass.value(), attachments, m_swapchain.getExtent() );
-    } );
-}
-
 void Engine::preparePipelines() {
     m_descriptorSetLayout.addBinding( 0U, vk::DescriptorType::eUniformBuffer,
                                       vk::ShaderStageFlagBits::eVertex | vk::ShaderStageFlagBits::eFragment );
     m_descriptorSetLayout.create();
-    const auto layoutVk{ m_descriptorSetLayout.get() };
-
-    static constexpr vk::PushConstantRange bufferRange{ ve::PushConstants::defaultRange() };
-    auto pipelineLayoutInfo{ ve::PipelineLayout::defaultInfo() };
-    pipelineLayoutInfo.pPushConstantRanges    = &bufferRange;
-    pipelineLayoutInfo.pushConstantRangeCount = 1U;
-    pipelineLayoutInfo.pSetLayouts            = &layoutVk;
-    pipelineLayoutInfo.setLayoutCount         = 1U;
-
-    m_pipelineLayout.emplace( m_logicalDevice, pipelineLayoutInfo );
-
-    m_pipelineBuilder.setShaders( m_vertexShader, m_fragmentShader );
-    m_pipelineBuilder.setLayout( m_pipelineLayout.value() );
-    m_pipeline.emplace( m_pipelineBuilder, m_renderPass.value() );
-
-    m_metalRough.buildPipelines( m_descriptorSetLayout, m_renderPass.value() );
+    m_metalRough.buildPipelines( m_descriptorSetLayout );
 }
 
 void Engine::createFrameResoures() {
@@ -350,7 +316,7 @@ void Engine::prepareDefaultTexture() {
                                  vk::ImageAspectFlagBits::eColor, mipLevels );
 
     immediateSubmit( [ &stagingBuffer, this, mipLevels ]( ve::GraphicsCommandBuffer cmd ) {
-        cmd.transitionImageBuffer( m_defaultWhiteImage->get(), m_defaultWhiteImage->getFormat(),
+        cmd.transitionImageLayout( m_defaultWhiteImage->get(), m_defaultWhiteImage->getFormat(),
                                    vk::ImageLayout::eUndefined, vk::ImageLayout::eTransferDstOptimal, mipLevels );
         cmd.copyBufferToImage( stagingBuffer.get(), m_defaultWhiteImage->get(), m_defaultWhiteImage->getExtent() );
     } );
@@ -363,17 +329,15 @@ void Engine::createDefaultTextureSampler() {
 }
 
 void Engine::loadMeshes() {
-    const auto spheres{ m_loader.load( cfg::directory::assets / "spheres/MetalRoughSpheres.gltf" ) };
+    const auto spheres{ m_loader.load( cfg::directory::assets / "sponza/Sponza.gltf" ) };
     if ( spheres.has_value() )
         m_scene.emplace( "spheres", spheres.value() );
 }
 
 void Engine::handleWindowResising() {
     m_swapchain.recreate();
-    createRenderPass();
     createColorResources();
     createDepthBuffer();
-    createFramebuffers();
 }
 
 void Engine::immediateSubmit( const std::function< void( ve::GraphicsCommandBuffer command ) >& function ) {
@@ -463,7 +427,7 @@ ve::Image Engine::createImage( void *data, const vk::Extent2D size, const vk::Fo
                      mipLevels };
 
     immediateSubmit( [ this, &stagingBuffer, &image, mipLevels, size ]( ve::GraphicsCommandBuffer cmd ) {
-        cmd.transitionImageBuffer( image.get(), image.getFormat(), vk::ImageLayout::eUndefined,
+        cmd.transitionImageLayout( image.get(), image.getFormat(), vk::ImageLayout::eUndefined,
                                    vk::ImageLayout::eTransferDstOptimal, mipLevels );
         cmd.copyBufferToImage( stagingBuffer.get(), image.get(), image.getExtent() );
     } );

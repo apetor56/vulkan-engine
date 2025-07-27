@@ -9,7 +9,6 @@
 namespace ve {
 
 class PipelineBuilder;
-class RenderPass;
 
 class PipelineLayout : public utils::NonCopyable,
                        public utils::NonMovable {
@@ -28,7 +27,7 @@ private:
 class Pipeline : public utils::NonCopyable,
                  public utils::NonMovable {
 public:
-    Pipeline( const PipelineBuilder& builder, const ve::RenderPass& renderPass );
+    Pipeline( const PipelineBuilder& builder );
     ~Pipeline();
 
     vk::Pipeline get() const noexcept { return m_pipeline; }
@@ -54,8 +53,10 @@ public:
     void setLayout( const ve::PipelineLayout& pipelineLayout );
     void setSamplesCount( const vk::SampleCountFlagBits samplesCount );
     void setSampleShading( const float minSampleShading );
+    void setColorFormat( const vk::Format colorFormat );
+    void setDepthFormat( const vk::Format depthFormat );
 
-    [[nodiscard]] ve::Pipeline build( const ve::RenderPass& renderPass );
+    [[nodiscard]] ve::Pipeline build();
 
     void disableBlending() noexcept;
     void enableBlendingAdditive() noexcept;
@@ -71,6 +72,9 @@ public:
     const auto& getVertexInputState() const noexcept { return m_vertexInputState; }
     const auto& getInputAssemblyState() const noexcept { return m_inputAsemblyState; }
     const auto& getLayout() const noexcept { return m_pipelineLayout; }
+    const vk::Format getColorFormat() const noexcept { return m_colorFormat; }
+    const vk::Format getDepthFormat() const noexcept { return m_depthFormat; }
+    const ve::LogicalDevice& getLogicalDevice() const noexcept { return m_logicalDevice; }
 
 private:
     const ve::LogicalDevice& m_logicalDevice;
@@ -85,6 +89,8 @@ private:
     vk::PipelineInputAssemblyStateCreateInfo m_inputAsemblyState{};
     vk::PipelineColorBlendAttachmentState m_colorBlendAttachmentState{};
     std::optional< vk::PipelineLayout > m_pipelineLayout{};
+    vk::Format m_colorFormat{ vk::Format::eB8G8R8A8Srgb };
+    vk::Format m_depthFormat{ vk::Format::eD32Sfloat };
 
     void addShaderStage( const vk::ShaderStageFlagBits shaderType, const ve::ShaderModule& shaderModule );
     vk::PipelineDynamicStateCreateInfo defaultDynamicStatesInfo() const noexcept;

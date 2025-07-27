@@ -11,7 +11,7 @@
 
 namespace ve::gltf {
 
-void MetalicRoughness::buildPipelines( const ve::DescriptorSetLayout& layout, const ve::RenderPass& renderPass ) {
+void MetalicRoughness::buildPipelines( const ve::DescriptorSetLayout& layout ) {
     const ve::ShaderModule meshVertexShader{ cfg::directory::shaderBinaries / "Mesh.vert.spv", m_logicalDevice };
     const ve::ShaderModule meshFragmentShader{ cfg::directory::shaderBinaries / "Mesh.frag.spv", m_logicalDevice };
 
@@ -38,11 +38,11 @@ void MetalicRoughness::buildPipelines( const ve::DescriptorSetLayout& layout, co
     builder.setShaders( meshVertexShader, meshFragmentShader );
     builder.setLayout( pipelineLayout.value() );
     builder.disableBlending();
-    opaquePipeline.emplace( builder, renderPass );
+    opaquePipeline.emplace( builder );
 
     builder.enableBlendingAdditive();
     builder.disableDepthWrite();
-    transparentPipeline.emplace( builder, renderPass );
+    transparentPipeline.emplace( builder );
 }
 
 ve::Material MetalicRoughness::writeMaterial( const ve::Material::Type materialType, const Resources& resources,

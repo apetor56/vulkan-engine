@@ -34,8 +34,6 @@ set(CORE
     core/QueueFamilyIDs.hpp        core/QueueFamilyIDs.cpp
     core/LogicalDevice.hpp         core/LogicalDevice.cpp
     core/Swapchain.hpp             core/Swapchain.cpp
-    core/RenderPass.hpp            core/RenderPass.cpp
-    core/Framebuffer.hpp           core/Framebuffer.cpp
     core/Pipeline.hpp              core/Pipeline.cpp
     core/ShaderModule.hpp          core/ShaderModule.cpp
     core/Vertex.hpp

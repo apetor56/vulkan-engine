@@ -23,7 +23,8 @@ public:
 
 private:
     ve::QueueFamilyIDs m_queueFamilies{};
-    const std::vector< const char * > m_deviceExtensions{ vk::KHRSwapchainExtensionName };
+    const std::vector< const char * > m_deviceExtensions{ vk::KHRSwapchainExtensionName,
+                                                          vk::KHRDynamicRenderingExtensionName };
     vk::PhysicalDevice m_physicalDevice{};
 
     void pickPhysicalDevice( const ve::VulkanInstance& instance, const ve::Window& window );

@@ -38,6 +38,7 @@ void LogicalDevice::createLogicalDevice() {
         queueCreateInfos.emplace_back( queueCreateInfo );
     } );
 
+    // TODO: make features checking via vk boost
     vk::PhysicalDeviceFeatures deviceFeatures{};
     deviceFeatures.samplerAnisotropy = vk::True;
     deviceFeatures.sampleRateShading = vk::True;
@@ -45,6 +46,10 @@ void LogicalDevice::createLogicalDevice() {
     vk::PhysicalDeviceVulkan12Features featuresV12;
     featuresV12.sType               = vk::StructureType::ePhysicalDeviceVulkan12Features;
     featuresV12.bufferDeviceAddress = vk::True;
+
+    vk::PhysicalDeviceVulkan13Features featuresV13;
+    featuresV13.pNext            = &featuresV12;
+    featuresV13.dynamicRendering = vk::True;
 
     vk::DeviceCreateInfo deviceCreateInfo{};
     deviceCreateInfo.sType                   = vk::StructureType::eDeviceCreateInfo;
@@ -54,7 +59,7 @@ void LogicalDevice::createLogicalDevice() {
     deviceCreateInfo.enabledExtensionCount   = utils::size( physicalDeviceExtensions );
     deviceCreateInfo.ppEnabledExtensionNames = std::data( physicalDeviceExtensions );
     deviceCreateInfo.pEnabledFeatures        = &deviceFeatures;
-    deviceCreateInfo.pNext                   = &featuresV12;
+    deviceCreateInfo.pNext                   = &featuresV13;
 
     m_logicalDevice = m_physicalDevice.get().createDevice( deviceCreateInfo, nullptr );
 

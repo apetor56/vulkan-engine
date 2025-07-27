@@ -23,21 +23,6 @@ uint32_t GraphicsCommandBuffer::getQueueFamilyID( const ve::LogicalDevice& logic
     return logicalDevice.getQueueFamilyIDs().at( ve::FamilyType::eGraphics );
 }
 
-void GraphicsCommandBuffer::beginRenderPass( const vk::RenderPass renderPass, const vk::Framebuffer framebuffer,
-                                             const vk::Extent2D renderArea ) const noexcept {
-    vk::RenderPassBeginInfo renderPassBeginInfo{};
-    renderPassBeginInfo.sType             = vk::StructureType::eRenderPassBeginInfo;
-    renderPassBeginInfo.renderPass        = renderPass;
-    renderPassBeginInfo.framebuffer       = framebuffer;
-    renderPassBeginInfo.renderArea.offset = vk::Offset2D{ 0, 0 };
-    renderPassBeginInfo.renderArea.extent = renderArea;
-
-    renderPassBeginInfo.clearValueCount = static_cast< uint32_t >( std::size( g_clearValues ) );
-    renderPassBeginInfo.pClearValues    = std::data( g_clearValues );
-
-    m_commandBuffer.beginRenderPass( renderPassBeginInfo, vk::SubpassContents::eInline );
-}
-
 void GraphicsCommandBuffer::bindPipeline( const vk::Pipeline pipeline ) const noexcept {
     m_commandBuffer.bindPipeline( vk::PipelineBindPoint::eGraphics, pipeline );
 }
@@ -65,21 +50,13 @@ void GraphicsCommandBuffer::bindDescriptorSet( const vk::PipelineLayout pipeline
                                         nullptr );
 }
 
-void GraphicsCommandBuffer::draw( const uint32_t verticesCount ) const noexcept {
-    m_commandBuffer.draw( verticesCount, g_instanceCount, g_firstVertex, g_firstInstance );
-}
-
 void GraphicsCommandBuffer::drawIndices( const uint32_t firstIndex, const uint32_t indicesCount ) const noexcept {
     m_commandBuffer.drawIndexed( indicesCount, g_instanceCount, firstIndex, g_offset, g_firstInstance );
 }
 
-void GraphicsCommandBuffer::endRenderPass() const noexcept {
-    m_commandBuffer.endRenderPass();
-}
-
-void GraphicsCommandBuffer::transitionImageBuffer( const vk::Image image, const vk::Format format,
+void GraphicsCommandBuffer::transitionImageLayout( const vk::Image image, [[maybe_unused]] const vk::Format format,
                                                    const vk::ImageLayout oldLayout, const vk::ImageLayout newLayout,
-                                                   const uint32_t mipLevel ) {
+                                                   const uint32_t mipLevel ) const {
     vk::ImageMemoryBarrier barrier{};
     barrier.sType               = vk::StructureType::eImageMemoryBarrier;
     barrier.oldLayout           = oldLayout;
@@ -94,25 +71,40 @@ void GraphicsCommandBuffer::transitionImageBuffer( const vk::Image image, const 
     barrier.subresourceRange.baseArrayLayer = 0U;
     barrier.subresourceRange.layerCount     = 1U;
 
-    vk::PipelineStageFlagBits srcStage{};
-    vk::PipelineStageFlagBits dstStage{};
+    vk::PipelineStageFlagBits sourceStage{};
+    vk::PipelineStageFlagBits destinationStage{};
     if ( oldLayout == vk::ImageLayout::eUndefined && newLayout == vk::ImageLayout::eTransferDstOptimal ) {
         barrier.srcAccessMask = vk::AccessFlagBits::eNone;
         barrier.dstAccessMask = vk::AccessFlagBits::eTransferWrite;
-        srcStage              = vk::PipelineStageFlagBits::eTopOfPipe;
-        dstStage              = vk::PipelineStageFlagBits::eTransfer;
+        sourceStage           = vk::PipelineStageFlagBits::eTopOfPipe;
+        destinationStage      = vk::PipelineStageFlagBits::eTransfer;
     } else if ( oldLayout == vk::ImageLayout::eTransferDstOptimal &&
                 newLayout == vk::ImageLayout::eShaderReadOnlyOptimal ) {
         barrier.srcAccessMask = vk::AccessFlagBits::eTransferWrite;
         barrier.dstAccessMask = vk::AccessFlagBits::eShaderRead;
-        srcStage              = vk::PipelineStageFlagBits::eTransfer;
-        dstStage              = vk::PipelineStageFlagBits::eFragmentShader;
-    } else {
+        sourceStage           = vk::PipelineStageFlagBits::eTransfer;
+        destinationStage      = vk::PipelineStageFlagBits::eFragmentShader;
+    }
+
+    else if ( oldLayout == vk::ImageLayout::eUndefined && newLayout == vk::ImageLayout::eColorAttachmentOptimal ) {
+        barrier.srcAccessMask = vk::AccessFlagBits::eNone;
+        barrier.dstAccessMask = vk::AccessFlagBits::eColorAttachmentWrite;
+        sourceStage           = vk::PipelineStageFlagBits::eTopOfPipe;
+        destinationStage      = vk::PipelineStageFlagBits::eColorAttachmentOutput;
+    } else if ( oldLayout == vk::ImageLayout::eColorAttachmentOptimal &&
+                newLayout == vk::ImageLayout::ePresentSrcKHR ) {
+        barrier.srcAccessMask = vk::AccessFlagBits::eColorAttachmentWrite;
+        barrier.dstAccessMask = vk::AccessFlagBits::eNone;
+        sourceStage           = vk::PipelineStageFlagBits::eColorAttachmentOutput;
+        destinationStage      = vk::PipelineStageFlagBits::eBottomOfPipe;
+    }
+
+    else {
         throw std::invalid_argument( "unsupported layout transition" );
     }
 
     static constexpr vk::DependencyFlags flags{};
-    m_commandBuffer.pipelineBarrier( srcStage, dstStage, flags, nullptr, nullptr, barrier );
+    m_commandBuffer.pipelineBarrier( sourceStage, destinationStage, flags, nullptr, nullptr, barrier );
 }
 
 void GraphicsCommandBuffer::copyBufferToImage( const vk::Buffer buffer, const vk::Image image,
@@ -137,6 +129,43 @@ void GraphicsCommandBuffer::pushConstants( const vk::PipelineLayout layout, cons
                                            const ve::PushConstants& pushConstants,
                                            const uint32_t offset ) const noexcept {
     m_commandBuffer.pushConstants( layout, shaderStages, offset, sizeof( ve::PushConstants ), &pushConstants );
+}
+
+void GraphicsCommandBuffer::beginRendering( const vk::Extent2D extent, const vk::ImageView sampledImageView,
+                                            const vk::ImageView resolvedImageView,
+                                            const vk::ImageView depthView ) const {
+    vk::RenderingAttachmentInfoKHR colorAttachment{};
+    colorAttachment.pNext              = nullptr;
+    colorAttachment.imageView          = sampledImageView;
+    colorAttachment.imageLayout        = vk::ImageLayout::eColorAttachmentOptimal;
+    colorAttachment.resolveImageView   = resolvedImageView;
+    colorAttachment.resolveImageLayout = vk::ImageLayout::eColorAttachmentOptimal;
+    colorAttachment.resolveMode        = vk::ResolveModeFlagBits::eAverage;
+    colorAttachment.loadOp             = vk::AttachmentLoadOp::eClear;
+    colorAttachment.storeOp            = vk::AttachmentStoreOp::eStore;
+    colorAttachment.clearValue         = g_clearColor;
+
+    vk::RenderingAttachmentInfoKHR depthAttachment{};
+    depthAttachment.pNext       = nullptr;
+    depthAttachment.imageView   = depthView;
+    depthAttachment.imageLayout = vk::ImageLayout::eDepthStencilAttachmentOptimal;
+    depthAttachment.loadOp      = vk::AttachmentLoadOp::eClear;
+    depthAttachment.storeOp     = vk::AttachmentStoreOp::eStore;
+    depthAttachment.clearValue  = g_clearDepthStencil;
+
+    static constexpr vk::Offset2D defaultOffset{ 0, 0 };
+    vk::RenderingInfoKHR renderingInfo{};
+    renderingInfo.layerCount           = 1U;
+    renderingInfo.colorAttachmentCount = 1U;
+    renderingInfo.renderArea           = vk::Rect2D{ defaultOffset, extent };
+    renderingInfo.pColorAttachments    = &colorAttachment;
+    renderingInfo.pDepthAttachment     = &depthAttachment;
+
+    m_commandBuffer.beginRendering( renderingInfo );
+}
+
+void GraphicsCommandBuffer::endRendering() const {
+    m_commandBuffer.endRendering();
 }
 
 } // namespace ve

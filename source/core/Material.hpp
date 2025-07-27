@@ -49,7 +49,7 @@ struct MetalicRoughness {
         uint32_t dataBufferOffset;
     };
 
-    void buildPipelines( const ve::DescriptorSetLayout& layout, const ve::RenderPass& renderPass );
+    void buildPipelines( const ve::DescriptorSetLayout& layout );
     ve::Material writeMaterial( const ve::Material::Type materialType, const Resources& resources,
                                 ve::DescriptorAllocator& descriptorAllocator );
 
