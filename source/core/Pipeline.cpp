@@ -1,5 +1,4 @@
 #include "Pipeline.hpp"
-#include "RenderingInfo.hpp"
 #include "Vertex.hpp"
 #include "Config.hpp"
 #include "descriptor/DescriptorSetLayout.hpp"

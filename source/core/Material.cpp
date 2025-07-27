@@ -2,7 +2,6 @@
 #include "ShaderModule.hpp"
 #include "Mesh.hpp"
 #include "Config.hpp"
-#include "RenderPass.hpp"
 
 #include "descriptor/DescriptorSetLayout.hpp"
 #include "descriptor/DescriptorAllocator.hpp"
