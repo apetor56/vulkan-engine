@@ -12,6 +12,7 @@ public:
     Image( const ve::MemoryAllocator& allocator, const ve::LogicalDevice& logicalDevice, const vk::Extent2D extent,
            const vk::Format format, const vk::ImageUsageFlags usage, const vk::ImageAspectFlagBits imageAspect,
            const uint32_t mipLevels = 1U, const vk::SampleCountFlagBits samplesCount = vk::SampleCountFlagBits::e1,
+           const uint32_t layersCount = 1U, const vk::ImageViewType viewType = vk::ImageViewType::e2D,
            const vk::ImageTiling tiling = vk::ImageTiling::eOptimal );
 
     ~Image();
@@ -34,8 +35,9 @@ private:
     const vk::Format m_imageFormat{};
 
     void createImage( const vk::ImageUsageFlags usage, const vk::ImageTiling tiling, const uint32_t mipLevels,
-                      const vk::SampleCountFlagBits samplesCount );
-    void createImageView( const vk::ImageAspectFlagBits imageAspect, const uint32_t mipLevels );
+                      const vk::SampleCountFlagBits samplesCount, const uint32_t layersCount, const vk::ImageViewType );
+    void createImageView( const vk::ImageAspectFlagBits imageAspect, const uint32_t mipLevels,
+                          const uint32_t layersCount, const vk::ImageViewType viewType );
 };
 
 } // namespace ve

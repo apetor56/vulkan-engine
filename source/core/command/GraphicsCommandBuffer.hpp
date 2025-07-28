@@ -21,10 +21,13 @@ public:
     void bindIndexBuffer( const vk::Buffer indexBuffer ) const;
     void bindDescriptorSet( const vk::PipelineLayout pipelineLayout, const vk::DescriptorSet descriptorSet,
                             const uint32_t firstSet = 0U ) const noexcept;
+    void drawVertices( const uint32_t firstVertex, const uint32_t vertexCount ) const noexcept;
     void drawIndices( const uint32_t firstIndex, const uint32_t indicesCount ) const noexcept;
     void transitionImageLayout( const vk::Image image, const vk::Format format, const vk::ImageLayout oldLayout,
-                                const vk::ImageLayout newLayout, const uint32_t mipLevel = 1U ) const;
-    void copyBufferToImage( const vk::Buffer buffer, const vk::Image image, const vk::Extent2D extent );
+                                const vk::ImageLayout newLayout, const uint32_t mipLevel = 1U,
+                                const uint32_t layerCount = 1U ) const;
+    void copyBufferToImage( const vk::Buffer buffer, const vk::Image image, const vk::Extent2D extent,
+                            const uint32_t layerCount = 1U );
     void pushConstants( const vk::PipelineLayout layout, const vk::ShaderStageFlags shaderStages,
                         const ve::PushConstants& pushConstants, const uint32_t offset = 0U ) const noexcept;
     void beginRendering( const vk::Extent2D extent, const vk::ImageView sampledImageView,

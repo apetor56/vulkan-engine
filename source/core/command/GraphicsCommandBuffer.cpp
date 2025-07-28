@@ -50,13 +50,17 @@ void GraphicsCommandBuffer::bindDescriptorSet( const vk::PipelineLayout pipeline
                                         nullptr );
 }
 
+void GraphicsCommandBuffer::drawVertices( const uint32_t firstVertex, const uint32_t vertexCount ) const noexcept {
+    m_commandBuffer.draw( vertexCount, g_instanceCount, g_firstIndex, g_firstInstance );
+}
+
 void GraphicsCommandBuffer::drawIndices( const uint32_t firstIndex, const uint32_t indicesCount ) const noexcept {
     m_commandBuffer.drawIndexed( indicesCount, g_instanceCount, firstIndex, g_offset, g_firstInstance );
 }
 
 void GraphicsCommandBuffer::transitionImageLayout( const vk::Image image, [[maybe_unused]] const vk::Format format,
                                                    const vk::ImageLayout oldLayout, const vk::ImageLayout newLayout,
-                                                   const uint32_t mipLevel ) const {
+                                                   const uint32_t mipLevel, const uint32_t layerCount ) const {
     vk::ImageMemoryBarrier barrier{};
     barrier.sType               = vk::StructureType::eImageMemoryBarrier;
     barrier.oldLayout           = oldLayout;
@@ -69,7 +73,7 @@ void GraphicsCommandBuffer::transitionImageLayout( const vk::Image image, [[mayb
     barrier.subresourceRange.baseMipLevel   = 0U;
     barrier.subresourceRange.levelCount     = mipLevel;
     barrier.subresourceRange.baseArrayLayer = 0U;
-    barrier.subresourceRange.layerCount     = 1U;
+    barrier.subresourceRange.layerCount     = layerCount;
 
     vk::PipelineStageFlagBits sourceStage{};
     vk::PipelineStageFlagBits destinationStage{};
@@ -108,7 +112,7 @@ void GraphicsCommandBuffer::transitionImageLayout( const vk::Image image, [[mayb
 }
 
 void GraphicsCommandBuffer::copyBufferToImage( const vk::Buffer buffer, const vk::Image image,
-                                               const vk::Extent2D extent ) {
+                                               const vk::Extent2D extent, const uint32_t layerCount ) {
     vk::BufferImageCopy copyRegion{};
     copyRegion.bufferOffset      = 0U;
     copyRegion.bufferRowLength   = 0U;
@@ -117,7 +121,7 @@ void GraphicsCommandBuffer::copyBufferToImage( const vk::Buffer buffer, const vk
     copyRegion.imageSubresource.aspectMask     = vk::ImageAspectFlagBits::eColor;
     copyRegion.imageSubresource.mipLevel       = 0U;
     copyRegion.imageSubresource.baseArrayLayer = 0U;
-    copyRegion.imageSubresource.layerCount     = 1U;
+    copyRegion.imageSubresource.layerCount     = layerCount;
 
     copyRegion.imageOffset = vk::Offset3D{};
     copyRegion.imageExtent = vk::Extent3D{ extent.width, extent.height, 1U };

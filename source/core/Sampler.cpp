@@ -23,6 +23,11 @@ Sampler::Sampler( ve::Sampler&& other ) noexcept
     other.m_sampler = nullptr;
 }
 
+Sampler::Sampler( const ve::LogicalDevice& logicalDevice, const vk::SamplerCreateInfo& info )
+    : m_logicalDevice{ logicalDevice } {
+    m_sampler = m_logicalDevice.get().createSampler( info );
+}
+
 Sampler::~Sampler() {
     m_logicalDevice.get().destroySampler( m_sampler );
 }

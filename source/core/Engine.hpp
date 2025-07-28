@@ -15,6 +15,7 @@
 #include "Material.hpp"
 #include "Node.hpp"
 #include "Camera.hpp"
+#include "ShaderModule.hpp"
 
 #include "command/CommandPool.hpp"
 #include "command/GraphicsCommandBuffer.hpp"
@@ -93,6 +94,15 @@ private:
     Scene m_scene;
     std::shared_ptr< ve::Camera > m_camera{};
 
+    std::optional< ve::Pipeline > m_skyboxPipeline;
+    std::optional< ve::PipelineLayout > m_skyboxPipelineLayout;
+    ve::DescriptorSetLayout m_skyboxDescriptorSetLayout;
+    vk::DescriptorSet m_skyboxDescriptorSet;
+    ve::ShaderModule m_skyboxVertexShader;
+    ve::ShaderModule m_skyboxFragmentShader;
+    std::optional< ve::Image > m_skyboxImage;
+    std::optional< ve::Sampler > m_skyboxSampler;
+
     void createColorResources();
     void createDepthBuffer();
     void preparePipelines();
@@ -105,11 +115,16 @@ private:
     void initDefaultData();
     void generateMipmaps( const ve::Image& image, const int32_t texWidth, const int32_t texHeight,
                           const uint32_t mipLevels );
+    void prepareSkyboxTexture();
+    void createSkybox();
 
     void updateScene( float deltaTime );
     std::optional< uint32_t > acquireNextImage();
     void draw( const uint32_t imageIndex );
     void present( const uint32_t imageIndex );
+
+    void drawScene( const ve::GraphicsCommandBuffer currentCommandBuffer, const vk::DescriptorSet currentGlobalSet );
+    void drawSkybox( const ve::GraphicsCommandBuffer currentCommandBuffer, const vk::DescriptorSet currentGlobalSet );
 
     void handleWindowResising();
     void immediateSubmit( const std::function< void( GraphicsCommandBuffer command ) >& function );

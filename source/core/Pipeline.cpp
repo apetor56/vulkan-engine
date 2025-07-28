@@ -87,7 +87,7 @@ PipelineBuilder::PipelineBuilder( const ve::LogicalDevice& logicalDevice )
       m_colorBlendAttachmentState{ defaultColorBlendAttachmentState() },
       m_logicalDevice{ logicalDevice } {
     setSamplesCount( m_logicalDevice.getParentPhysicalDevice().getMaxSamplesCount() );
-    setSampleShading( 1.0F );
+    setSampleShading( 0.2F );
 }
 
 PipelineBuilder::PipelineBuilder( const ve::LogicalDevice& logicalDevice, const ve::ShaderModule& vertexShader,
@@ -121,8 +121,13 @@ void PipelineBuilder::setSamplesCount( const vk::SampleCountFlagBits samplesCoun
 }
 
 void PipelineBuilder::setSampleShading( const float minSampleShading ) {
-    m_multisamplingState.sampleShadingEnable = vk::True;
-    m_multisamplingState.minSampleShading    = minSampleShading;
+    if ( minSampleShading != 0.0F ) {
+        m_multisamplingState.sampleShadingEnable = vk::True;
+        m_multisamplingState.minSampleShading    = minSampleShading;
+    } else {
+        m_multisamplingState.sampleShadingEnable = vk::False;
+        m_multisamplingState.minSampleShading    = 0.0F;
+    }
 }
 
 void PipelineBuilder::setColorFormat( const vk::Format colorFormat ) {
@@ -131,6 +136,10 @@ void PipelineBuilder::setColorFormat( const vk::Format colorFormat ) {
 
 void PipelineBuilder::setDepthFormat( const vk::Format depthFormat ) {
     m_depthFormat = depthFormat;
+}
+
+void PipelineBuilder::setCullingMode( const vk::CullModeFlags cullingMode ) {
+    m_rasterizerState.cullMode = cullingMode;
 }
 
 [[nodiscard]] ve::Pipeline PipelineBuilder::build() {
@@ -263,7 +272,7 @@ vk::PipelineDepthStencilStateCreateInfo PipelineBuilder::defaultDepthStencilInfo
     vk::PipelineDepthStencilStateCreateInfo depthStencil{};
     depthStencil.depthTestEnable       = vk::True;
     depthStencil.depthWriteEnable      = vk::True;
-    depthStencil.depthCompareOp        = vk::CompareOp::eLess;
+    depthStencil.depthCompareOp        = vk::CompareOp::eLessOrEqual;
     depthStencil.depthBoundsTestEnable = vk::False;
     depthStencil.minDepthBounds        = 0.0F;
     depthStencil.maxDepthBounds        = 1.0F;

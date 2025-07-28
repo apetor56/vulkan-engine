@@ -55,6 +55,7 @@ public:
     void setSampleShading( const float minSampleShading );
     void setColorFormat( const vk::Format colorFormat );
     void setDepthFormat( const vk::Format depthFormat );
+    void setCullingMode( const vk::CullModeFlags cullingMode );
 
     [[nodiscard]] ve::Pipeline build();
 

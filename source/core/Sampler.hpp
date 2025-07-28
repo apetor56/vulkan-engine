@@ -12,6 +12,7 @@ class Sampler : public utils::NonCopyable {
 public:
     Sampler( const ve::LogicalDevice& logicalDevice, const fastgltf::Sampler& gltfSampler );
     Sampler( const ve::LogicalDevice& logicalDevice );
+    Sampler( const ve::LogicalDevice& logicalDevice, const vk::SamplerCreateInfo& info );
 
     ~Sampler();
 

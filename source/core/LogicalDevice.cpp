@@ -61,7 +61,7 @@ void LogicalDevice::createLogicalDevice() {
     deviceCreateInfo.pEnabledFeatures        = &deviceFeatures;
     deviceCreateInfo.pNext                   = &featuresV13;
 
-    m_logicalDevice = m_physicalDevice.get().createDevice( deviceCreateInfo, nullptr );
+    m_logicalDevice = m_physicalDevice.get().createDevice( deviceCreateInfo );
 
     constexpr uint32_t queueIndex{ 0U };
     m_queues.emplace( ve::QueueType::eGraphics,

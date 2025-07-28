@@ -34,6 +34,7 @@ void MetalicRoughness::buildPipelines( const ve::DescriptorSetLayout& layout ) {
     pipelineLayout.emplace( m_logicalDevice, meshLayoutInfo );
 
     ve::PipelineBuilder builder{ m_logicalDevice };
+    builder.setCullingMode( vk::CullModeFlagBits::eBack );
     builder.setShaders( meshVertexShader, meshFragmentShader );
     builder.setLayout( pipelineLayout.value() );
     builder.disableBlending();
