@@ -37,7 +37,6 @@ void DescriptorSetLayout::create() {
 }
 
 vk::DescriptorSetLayout DescriptorSetLayout::get() const noexcept {
-    assert( m_layout != nullptr, "descriptor layout is not created" );
     return m_layout;
 }
 
