@@ -50,18 +50,18 @@ std::optional< std::shared_ptr< ve::gltf::Scene > > Loader::load( const std::fil
 }
 
 std::optional< ve::Image > Loader::loadImage( const fastgltf::Asset& asset, ve::gltf::Scene& scene,
-                                              const fastgltf::Image& image ) {
+                                              const fastgltf::Image& image, const vk::Format textureFormat ) {
     std::optional< ve::Image > newImage{};
     int width;
     int height;
     int nrChannels;
 
-    const auto createTextureImage{ [ &width, &height, &newImage, this ]( stbi_uc *data ) {
+    const auto createTextureImage{ [ &width, &height, &newImage, textureFormat, this ]( stbi_uc *data ) {
         if ( data ) {
             vk::Extent2D imagesize{ static_cast< uint32_t >( width ), static_cast< uint32_t >( height ) };
             const uint32_t mipLevels{ static_cast< uint32_t >( std::floor( std::log2( std::max( width, height ) ) ) ) +
                                       1U };
-            newImage.emplace( m_engine.createImage( data, imagesize, vk::Format::eR8G8B8A8Srgb,
+            newImage.emplace( m_engine.createImage( data, imagesize, textureFormat,
                                                     vk::ImageUsageFlagBits::eTransferSrc |
                                                         vk::ImageUsageFlagBits::eTransferDst |
                                                         vk::ImageUsageFlagBits::eSampled,
@@ -118,16 +118,6 @@ std::optional< ve::Image > Loader::loadImage( const fastgltf::Asset& asset, ve::
     return newImage;
 }
 
-void Loader::loadImages( const fastgltf::Asset& asset, ve::gltf::Scene& scene ) {
-    scene.images.reserve( std::size( asset.images ) );
-    std::ranges::for_each( asset.images, [ & ]( const auto& image ) {
-        std::optional< ve::Image > loadedImage{ loadImage( asset, scene, image ) };
-        if ( loadedImage.has_value() ) {
-            scene.images.emplace_back( std::move( loadedImage.value() ) );
-        }
-    } );
-}
-
 std::optional< fastgltf::Asset > Loader::getAsset( const std::filesystem::path& path ) {
     constexpr auto loadingOptions{ fastgltf::Options::DontRequireValidAssetMember | fastgltf::Options::AllowDouble |
                                    fastgltf::Options::LoadGLBBuffers | fastgltf::Options::LoadExternalBuffers };
@@ -173,7 +163,7 @@ Loader::MaterialsOpt Loader::loadMeterials( const fastgltf::Asset& asset, ve::gl
         return std::nullopt;
     }
 
-    loadImages( asset, scene );
+    scene.images.reserve( std::size( asset.images ) );
 
     std::vector< ve::gltf::Material * > tempMaterials;
     scene.materialDataBuffer.emplace( m_memoryAllocator, bufferSize );
@@ -344,24 +334,30 @@ Loader::Resources Loader::loadResources( const size_t index, ve::gltf::Scene& sc
     resources.dataBuffer                = scene.materialDataBuffer->get();
     resources.dataBufferOffset          = uniformBufferOffset;
 
-    const auto getImageViewAndSampler{ [ & ]( const auto& textureInfo ) -> std::pair< vk::ImageView, vk::Sampler > {
-        if ( textureInfo.has_value() ) {
-            const size_t textureIndex{ textureInfo->textureIndex };
-            const size_t imageIndex{ asset.textures.at( textureIndex ).imageIndex.value() };
-            const auto samplerIndexOpt{ asset.textures[ textureIndex ].samplerIndex };
+    const auto getImageViewAndSampler{
+        [ & ]( const auto& textureInfo, const vk::Format textureFormat ) -> std::pair< vk::ImageView, vk::Sampler > {
+            if ( textureInfo.has_value() ) {
+                const size_t textureIndex{ textureInfo->textureIndex };
+                const size_t imageIndex{ asset.textures.at( textureIndex ).imageIndex.value() };
+                const auto samplerIndexOpt{ asset.textures[ textureIndex ].samplerIndex };
 
-            return { scene.images.at( imageIndex ).getImageView(),
-                     samplerIndexOpt.has_value() ? scene.samplers.at( samplerIndexOpt.value() ).get()
-                                                 : defaultSampler };
-        }
+                const auto& loadedImage{ scene.images.emplace_back(
+                    *loadImage( asset, scene, asset.images.at( imageIndex ), textureFormat ) ) };
 
-        return { defaultImageView, defaultSampler };
-    } };
+                return { loadedImage.getImageView(), samplerIndexOpt.has_value()
+                                                         ? scene.samplers.at( samplerIndexOpt.value() ).get()
+                                                         : defaultSampler };
+            }
 
-    const auto [ baseColorView, colorSampler ]{ getImageViewAndSampler( material.pbrData.baseColorTexture ) };
-    const auto [ normalView, normalSampler ]{ getImageViewAndSampler( material.normalTexture ) };
-    const auto [ metallicRoughnessView,
-                 metallicRoughnessSampler ]{ getImageViewAndSampler( material.pbrData.metallicRoughnessTexture ) };
+            return { defaultImageView, defaultSampler };
+        } };
+
+    const auto [ baseColorView, colorSampler ]{
+        getImageViewAndSampler( material.pbrData.baseColorTexture, vk::Format::eR8G8B8A8Srgb ) };
+    const auto [ normalView,
+                 normalSampler ]{ getImageViewAndSampler( material.normalTexture, vk::Format::eR8G8B8A8Unorm ) };
+    const auto [ metallicRoughnessView, metallicRoughnessSampler ]{
+        getImageViewAndSampler( material.pbrData.metallicRoughnessTexture, vk::Format::eR8G8B8A8Unorm ) };
 
     resources.colorImageView            = baseColorView;
     resources.normalMapView             = normalView;

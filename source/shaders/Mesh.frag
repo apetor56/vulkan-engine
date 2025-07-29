@@ -39,12 +39,28 @@ vec3 lightPositions[ 4 ] = vec3[]( vec3( -10.0f, 10.0f, 10.0f ), vec3( 10.0f, 10
 vec3 lightColors[ 4 ]    = vec3[]( vec3( 500.0f, 300.0f, 700.0f ), vec3( 300.0f, 500.0f, 300.0f ),
                                 vec3( 300.0f, 900.0f, 400.0f ), vec3( 1300.0f, 500.0f, 500.0f ) );
 
+vec3 getNormalFromMap() {
+    vec3 tangentNormal = texture( normalMap, inTexCoords ).xyz * 2.0 - 1.0;
+
+    vec3 Q1  = dFdx( inWorldPos );
+    vec3 Q2  = dFdy( inWorldPos );
+    vec2 st1 = dFdx( inTexCoords );
+    vec2 st2 = dFdy( inTexCoords );
+
+    vec3 N   = normalize( inNormal );
+    vec3 T   = normalize( Q1 * st2.t - Q2 * st1.t );
+    vec3 B   = -normalize( cross( N, T ) );
+    mat3 TBN = mat3( T, B, N );
+
+    return normalize( TBN * tangentNormal );
+}
+
 void main() {
     float metallic  = texture( metallicRoughnessMap, inTexCoords ).b * materialData.metallicRoughnessFactors.x;
     float roughness = texture( metallicRoughnessMap, inTexCoords ).g * materialData.metallicRoughnessFactors.y;
     vec3 albedo     = texture( albedoMap, inTexCoords ).rgb;
 
-    vec3 normal        = normalize( inNormal );
+    vec3 normal        = getNormalFromMap();
     vec3 viewDirection = normalize( sceneData.cameraPosition - inWorldPos );
 
     vec3 baseReflectivity = vec3( 0.04 );

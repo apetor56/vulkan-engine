@@ -90,7 +90,7 @@ private:
     vk::PipelineInputAssemblyStateCreateInfo m_inputAsemblyState{};
     vk::PipelineColorBlendAttachmentState m_colorBlendAttachmentState{};
     std::optional< vk::PipelineLayout > m_pipelineLayout{};
-    vk::Format m_colorFormat{ vk::Format::eB8G8R8A8Srgb };
+    vk::Format m_colorFormat{ vk::Format::eR8G8B8A8Srgb };
     vk::Format m_depthFormat{ vk::Format::eD32Sfloat };
 
     void addShaderStage( const vk::ShaderStageFlagBits shaderType, const ve::ShaderModule& shaderModule );

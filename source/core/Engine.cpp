@@ -344,9 +344,9 @@ void Engine::createDefaultTextureSampler() {
 }
 
 void Engine::loadMeshes() {
-    const auto spheres{ m_loader.load( cfg::directory::assets / "spheres/MetalRoughSpheres.gltf" ) };
+    const auto spheres{ m_loader.load( cfg::directory::assets / "sponza/Sponza.gltf" ) };
     if ( spheres.has_value() )
-        m_scene.emplace( "spheres", spheres.value() );
+        m_scene.emplace( "sponza", spheres.value() );
 }
 
 void Engine::handleWindowResising() {
@@ -390,7 +390,7 @@ void Engine::updateScene( float deltaTime ) {
     constexpr float nearPlane{ 0.1F };
     constexpr float farPlane{ 1000.0F };
 
-    m_sceneData.model = glm::mat4{ 1.0F };
+    m_sceneData.model = glm::mat4{ 1.0F } * glm::scale( glm::mat4{ 1.0F }, glm::vec3{ 3.0F, 3.0F, 3.0F } );
 
     if ( m_camera != nullptr )
         m_sceneData.view = m_camera->getViewMartix();

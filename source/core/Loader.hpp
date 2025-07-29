@@ -38,8 +38,7 @@ private:
 
     std::optional< fastgltf::Asset > getAsset( const std::filesystem::path& path );
     std::optional< ve::Image > loadImage( const fastgltf::Asset& asset, ve::gltf::Scene& scene,
-                                          const fastgltf::Image& image );
-    void loadImages( const fastgltf::Asset& asset, ve::gltf::Scene& scene );
+                                          const fastgltf::Image& image, const vk::Format textureFormat );
     MaterialsOpt loadMeterials( const fastgltf::Asset& asset, ve::gltf::Scene& scene );
     std::vector< ve::MeshAsset * > loadMeshes( const fastgltf::Asset& asset, ve::gltf::Scene& scene );
     std::vector< std::shared_ptr< ve::Node > > loadNodes( const fastgltf::Asset& asset, ve::gltf::Scene& scene );
