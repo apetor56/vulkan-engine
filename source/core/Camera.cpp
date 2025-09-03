@@ -5,7 +5,6 @@
 #include <glm/gtx/quaternion.hpp>
 
 #include <GLFW/glfw3.h>
-#include <iostream>
 
 namespace ve {
 

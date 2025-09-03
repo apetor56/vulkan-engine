@@ -344,9 +344,9 @@ void Engine::createDefaultTextureSampler() {
 }
 
 void Engine::loadMeshes() {
-    const auto spheres{ m_loader.load( cfg::directory::assets / "sponza/Sponza.gltf" ) };
-    if ( spheres.has_value() )
-        m_scene.emplace( "sponza", spheres.value() );
+    const auto sponza{ m_loader.load( cfg::directory::assets / "sponza/Sponza.gltf" ) };
+    if ( sponza.has_value() )
+        m_scene.emplace( "sponza", sponza.value() );
 }
 
 void Engine::handleWindowResising() {
