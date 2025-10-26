@@ -24,6 +24,7 @@ Pipeline::Pipeline( const PipelineBuilder& builder ) : m_logicalDevice{ builder.
     renderingInfo.pColorAttachmentFormats = &colorFormat;
     renderingInfo.depthAttachmentFormat   = builder.getDepthFormat();
     renderingInfo.stencilAttachmentFormat = vk::Format::eUndefined;
+    renderingInfo.viewMask                = builder.getVievMask();
 
     m_layout = pipelineLayout.value();
 

@@ -43,9 +43,13 @@ void LogicalDevice::createLogicalDevice() {
     deviceFeatures.samplerAnisotropy = vk::True;
     deviceFeatures.sampleRateShading = vk::True;
 
+    vk::PhysicalDeviceVulkan11Features featuresV11;
+    featuresV11.multiview = vk::True;
+
     vk::PhysicalDeviceVulkan12Features featuresV12;
     featuresV12.sType               = vk::StructureType::ePhysicalDeviceVulkan12Features;
     featuresV12.bufferDeviceAddress = vk::True;
+    featuresV12.pNext               = &featuresV11;
 
     vk::PhysicalDeviceVulkan13Features featuresV13;
     featuresV13.pNext            = &featuresV12;

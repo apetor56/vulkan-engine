@@ -5,6 +5,7 @@
 #include <stb_image.h>
 
 #include <glm/gtc/matrix_transform.hpp>
+#include <glm/gtc/packing.hpp>
 
 #include <spdlog/spdlog.h>
 
@@ -37,7 +38,10 @@ Engine::Engine()
       m_camera{ std::make_shared< ve::Camera >() },
       m_skyboxDescriptorSetLayout{ m_logicalDevice },
       m_skyboxVertexShader{ cfg::directory::shaderBinaries / "Skybox.vert.spv", m_logicalDevice },
-      m_skyboxFragmentShader{ cfg::directory::shaderBinaries / "Skybox.frag.spv", m_logicalDevice } {
+      m_skyboxFragmentShader{ cfg::directory::shaderBinaries / "Skybox.frag.spv", m_logicalDevice },
+      m_hdrDescriptorSetLayout{ m_logicalDevice },
+      m_hdrVertexShader{ cfg::directory::shaderBinaries / "HDR.vert.spv", m_logicalDevice },
+      m_hdrFragmentShader{ cfg::directory::shaderBinaries / "HDR.frag.spv", m_logicalDevice } {
     init();
 }
 
@@ -52,6 +56,8 @@ void Engine::init() {
     configureDescriptorSets();
     initDefaultData();
     loadMeshes();
+    loadHDRI();
+    renderHDRSkybox();
     createSkybox();
 }
 
@@ -180,6 +186,13 @@ void Engine::drawSkybox( const ve::GraphicsCommandBuffer currentCommandBuffer,
     currentCommandBuffer.bindPipeline( m_skyboxPipeline->get() );
     currentCommandBuffer.bindDescriptorSet( m_skyboxPipelineLayout->get(), currentGlobalSet, 0U );
     currentCommandBuffer.bindDescriptorSet( m_skyboxPipelineLayout->get(), m_skyboxDescriptorSet, 1U );
+    currentCommandBuffer.drawVertices( 0U, 36U );
+}
+
+void Engine::drawHDRI( const ve::GraphicsCommandBuffer currentCommandBuffer,
+                       const vk::DescriptorSet currentGlobalSet ) {
+    currentCommandBuffer.bindPipeline( m_hdrPipeline->get() );
+    currentCommandBuffer.bindDescriptorSet( m_hdrPipelineLayout->get(), m_hdrDescriptorSet, 0U );
     currentCommandBuffer.drawVertices( 0U, 36U );
 }
 
@@ -344,7 +357,7 @@ void Engine::createDefaultTextureSampler() {
 }
 
 void Engine::loadMeshes() {
-    const auto sponza{ m_loader.load( cfg::directory::assets / "sponza/Sponza.gltf" ) };
+    const auto sponza{ m_loader.load( cfg::directory::assets / "spheres/MetalRoughSpheres.gltf" ) };
     if ( sponza.has_value() )
         m_scene.emplace( "sponza", sponza.value() );
 }
@@ -536,47 +549,47 @@ void Engine::generateMipmaps( const ve::Image& image, const int32_t texWidth, co
 }
 
 void Engine::prepareSkyboxTexture() {
-    std::array< std::string, 6U > skyboxTexturesNames;
-    std::array< stbi_uc *, 6U > skyboxTextureData;
+    // std::array< std::string, 6U > skyboxTexturesNames;
+    // std::array< stbi_uc *, 6U > skyboxTextureData;
 
-    skyboxTexturesNames.at( 0 ) = ( cfg::directory::assets / "skybox/right.jpg" ).string();
-    skyboxTexturesNames.at( 1 ) = ( cfg::directory::assets / "skybox/left.jpg" ).string();
-    skyboxTexturesNames.at( 2 ) = ( cfg::directory::assets / "skybox/top.jpg" ).string();
-    skyboxTexturesNames.at( 3 ) = ( cfg::directory::assets / "skybox/bottom.jpg" ).string();
-    skyboxTexturesNames.at( 4 ) = ( cfg::directory::assets / "skybox/front.jpg" ).string();
-    skyboxTexturesNames.at( 5 ) = ( cfg::directory::assets / "skybox/back.jpg" ).string();
+    // skyboxTexturesNames.at( 0 ) = ( cfg::directory::assets / "skybox/right.jpg" ).string();
+    // skyboxTexturesNames.at( 1 ) = ( cfg::directory::assets / "skybox/left.jpg" ).string();
+    // skyboxTexturesNames.at( 2 ) = ( cfg::directory::assets / "skybox/top.jpg" ).string();
+    // skyboxTexturesNames.at( 3 ) = ( cfg::directory::assets / "skybox/bottom.jpg" ).string();
+    // skyboxTexturesNames.at( 4 ) = ( cfg::directory::assets / "skybox/front.jpg" ).string();
+    // skyboxTexturesNames.at( 5 ) = ( cfg::directory::assets / "skybox/back.jpg" ).string();
 
-    int width{}, height{}, nrChannels{};
-    for ( size_t textureID{ 0U }; textureID < 6U; textureID++ ) {
-        skyboxTextureData.at( textureID ) =
-            stbi_load( skyboxTexturesNames.at( textureID ).data(), &width, &height, &nrChannels, STBI_rgb_alpha );
-    }
+    // int width{}, height{}, nrChannels{};
+    // for ( size_t textureID{ 0U }; textureID < 6U; textureID++ ) {
+    //     skyboxTextureData.at( textureID ) =
+    //         stbi_load( skyboxTexturesNames.at( textureID ).data(), &width, &height, &nrChannels, STBI_rgb_alpha );
+    // }
 
-    const vk::DeviceSize layerSize{ static_cast< vk::DeviceSize >( width ) * height * 4 };
-    const vk::DeviceSize imageSize{ 6U * layerSize };
-    ve::StagingBuffer stagingBuffer{ m_memoryAllocator, imageSize };
+    // const vk::DeviceSize layerSize{ static_cast< vk::DeviceSize >( width ) * height * 4 };
+    // const vk::DeviceSize imageSize{ 6U * layerSize };
+    // ve::StagingBuffer stagingBuffer{ m_memoryAllocator, imageSize };
 
-    for ( size_t textureID{ 0U }; textureID < 6U; textureID++ ) {
-        const vk::DeviceSize memoryAddress{ reinterpret_cast< vk::DeviceSize >( stagingBuffer.getMappedMemory() ) +
-                                            layerSize * textureID };
-        memcpy( reinterpret_cast< void * >( memoryAddress ), skyboxTextureData.at( textureID ),
-                static_cast< size_t >( layerSize ) );
-    }
+    // for ( size_t textureID{ 0U }; textureID < 6U; textureID++ ) {
+    //     const vk::DeviceSize memoryAddress{ reinterpret_cast< vk::DeviceSize >( stagingBuffer.getMappedMemory() ) +
+    //                                         layerSize * textureID };
+    //     memcpy( reinterpret_cast< void * >( memoryAddress ), skyboxTextureData.at( textureID ),
+    //             static_cast< size_t >( layerSize ) );
+    // }
 
-    const vk::Extent2D imageExtent{ static_cast< uint32_t >( width ), static_cast< uint32_t >( height ) };
-    m_skyboxImage.emplace( m_memoryAllocator, m_logicalDevice, imageExtent, vk::Format::eR8G8B8A8Srgb,
-                           vk::ImageUsageFlagBits::eTransferDst | vk::ImageUsageFlagBits::eSampled,
-                           vk::ImageAspectFlagBits::eColor, 1U, vk::SampleCountFlagBits::e1, 6U,
-                           vk::ImageViewType::eCube );
+    // const vk::Extent2D imageExtent{ static_cast< uint32_t >( width ), static_cast< uint32_t >( height ) };
+    // m_skyboxImage.emplace( m_memoryAllocator, m_logicalDevice, imageExtent, vk::Format::eR8G8B8A8Srgb,
+    //                        vk::ImageUsageFlagBits::eTransferDst | vk::ImageUsageFlagBits::eSampled,
+    //                        vk::ImageAspectFlagBits::eColor, 1U, vk::SampleCountFlagBits::e1, 6U,
+    //                        vk::ImageViewType::eCube );
 
-    immediateSubmit( [ this, &stagingBuffer, imageSize ]( ve::GraphicsCommandBuffer cmd ) {
-        cmd.transitionImageLayout( m_skyboxImage->get(), m_skyboxImage->getFormat(), vk::ImageLayout::eUndefined,
-                                   vk::ImageLayout::eTransferDstOptimal, 1U, 6U );
-        cmd.copyBufferToImage( stagingBuffer.get(), m_skyboxImage->get(), m_skyboxImage->getExtent(), 6U );
-        cmd.transitionImageLayout( m_skyboxImage->get(), m_skyboxImage->getFormat(),
-                                   vk::ImageLayout::eTransferDstOptimal, vk::ImageLayout::eShaderReadOnlyOptimal, 1U,
-                                   6U );
-    } );
+    // immediateSubmit( [ this, &stagingBuffer, imageSize ]( ve::GraphicsCommandBuffer cmd ) {
+    //     cmd.transitionImageLayout( m_skyboxImage->get(), m_skyboxImage->getFormat(), vk::ImageLayout::eUndefined,
+    //                                vk::ImageLayout::eTransferDstOptimal, 1U, 6U );
+    //     cmd.copyBufferToImage( stagingBuffer.get(), m_skyboxImage->get(), m_skyboxImage->getExtent(), 6U );
+    //     cmd.transitionImageLayout( m_skyboxImage->get(), m_skyboxImage->getFormat(),
+    //                                vk::ImageLayout::eTransferDstOptimal, vk::ImageLayout::eShaderReadOnlyOptimal, 1U,
+    //                                6U );
+    // } );
 
     vk::SamplerCreateInfo info{};
     info.magFilter        = vk::Filter::eLinear;
@@ -619,9 +632,203 @@ void Engine::createSkybox() {
 
     m_skyboxDescriptorSet = m_globalDescriptorAllocator.allocate( m_skyboxDescriptorSetLayout );
     m_descriptorWriter.clear();
-    m_descriptorWriter.writeImage( 0U, m_skyboxImage->getImageView(), vk::ImageLayout::eShaderReadOnlyOptimal,
+    m_descriptorWriter.writeImage( 0U, m_hdrSkybox->getImageView(), vk::ImageLayout::eShaderReadOnlyOptimal,
                                    m_skyboxSampler.value().get(), vk::DescriptorType::eCombinedImageSampler );
     m_descriptorWriter.updateSet( m_skyboxDescriptorSet );
+}
+
+void Engine::loadHDRI() {
+    int width{};
+    int height{};
+    int nrComponents{};
+    stbi_set_flip_vertically_on_load( true );
+    float *hdrData = stbi_loadf( ( cfg::directory::assets / "hdr/newport_loft.hdr" ).string().c_str(), &width, &height,
+                                 &nrComponents, 0 );
+
+    if ( hdrData ) {
+        static constexpr int fixedComponents = 4;
+        std::vector< uint16_t > rgbaData( width * height * fixedComponents );
+        for ( int i = 0; i < width * height; i++ ) {
+            rgbaData[ i * fixedComponents ]     = glm::packHalf1x16( hdrData[ nrComponents * i ] );     // r
+            rgbaData[ i * fixedComponents + 1 ] = glm::packHalf1x16( hdrData[ nrComponents * i + 1 ] ); // g
+            rgbaData[ i * fixedComponents + 2 ] = glm::packHalf1x16( hdrData[ nrComponents * i + 2 ] ); // b
+            rgbaData[ i * fixedComponents + 3 ] = static_cast< uint16_t >( 1 );                         // b
+        }
+
+        const vk::Extent2D imageExtent{ static_cast< uint32_t >( width ), static_cast< uint32_t >( height ) };
+        m_hdrImage.emplace( m_memoryAllocator, m_logicalDevice, imageExtent, vk::Format::eR16G16B16A16Sfloat,
+                            vk::ImageUsageFlagBits::eTransferDst | vk::ImageUsageFlagBits::eSampled,
+                            vk::ImageAspectFlagBits::eColor, 1U, vk::SampleCountFlagBits::e1, 1U,
+                            vk::ImageViewType::e2D );
+
+        const vk::DeviceSize layerSize{ static_cast< vk::DeviceSize >( width ) * height * fixedComponents *
+                                        sizeof( uint16_t ) };
+        ve::StagingBuffer stagingBuffer{ m_memoryAllocator, layerSize };
+
+        const vk::DeviceSize memoryAddress{ reinterpret_cast< vk::DeviceSize >( stagingBuffer.getMappedMemory() ) };
+        memcpy( reinterpret_cast< void * >( memoryAddress ), std::data( rgbaData ),
+                static_cast< size_t >( layerSize ) );
+
+        immediateSubmit( [ this, &stagingBuffer, layerSize ]( ve::GraphicsCommandBuffer cmd ) {
+            cmd.transitionImageLayout( m_hdrImage->get(), m_hdrImage->getFormat(), vk::ImageLayout::eUndefined,
+                                       vk::ImageLayout::eTransferDstOptimal, 1U, 1U );
+            cmd.copyBufferToImage( stagingBuffer.get(), m_hdrImage->get(), m_hdrImage->getExtent(), 1U );
+            cmd.transitionImageLayout( m_hdrImage->get(), m_hdrImage->getFormat(), vk::ImageLayout::eTransferDstOptimal,
+                                       vk::ImageLayout::eShaderReadOnlyOptimal, 1U, 1U );
+        } );
+
+        vk::SamplerCreateInfo info{};
+        info.magFilter        = vk::Filter::eLinear;
+        info.minFilter        = vk::Filter::eLinear;
+        info.addressModeU     = vk::SamplerAddressMode::eClampToEdge;
+        info.addressModeV     = vk::SamplerAddressMode::eClampToEdge;
+        info.compareOp        = vk::CompareOp::eNever;
+        info.mipLodBias       = 0.0f;
+        info.mipmapMode       = vk::SamplerMipmapMode::eLinear;
+        info.minLod           = 0.0f;
+        info.maxLod           = 1.0f;
+        info.maxAnisotropy    = 4.0f;
+        info.anisotropyEnable = vk::True;
+        info.borderColor      = vk::BorderColor::eFloatOpaqueWhite;
+
+        m_hdrSampler.emplace( m_logicalDevice, info );
+
+        stbi_image_free( hdrData );
+    } else {
+        spdlog::warn( "failed to load hdri" );
+    }
+
+    m_hdrUniformBuf.emplace( m_memoryAllocator, sizeof( glm::mat4 ) * 7 );
+    glm::mat4 captureProjection = glm::perspectiveLH( glm::radians( 90.0f ), 1.0f, 0.1f, 10.0f );
+    glm::mat4 captureViews[]    = {
+        glm::lookAt( glm::vec3( 0.0f, 0.0f, 0.0f ), glm::vec3( -1.0f, 0.0f, 0.0f ), glm::vec3( 0.0f, -1.0f, 0.0f ) ),
+        glm::lookAt( glm::vec3( 0.0f, 0.0f, 0.0f ), glm::vec3( 1.0f, 0.0f, 0.0f ), glm::vec3( 0.0f, -1.0f, 0.0f ) ),
+        glm::lookAt( glm::vec3( 0.0f, 0.0f, 0.0f ), glm::vec3( 0.0f, -1.0f, 0.0f ), glm::vec3( 0.0f, 0.0f, -1.0f ) ),
+        glm::lookAt( glm::vec3( 0.0f, 0.0f, 0.0f ), glm::vec3( 0.0f, 1.0f, 0.0f ), glm::vec3( 0.0f, 0.0f, 1.0f ) ),
+        glm::lookAt( glm::vec3( 0.0f, 0.0f, 0.0f ), glm::vec3( 0.0f, 0.0f, 1.0f ), glm::vec3( 0.0f, -1.0f, 0.0f ) ),
+        glm::lookAt( glm::vec3( 0.0f, 0.0f, 0.0f ), glm::vec3( 0.0f, 0.0f, -1.0f ), glm::vec3( 0.0f, -1.0f, 0.0f ) ) };
+
+    ve::StagingBuffer st{ m_memoryAllocator, m_hdrUniformBuf->size() };
+    memcpy( st.getMappedMemory(), &captureProjection, sizeof( glm::mat4 ) );
+    memcpy( static_cast< std::byte * >( st.getMappedMemory() ) + sizeof( glm::mat4 ), &captureViews,
+            sizeof( captureViews ) );
+
+    auto logicalDeviceVk{ m_logicalDevice.get() };
+    auto commandBufferVk{ m_transferCommandBuffer.get() };
+    logicalDeviceVk.resetFences( m_immediateSubmitFence.get() );
+    m_transferCommandBuffer.reset();
+
+    m_transferCommandBuffer.begin();
+
+    m_transferCommandBuffer.copyBuffer( 0, 0, m_hdrUniformBuf->size(), st.get(), m_hdrUniformBuf->get() );
+
+    m_transferCommandBuffer.end();
+
+    vk::SubmitInfo submitInfo{};
+    submitInfo.sType              = vk::StructureType::eSubmitInfo;
+    submitInfo.commandBufferCount = 1U;
+    submitInfo.pCommandBuffers    = &commandBufferVk;
+
+    const auto transferQueue{ m_logicalDevice.getQueue( ve::QueueType::eTransfer ) };
+    transferQueue.submit( submitInfo, m_immediateSubmitFence.get() );
+    [[maybe_unused]] const auto result{
+        logicalDeviceVk.waitForFences( m_immediateSubmitFence.get(), g_waitForAllFences, g_timeoutOff ) };
+
+    m_hdrDescriptorSetLayout.addBinding( 0U, vk::DescriptorType::eUniformBuffer, vk::ShaderStageFlagBits::eVertex );
+    m_hdrDescriptorSetLayout.addBinding( 1U, vk::DescriptorType::eCombinedImageSampler,
+                                         vk::ShaderStageFlagBits::eFragment );
+    m_hdrDescriptorSetLayout.create();
+
+    const std::array< vk::DescriptorSetLayout, 1U > layoutsVk{ m_hdrDescriptorSetLayout.get() };
+    vk::PipelineLayoutCreateInfo hdrLayoutInfo;
+    hdrLayoutInfo.pSetLayouts            = std::data( layoutsVk );
+    hdrLayoutInfo.setLayoutCount         = std::size( layoutsVk );
+    hdrLayoutInfo.pPushConstantRanges    = nullptr;
+    hdrLayoutInfo.pushConstantRangeCount = 0U;
+
+    m_hdrPipelineLayout.emplace( m_logicalDevice, hdrLayoutInfo );
+
+    ve::PipelineBuilder builder{ m_logicalDevice };
+
+    builder.setLayout( m_hdrPipelineLayout.value() );
+    builder.setShaders( m_hdrVertexShader, m_hdrFragmentShader );
+    builder.setCullingMode( vk::CullModeFlagBits::eFront );
+    builder.setColorFormat( m_hdrImage->getFormat() );
+    builder.setSamplesCount( vk::SampleCountFlagBits::e1 );
+    builder.setViewMask( 0b111111 );
+    m_hdrPipeline.emplace( builder );
+
+    m_hdrDescriptorSet = m_globalDescriptorAllocator.allocate( m_hdrDescriptorSetLayout );
+    m_descriptorWriter.clear();
+    m_descriptorWriter.writeBuffer( 0U, m_hdrUniformBuf->get(), 7 * sizeof( glm::mat4 ), 0,
+                                    vk::DescriptorType::eUniformBuffer );
+    m_descriptorWriter.writeImage( 1U, m_hdrImage->getImageView(), vk::ImageLayout::eShaderReadOnlyOptimal,
+                                   m_hdrSampler.value().get(), vk::DescriptorType::eCombinedImageSampler );
+    m_descriptorWriter.updateSet( m_hdrDescriptorSet );
+}
+
+void Engine::renderHDRSkybox() {
+    m_hdrSkybox.emplace(
+        m_memoryAllocator, m_logicalDevice, vk::Extent2D{ 512u, 512u }, vk::Format::eR16G16B16A16Sfloat,
+        vk::ImageUsageFlagBits::eSampled | vk::ImageUsageFlagBits::eColorAttachment, vk::ImageAspectFlagBits::eColor,
+        1U, vk::SampleCountFlagBits::e1, 6U, vk::ImageViewType::eCube );
+
+    auto cmd = m_graphicsCommandPool.createCommandBuffers();
+    cmd.begin();
+
+    cmd.setScissor( vk::Rect2D{ vk::Offset2D{ 0, 0 }, vk::Extent2D{ 512u, 512u } } );
+    cmd.setViewport( vk::Viewport{ 0, 0, 512, 512, 0, 0 } );
+
+    cmd.transitionImageLayout( m_hdrSkybox->get(), m_hdrSkybox->getFormat(), vk::ImageLayout::eUndefined,
+                               vk::ImageLayout::eColorAttachmentOptimal, 1, 6 );
+
+    vk::RenderingAttachmentInfoKHR colorAttachment{};
+    colorAttachment.pNext              = nullptr;
+    colorAttachment.imageView          = m_hdrSkybox->getImageView();
+    colorAttachment.imageLayout        = vk::ImageLayout::eColorAttachmentOptimal;
+    colorAttachment.resolveImageView   = nullptr;
+    colorAttachment.resolveImageLayout = vk::ImageLayout::eColorAttachmentOptimal;
+    colorAttachment.resolveMode        = vk::ResolveModeFlagBits::eNone;
+    colorAttachment.loadOp             = vk::AttachmentLoadOp::eClear;
+    colorAttachment.storeOp            = vk::AttachmentStoreOp::eStore;
+    colorAttachment.clearValue         = vk::ClearValue{};
+
+    static constexpr vk::Offset2D defaultOffset{ 0, 0 };
+    vk::RenderingInfoKHR renderingInfo{};
+    renderingInfo.viewMask             = 0b111111;
+    renderingInfo.layerCount           = 6U;
+    renderingInfo.colorAttachmentCount = 1U;
+    renderingInfo.renderArea           = vk::Rect2D{ defaultOffset, vk::Extent2D{ 512u, 512u } };
+    renderingInfo.pColorAttachments    = &colorAttachment;
+
+    cmd.get().beginRendering( renderingInfo );
+
+    auto set = m_globalDescriptorAllocator.allocate( m_descriptorSetLayout );
+    drawHDRI( cmd, set );
+
+    cmd.endRendering();
+
+    cmd.transitionImageLayout( m_hdrSkybox->get(), m_hdrSkybox->getFormat(), vk::ImageLayout::eColorAttachmentOptimal,
+                               vk::ImageLayout::eShaderReadOnlyOptimal, 1, 6 );
+
+    cmd.end();
+
+    auto cmdVk = cmd.get();
+
+    static constexpr vk::PipelineStageFlags waitStage{ vk::PipelineStageFlagBits::eColorAttachmentOutput };
+    vk::SubmitInfo submitInfo{};
+    submitInfo.sType                = vk::StructureType::eSubmitInfo;
+    submitInfo.waitSemaphoreCount   = 0U;
+    submitInfo.pWaitSemaphores      = nullptr;
+    submitInfo.pWaitDstStageMask    = &waitStage;
+    submitInfo.commandBufferCount   = 1U;
+    submitInfo.pCommandBuffers      = &cmdVk;
+    submitInfo.signalSemaphoreCount = 0U;
+    submitInfo.pSignalSemaphores    = nullptr;
+
+    const auto graphicsQueue{ m_logicalDevice.getQueue( ve::QueueType::eGraphics ) };
+    graphicsQueue.submit( submitInfo, nullptr );
+    graphicsQueue.waitIdle();
 }
 
 } // namespace ve

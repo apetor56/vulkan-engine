@@ -128,7 +128,7 @@ vk::PresentModeKHR
     Swapchain::choosePresentationMode( const std::vector< vk::PresentModeKHR >& availablePresentModes ) const noexcept {
     const auto bestPresentationModeIt{
         std::ranges::find_if( availablePresentModes, []( const auto availablePresentMode ) {
-            return availablePresentMode == vk::PresentModeKHR::eMailbox;
+            return availablePresentMode == vk::PresentModeKHR::eFifo;
         } ) };
     if ( bestPresentationModeIt != std::end( availablePresentModes ) )
         return *bestPresentationModeIt;

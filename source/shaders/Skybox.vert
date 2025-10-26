@@ -1,5 +1,4 @@
-#version 430 core
-
+#version 450
 #extension GL_GOOGLE_include_directive : require
 
 #include "Structures.glsl"

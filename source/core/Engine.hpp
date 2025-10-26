@@ -103,6 +103,17 @@ private:
     std::optional< ve::Image > m_skyboxImage;
     std::optional< ve::Sampler > m_skyboxSampler;
 
+    std::optional< ve::Pipeline > m_hdrPipeline;
+    std::optional< ve::PipelineLayout > m_hdrPipelineLayout;
+    ve::DescriptorSetLayout m_hdrDescriptorSetLayout;
+    vk::DescriptorSet m_hdrDescriptorSet;
+    ve::ShaderModule m_hdrVertexShader;
+    ve::ShaderModule m_hdrFragmentShader;
+    std::optional< ve::Image > m_hdrImage;
+    std::optional< ve::Sampler > m_hdrSampler;
+    std::optional< ve::Image > m_hdrSkybox;
+    std::optional< ve::UniformBufferGPU > m_hdrUniformBuf;
+
     void createColorResources();
     void createDepthBuffer();
     void preparePipelines();
@@ -117,6 +128,7 @@ private:
                           const uint32_t mipLevels );
     void prepareSkyboxTexture();
     void createSkybox();
+    void loadHDRI();
 
     void updateScene( float deltaTime );
     std::optional< uint32_t > acquireNextImage();
@@ -125,6 +137,8 @@ private:
 
     void drawScene( const ve::GraphicsCommandBuffer currentCommandBuffer, const vk::DescriptorSet currentGlobalSet );
     void drawSkybox( const ve::GraphicsCommandBuffer currentCommandBuffer, const vk::DescriptorSet currentGlobalSet );
+    void drawHDRI( const ve::GraphicsCommandBuffer currentCommandBuffer, const vk::DescriptorSet currentGlobalSet );
+    void renderHDRSkybox();
 
     void handleWindowResising();
     void immediateSubmit( const std::function< void( GraphicsCommandBuffer command ) >& function );

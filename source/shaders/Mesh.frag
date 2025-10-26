@@ -60,7 +60,8 @@ void main() {
     float roughness = texture( metallicRoughnessMap, inTexCoords ).g * materialData.metallicRoughnessFactors.y;
     vec3 albedo     = texture( albedoMap, inTexCoords ).rgb;
 
-    vec3 normal        = getNormalFromMap();
+    //vec3 normal        = getNormalFromMap();
+    vec3 normal        = normalize( inNormal );
     vec3 viewDirection = normalize( sceneData.cameraPosition - inWorldPos );
 
     vec3 baseReflectivity = vec3( 0.04 );

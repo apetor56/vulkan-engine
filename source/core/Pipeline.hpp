@@ -56,6 +56,7 @@ public:
     void setColorFormat( const vk::Format colorFormat );
     void setDepthFormat( const vk::Format depthFormat );
     void setCullingMode( const vk::CullModeFlags cullingMode );
+    void setViewMask( const uint32_t viewMask ) { m_viewMask = viewMask; }
 
     [[nodiscard]] ve::Pipeline build();
 
@@ -76,6 +77,7 @@ public:
     const vk::Format getColorFormat() const noexcept { return m_colorFormat; }
     const vk::Format getDepthFormat() const noexcept { return m_depthFormat; }
     const ve::LogicalDevice& getLogicalDevice() const noexcept { return m_logicalDevice; }
+    const auto getVievMask() const noexcept { return m_viewMask; }
 
 private:
     const ve::LogicalDevice& m_logicalDevice;
@@ -92,6 +94,7 @@ private:
     std::optional< vk::PipelineLayout > m_pipelineLayout{};
     vk::Format m_colorFormat{ vk::Format::eR8G8B8A8Srgb };
     vk::Format m_depthFormat{ vk::Format::eD32Sfloat };
+    uint32_t m_viewMask{};
 
     void addShaderStage( const vk::ShaderStageFlagBits shaderType, const ve::ShaderModule& shaderModule );
     vk::PipelineDynamicStateCreateInfo defaultDynamicStatesInfo() const noexcept;
