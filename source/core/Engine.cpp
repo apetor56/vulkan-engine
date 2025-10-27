@@ -41,7 +41,9 @@ Engine::Engine()
       m_skyboxFragmentShader{ cfg::directory::shaderBinaries / "Skybox.frag.spv", m_logicalDevice },
       m_hdrDescriptorSetLayout{ m_logicalDevice },
       m_hdrVertexShader{ cfg::directory::shaderBinaries / "HDR.vert.spv", m_logicalDevice },
-      m_hdrFragmentShader{ cfg::directory::shaderBinaries / "HDR.frag.spv", m_logicalDevice } {
+      m_hdrFragmentShader{ cfg::directory::shaderBinaries / "HDR.frag.spv", m_logicalDevice },
+      m_convultionDescriptorSetLayout{ m_logicalDevice },
+      m_convultionFragmentShader{ cfg::directory::shaderBinaries / "Convultion.frag.spv", m_logicalDevice } {
     init();
 }
 
@@ -58,6 +60,7 @@ void Engine::init() {
     loadMeshes();
     loadHDRI();
     renderHDRSkybox();
+    convulteCubemap();
     createSkybox();
 }
 
@@ -632,7 +635,7 @@ void Engine::createSkybox() {
 
     m_skyboxDescriptorSet = m_globalDescriptorAllocator.allocate( m_skyboxDescriptorSetLayout );
     m_descriptorWriter.clear();
-    m_descriptorWriter.writeImage( 0U, m_hdrSkybox->getImageView(), vk::ImageLayout::eShaderReadOnlyOptimal,
+    m_descriptorWriter.writeImage( 0U, m_convultionImage->getImageView(), vk::ImageLayout::eShaderReadOnlyOptimal,
                                    m_skyboxSampler.value().get(), vk::DescriptorType::eCombinedImageSampler );
     m_descriptorWriter.updateSet( m_skyboxDescriptorSet );
 }
@@ -682,6 +685,7 @@ void Engine::loadHDRI() {
         info.minFilter        = vk::Filter::eLinear;
         info.addressModeU     = vk::SamplerAddressMode::eClampToEdge;
         info.addressModeV     = vk::SamplerAddressMode::eClampToEdge;
+        info.addressModeW     = vk::SamplerAddressMode::eClampToEdge;
         info.compareOp        = vk::CompareOp::eNever;
         info.mipLodBias       = 0.0f;
         info.mipmapMode       = vk::SamplerMipmapMode::eLinear;
@@ -829,6 +833,134 @@ void Engine::renderHDRSkybox() {
     const auto graphicsQueue{ m_logicalDevice.getQueue( ve::QueueType::eGraphics ) };
     graphicsQueue.submit( submitInfo, nullptr );
     graphicsQueue.waitIdle();
+}
+
+void Engine::convulteCubemap() {
+    // m_convultionDescriptorSetLayout.addBinding( 0U, vk::DescriptorType::eUniformBuffer,
+    //                                             vk::ShaderStageFlagBits::eVertex );
+    // m_convultionDescriptorSetLayout.addBinding( 1U, vk::DescriptorType::eCombinedImageSampler,
+    //                                             vk::ShaderStageFlagBits::eFragment );
+    // m_convultionDescriptorSetLayout.create();
+
+    // const std::array< vk::DescriptorSetLayout, 1U > layoutsVk{ m_convultionDescriptorSetLayout.get() };
+    // vk::PipelineLayoutCreateInfo convultionLayoutInfo;
+    // convultionLayoutInfo.pSetLayouts            = std::data( layoutsVk );
+    // convultionLayoutInfo.setLayoutCount         = std::size( layoutsVk );
+    // convultionLayoutInfo.pPushConstantRanges    = nullptr;
+    // convultionLayoutInfo.pushConstantRangeCount = 0U;
+    // m_convultionPipelineLayout.emplace( m_logicalDevice, convultionLayoutInfo );
+
+    // m_convultionDescriptorSet = m_globalDescriptorAllocator.allocate( m_convultionDescriptorSetLayout );
+    // m_descriptorWriter.clear();
+    // m_descriptorWriter.writeBuffer( 0U, m_hdrUniformBuf->get(), 7 * sizeof( glm::mat4 ), 0,
+    //                                 vk::DescriptorType::eUniformBuffer );
+    // m_descriptorWriter.writeImage( 1U, m_hdrImage->getImageView(), vk::ImageLayout::eShaderReadOnlyOptimal,
+    //                                m_hdrSampler.value().get(), vk::DescriptorType::eCombinedImageSampler );
+    // m_descriptorWriter.updateSet( m_hdrDescriptorSet );
+
+    m_descriptorWriter.clear();
+    m_descriptorWriter.writeBuffer( 0U, m_hdrUniformBuf->get(), 7 * sizeof( glm::mat4 ), 0,
+                                    vk::DescriptorType::eUniformBuffer );
+    m_descriptorWriter.writeImage( 1U, m_hdrSkybox->getImageView(), vk::ImageLayout::eShaderReadOnlyOptimal,
+                                   m_hdrSampler.value().get(), vk::DescriptorType::eCombinedImageSampler );
+    m_descriptorWriter.updateSet( m_hdrDescriptorSet );
+
+    ve::PipelineBuilder builder{ m_logicalDevice };
+
+    builder.setLayout( m_hdrPipelineLayout.value() );
+    builder.setShaders( m_hdrVertexShader, m_convultionFragmentShader );
+    builder.setCullingMode( vk::CullModeFlagBits::eFront );
+    builder.setColorFormat( m_hdrImage->getFormat() );
+    builder.setSamplesCount( vk::SampleCountFlagBits::e1 );
+    builder.setViewMask( 0b111111 );
+    m_convultionPipeline.emplace( builder );
+
+    m_convultionImage.emplace(
+        m_memoryAllocator, m_logicalDevice, vk::Extent2D{ 32u, 32u }, vk::Format::eR16G16B16A16Sfloat,
+        vk::ImageUsageFlagBits::eSampled | vk::ImageUsageFlagBits::eColorAttachment, vk::ImageAspectFlagBits::eColor,
+        1U, vk::SampleCountFlagBits::e1, 6U, vk::ImageViewType::eCube );
+
+    vk::SamplerCreateInfo info{};
+    info.magFilter        = vk::Filter::eLinear;
+    info.minFilter        = vk::Filter::eLinear;
+    info.addressModeU     = vk::SamplerAddressMode::eClampToEdge;
+    info.addressModeV     = vk::SamplerAddressMode::eClampToEdge;
+    info.addressModeW     = vk::SamplerAddressMode::eClampToEdge;
+    info.compareOp        = vk::CompareOp::eNever;
+    info.mipLodBias       = 0.0f;
+    info.mipmapMode       = vk::SamplerMipmapMode::eLinear;
+    info.minLod           = 0.0f;
+    info.maxLod           = 1.0f;
+    info.maxAnisotropy    = 4.0f;
+    info.anisotropyEnable = vk::True;
+    info.borderColor      = vk::BorderColor::eFloatOpaqueWhite;
+
+    m_convultionSampler.emplace( m_logicalDevice, info );
+
+    auto cmd = m_graphicsCommandPool.createCommandBuffers();
+    cmd.begin();
+
+    cmd.setScissor( vk::Rect2D{ vk::Offset2D{ 0, 0 }, vk::Extent2D{ 32u, 32u } } );
+    cmd.setViewport( vk::Viewport{ 0, 0, 32, 32, 0, 0 } );
+
+    cmd.transitionImageLayout( m_convultionImage->get(), m_convultionImage->getFormat(), vk::ImageLayout::eUndefined,
+                               vk::ImageLayout::eColorAttachmentOptimal, 1, 6 );
+
+    vk::RenderingAttachmentInfoKHR colorAttachment{};
+    colorAttachment.pNext              = nullptr;
+    colorAttachment.imageView          = m_convultionImage->getImageView();
+    colorAttachment.imageLayout        = vk::ImageLayout::eColorAttachmentOptimal;
+    colorAttachment.resolveImageView   = nullptr;
+    colorAttachment.resolveImageLayout = vk::ImageLayout::eColorAttachmentOptimal;
+    colorAttachment.resolveMode        = vk::ResolveModeFlagBits::eNone;
+    colorAttachment.loadOp             = vk::AttachmentLoadOp::eClear;
+    colorAttachment.storeOp            = vk::AttachmentStoreOp::eStore;
+    colorAttachment.clearValue         = vk::ClearValue{};
+
+    static constexpr vk::Offset2D defaultOffset{ 0, 0 };
+    vk::RenderingInfoKHR renderingInfo{};
+    renderingInfo.viewMask             = 0b111111;
+    renderingInfo.layerCount           = 6U;
+    renderingInfo.colorAttachmentCount = 1U;
+    renderingInfo.renderArea           = vk::Rect2D{ defaultOffset, vk::Extent2D{ 32u, 32u } };
+    renderingInfo.pColorAttachments    = &colorAttachment;
+
+    cmd.get().beginRendering( renderingInfo );
+
+    auto set = m_globalDescriptorAllocator.allocate( m_descriptorSetLayout );
+    renderConvultion( cmd, set );
+
+    cmd.endRendering();
+
+    cmd.transitionImageLayout( m_convultionImage->get(), m_convultionImage->getFormat(),
+                               vk::ImageLayout::eColorAttachmentOptimal, vk::ImageLayout::eShaderReadOnlyOptimal, 1,
+                               6 );
+
+    cmd.end();
+
+    auto cmdVk = cmd.get();
+
+    static constexpr vk::PipelineStageFlags waitStage{ vk::PipelineStageFlagBits::eColorAttachmentOutput };
+    vk::SubmitInfo submitInfo{};
+    submitInfo.sType                = vk::StructureType::eSubmitInfo;
+    submitInfo.waitSemaphoreCount   = 0U;
+    submitInfo.pWaitSemaphores      = nullptr;
+    submitInfo.pWaitDstStageMask    = &waitStage;
+    submitInfo.commandBufferCount   = 1U;
+    submitInfo.pCommandBuffers      = &cmdVk;
+    submitInfo.signalSemaphoreCount = 0U;
+    submitInfo.pSignalSemaphores    = nullptr;
+
+    const auto graphicsQueue{ m_logicalDevice.getQueue( ve::QueueType::eGraphics ) };
+    graphicsQueue.submit( submitInfo, nullptr );
+    graphicsQueue.waitIdle();
+}
+
+void Engine::renderConvultion( const ve::GraphicsCommandBuffer currentCommandBuffer,
+                               const vk::DescriptorSet currentGlobalSet ) {
+    currentCommandBuffer.bindPipeline( m_convultionPipeline->get() );
+    currentCommandBuffer.bindDescriptorSet( m_hdrPipelineLayout->get(), m_hdrDescriptorSet, 0U );
+    currentCommandBuffer.drawVertices( 0U, 36U );
 }
 
 } // namespace ve

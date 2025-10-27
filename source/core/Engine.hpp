@@ -114,6 +114,14 @@ private:
     std::optional< ve::Image > m_hdrSkybox;
     std::optional< ve::UniformBufferGPU > m_hdrUniformBuf;
 
+    std::optional< ve::PipelineLayout > m_convultionPipelineLayout;
+    ve::DescriptorSetLayout m_convultionDescriptorSetLayout;
+    vk::DescriptorSet m_convultionDescriptorSet;
+    std::optional< ve::Image > m_convultionImage;
+    std::optional< ve::Sampler > m_convultionSampler;
+    std::optional< ve::Pipeline > m_convultionPipeline;
+    ve::ShaderModule m_convultionFragmentShader;
+
     void createColorResources();
     void createDepthBuffer();
     void preparePipelines();
@@ -129,6 +137,9 @@ private:
     void prepareSkyboxTexture();
     void createSkybox();
     void loadHDRI();
+    void convulteCubemap();
+    void renderConvultion( const ve::GraphicsCommandBuffer currentCommandBuffer,
+                           const vk::DescriptorSet currentGlobalSet );
 
     void updateScene( float deltaTime );
     std::optional< uint32_t > acquireNextImage();

@@ -79,6 +79,7 @@ set(SHADER_SOURCE
     "${CMAKE_CURRENT_SOURCE_DIR}/shaders/Skybox.frag"
     "${CMAKE_CURRENT_SOURCE_DIR}/shaders/HDR.vert"
     "${CMAKE_CURRENT_SOURCE_DIR}/shaders/HDR.frag"
+    "${CMAKE_CURRENT_SOURCE_DIR}/shaders/Convultion.frag"
 )
 
 source_group("Command" FILES ${COMMAND})
