@@ -63,6 +63,7 @@ void main() {
     //vec3 normal        = getNormalFromMap();
     vec3 normal        = normalize( inNormal );
     vec3 viewDirection = normalize( sceneData.cameraPosition - inWorldPos );
+    float normalViewDotMax    = max( dot( normal, viewDirection ), 0.0 );
 
     vec3 baseReflectivity = vec3( 0.04 );
     baseReflectivity      = mix( baseReflectivity, albedo, metallic );
@@ -73,20 +74,19 @@ void main() {
         vec3 lightDir = normalize( lightPositions[ i ] - inWorldPos );
         vec3 halfway  = normalize( viewDirection + lightDir );
 
-        float normalViewDotMax    = max( dot( normal, viewDirection ), 0.0 );
         float normalLightDotMax   = max( dot( normal, lightDir ), 0.0 );
         float normalHalfwayDotMax = max( dot( normal, halfway ), 0.0 );
         float halfwayViewDot      = dot( halfway, viewDirection );
 
-        float dist    = length( lightPositions[ i ] - inWorldPos );
+        float dist        = length( lightPositions[ i ] - inWorldPos );
         float attenuation = 1.0 / pow( dist, 2.0 );
         vec3 radiance     = lightColors[ i ] * 6.0f * attenuation;
 
         float normalDistribution = distributionGGX( normalHalfwayDotMax, roughness );
         float geometry           = geometrySmith( normalViewDotMax, normalLightDotMax, roughness );
-        vec3 fresnel             = fresnelSchlick( halfwayViewDot, baseReflectivity );
+        vec3 fresnel             = fresnelSchlick( max( halfwayViewDot, 0.0 ), baseReflectivity );
 
-        vec3 specular = normalDistribution * geometry * fresnel / ( 4.0 * normalViewDotMax * normalLightDotMax + 0.01 );
+        vec3 specular = normalDistribution * geometry * fresnel / ( 4.0 * normalViewDotMax * normalLightDotMax + 0.0001 );
         vec3 diffuse  = albedo / PI;
         vec3 kS       = fresnel;
         vec3 kD       = ( 1.0 - kS ) * ( 1.0 - metallic );
@@ -94,7 +94,13 @@ void main() {
         outRadiance += ( kD * diffuse + specular ) * radiance * normalLightDotMax;
     }
 
-    vec3 ambient = vec3( 0.03 ) * albedo;
+    const float ao  = 0.98;
+    vec3 kS         = fresnelSchlick( normalViewDotMax, baseReflectivity );
+    vec3 kD         = ( 1.0 - kS ) * ( 1.0 - metallic );
+    vec3 irradiance = texture( irradianceMap, normal ).rgb;
+    vec3 diffuse    = irradiance * albedo;
+    vec3 ambient    = ( kD * diffuse ) * ao;
+
     vec3 color   = ambient + outRadiance;
     color        = color / ( color + vec3( 1.0 ) );
     outFragColor = vec4( color, 1.0 );

@@ -10,7 +10,8 @@
 
 namespace ve::gltf {
 
-void MetalicRoughness::buildPipelines( const ve::DescriptorSetLayout& layout ) {
+void MetalicRoughness::buildPipelines( vk::DescriptorSetLayout globalLayout,
+                                       vk::DescriptorSetLayout irradianceLayout ) {
     const ve::ShaderModule meshVertexShader{ cfg::directory::shaderBinaries / "Mesh.vert.spv", m_logicalDevice };
     const ve::ShaderModule meshFragmentShader{ cfg::directory::shaderBinaries / "Mesh.frag.spv", m_logicalDevice };
 
@@ -25,12 +26,14 @@ void MetalicRoughness::buildPipelines( const ve::DescriptorSetLayout& layout ) {
     desMaterialLayout->addBinding( 3U, vk::DescriptorType::eCombinedImageSampler, shaderStages );
     desMaterialLayout->create();
 
-    const std::array< vk::DescriptorSetLayout, 2U > layoutsVk{ layout.get(), desMaterialLayout->get() };
+    const std::array< vk::DescriptorSetLayout, 3 > allLayouts{ globalLayout, desMaterialLayout->get(),
+                                                               irradianceLayout };
+
     auto meshLayoutInfo{ ve::PipelineLayout::defaultInfo() };
     meshLayoutInfo.pPushConstantRanges    = &range;
     meshLayoutInfo.pushConstantRangeCount = 1U;
-    meshLayoutInfo.pSetLayouts            = std::data( layoutsVk );
-    meshLayoutInfo.setLayoutCount         = utils::size( layoutsVk );
+    meshLayoutInfo.pSetLayouts            = std::data( allLayouts );
+    meshLayoutInfo.setLayoutCount         = utils::size( allLayouts );
     pipelineLayout.emplace( m_logicalDevice, meshLayoutInfo );
 
     ve::PipelineBuilder builder{ m_logicalDevice };

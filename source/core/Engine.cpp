@@ -31,6 +31,7 @@ Engine::Engine()
       m_transferCommandPool{ m_logicalDevice },
       m_transferCommandBuffer{ m_transferCommandPool.createCommandBuffers() },
       m_descriptorSetLayout{ m_logicalDevice },
+      m_irradianceLayout{ m_logicalDevice },
       m_loader{ *this, m_memoryAllocator },
       m_descriptorWriter{ m_logicalDevice },
       m_metalRough{ m_logicalDevice },
@@ -78,6 +79,7 @@ void Engine::run() {
         updateScene( deltaTime.count() );
 
         const auto& currentFrame{ m_currentFrameIt->value() };
+
         [[maybe_unused]] const auto waitForFencesResult{
             m_logicalDevice.get().waitForFences( currentFrame.renderFence.get(), g_waitForAllFences, g_timeoutOff ) };
         m_logicalDevice.get().resetFences( currentFrame.renderFence.get() );
@@ -164,11 +166,13 @@ void Engine::draw( const uint32_t imageIndex ) {
 
 void Engine::drawScene( const ve::GraphicsCommandBuffer currentCommandBuffer,
                         const vk::DescriptorSet currentGlobalSet ) {
-    auto draw{ [ &currentCommandBuffer, &currentGlobalSet ]( const auto& renderObject ) {
+    auto draw{ [ &currentCommandBuffer, &currentGlobalSet, this ]( const auto& renderObject ) {
         currentCommandBuffer.bindPipeline( renderObject.material.pipeline.get() );
         currentCommandBuffer.bindDescriptorSet( renderObject.material.pipeline.getLayout(), currentGlobalSet, 0U );
         currentCommandBuffer.bindDescriptorSet( renderObject.material.pipeline.getLayout(),
                                                 renderObject.material.descriptorSet, 1U );
+        currentCommandBuffer.bindDescriptorSet( renderObject.material.pipeline.getLayout(), m_irradianceDescriptorSet,
+                                                2U );
         currentCommandBuffer.bindIndexBuffer( renderObject.indexBuffer );
 
         const ve::PushConstants pushConstants{ .worldMatrix{ renderObject.transform },
@@ -242,7 +246,11 @@ void Engine::preparePipelines() {
     m_descriptorSetLayout.addBinding( 0U, vk::DescriptorType::eUniformBuffer,
                                       vk::ShaderStageFlagBits::eVertex | vk::ShaderStageFlagBits::eFragment );
     m_descriptorSetLayout.create();
-    m_metalRough.buildPipelines( m_descriptorSetLayout );
+
+    m_irradianceLayout.addBinding( 0U, vk::DescriptorType::eCombinedImageSampler, vk::ShaderStageFlagBits::eFragment );
+    m_irradianceLayout.create();
+
+    m_metalRough.buildPipelines( m_descriptorSetLayout.get(), m_irradianceLayout.get() );
 }
 
 void Engine::createFrameResoures() {
@@ -635,7 +643,7 @@ void Engine::createSkybox() {
 
     m_skyboxDescriptorSet = m_globalDescriptorAllocator.allocate( m_skyboxDescriptorSetLayout );
     m_descriptorWriter.clear();
-    m_descriptorWriter.writeImage( 0U, m_convultionImage->getImageView(), vk::ImageLayout::eShaderReadOnlyOptimal,
+    m_descriptorWriter.writeImage( 0U, m_hdrSkybox->getImageView(), vk::ImageLayout::eShaderReadOnlyOptimal,
                                    m_skyboxSampler.value().get(), vk::DescriptorType::eCombinedImageSampler );
     m_descriptorWriter.updateSet( m_skyboxDescriptorSet );
 }
@@ -954,6 +962,11 @@ void Engine::convulteCubemap() {
     const auto graphicsQueue{ m_logicalDevice.getQueue( ve::QueueType::eGraphics ) };
     graphicsQueue.submit( submitInfo, nullptr );
     graphicsQueue.waitIdle();
+
+    m_irradianceDescriptorSet = m_globalDescriptorAllocator.allocate( m_irradianceLayout );
+    m_descriptorWriter.writeImage( 0U, m_convultionImage->getImageView(), vk::ImageLayout::eShaderReadOnlyOptimal,
+                                   m_hdrSampler->get(), vk::DescriptorType::eCombinedImageSampler );
+    m_descriptorWriter.updateSet( m_irradianceDescriptorSet );
 }
 
 void Engine::renderConvultion( const ve::GraphicsCommandBuffer currentCommandBuffer,

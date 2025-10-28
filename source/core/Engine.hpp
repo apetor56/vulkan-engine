@@ -76,6 +76,7 @@ private:
     ve::TransferCommandBuffer m_transferCommandBuffer;
     ve::MeshBuffers m_meshBuffers{};
     ve::DescriptorSetLayout m_descriptorSetLayout;
+    ve::DescriptorSetLayout m_irradianceLayout;
     FrameResources m_frameResources;
     FrameResources::iterator m_currentFrameIt{ nullptr };
     std::optional< ve::Image > m_defaultWhiteImage{};
@@ -116,7 +117,7 @@ private:
 
     std::optional< ve::PipelineLayout > m_convultionPipelineLayout;
     ve::DescriptorSetLayout m_convultionDescriptorSetLayout;
-    vk::DescriptorSet m_convultionDescriptorSet;
+    vk::DescriptorSet m_irradianceDescriptorSet;
     std::optional< ve::Image > m_convultionImage;
     std::optional< ve::Sampler > m_convultionSampler;
     std::optional< ve::Pipeline > m_convultionPipeline;

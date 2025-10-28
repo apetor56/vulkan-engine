@@ -16,8 +16,8 @@ inline constexpr bool areValidationLayersEnabled{ false };
 
 namespace cfg::window {
 
-inline constexpr int width{ 1366 };
-inline constexpr int height{ 768 };
+inline constexpr int width{ 1920 };
+inline constexpr int height{ 1080 };
 
 } // namespace cfg::window
 

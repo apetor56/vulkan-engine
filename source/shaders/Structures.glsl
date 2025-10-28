@@ -19,3 +19,5 @@ materialData;
 layout( set = 1, binding = 1 ) uniform sampler2D albedoMap;
 layout( set = 1, binding = 2 ) uniform sampler2D normalMap;
 layout( set = 1, binding = 3 ) uniform sampler2D metallicRoughnessMap;
+
+layout( set = 2, binding = 0 ) uniform samplerCube irradianceMap;
