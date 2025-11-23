@@ -19,8 +19,6 @@ This project is a graphics renderer built with the **Vulkan SDK** as part of a M
 2. **Visual Studio 2022** or **clang++** compiler with `c++23` support.
 3. **CMake** version `3.19` and higher.
 
-<br>
-
 ## Configuration
 ```bash
 git clone https://github.com/apetor56/vulkan-engine.git
