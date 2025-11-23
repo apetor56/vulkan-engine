@@ -135,7 +135,7 @@ private:
     void initDefaultData();
     void generateMipmaps( const ve::Image& image, const int32_t texWidth, const int32_t texHeight,
                           const uint32_t mipLevels );
-    void prepareSkyboxTexture();
+    void prepareSkyboxSampler();
     void createSkybox();
     void loadHDRI();
     void convulteCubemap();

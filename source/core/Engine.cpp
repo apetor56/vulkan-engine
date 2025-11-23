@@ -559,49 +559,7 @@ void Engine::generateMipmaps( const ve::Image& image, const int32_t texWidth, co
     } );
 }
 
-void Engine::prepareSkyboxTexture() {
-    // std::array< std::string, 6U > skyboxTexturesNames;
-    // std::array< stbi_uc *, 6U > skyboxTextureData;
-
-    // skyboxTexturesNames.at( 0 ) = ( cfg::directory::assets / "skybox/right.jpg" ).string();
-    // skyboxTexturesNames.at( 1 ) = ( cfg::directory::assets / "skybox/left.jpg" ).string();
-    // skyboxTexturesNames.at( 2 ) = ( cfg::directory::assets / "skybox/top.jpg" ).string();
-    // skyboxTexturesNames.at( 3 ) = ( cfg::directory::assets / "skybox/bottom.jpg" ).string();
-    // skyboxTexturesNames.at( 4 ) = ( cfg::directory::assets / "skybox/front.jpg" ).string();
-    // skyboxTexturesNames.at( 5 ) = ( cfg::directory::assets / "skybox/back.jpg" ).string();
-
-    // int width{}, height{}, nrChannels{};
-    // for ( size_t textureID{ 0U }; textureID < 6U; textureID++ ) {
-    //     skyboxTextureData.at( textureID ) =
-    //         stbi_load( skyboxTexturesNames.at( textureID ).data(), &width, &height, &nrChannels, STBI_rgb_alpha );
-    // }
-
-    // const vk::DeviceSize layerSize{ static_cast< vk::DeviceSize >( width ) * height * 4 };
-    // const vk::DeviceSize imageSize{ 6U * layerSize };
-    // ve::StagingBuffer stagingBuffer{ m_memoryAllocator, imageSize };
-
-    // for ( size_t textureID{ 0U }; textureID < 6U; textureID++ ) {
-    //     const vk::DeviceSize memoryAddress{ reinterpret_cast< vk::DeviceSize >( stagingBuffer.getMappedMemory() ) +
-    //                                         layerSize * textureID };
-    //     memcpy( reinterpret_cast< void * >( memoryAddress ), skyboxTextureData.at( textureID ),
-    //             static_cast< size_t >( layerSize ) );
-    // }
-
-    // const vk::Extent2D imageExtent{ static_cast< uint32_t >( width ), static_cast< uint32_t >( height ) };
-    // m_skyboxImage.emplace( m_memoryAllocator, m_logicalDevice, imageExtent, vk::Format::eR8G8B8A8Srgb,
-    //                        vk::ImageUsageFlagBits::eTransferDst | vk::ImageUsageFlagBits::eSampled,
-    //                        vk::ImageAspectFlagBits::eColor, 1U, vk::SampleCountFlagBits::e1, 6U,
-    //                        vk::ImageViewType::eCube );
-
-    // immediateSubmit( [ this, &stagingBuffer, imageSize ]( ve::GraphicsCommandBuffer cmd ) {
-    //     cmd.transitionImageLayout( m_skyboxImage->get(), m_skyboxImage->getFormat(), vk::ImageLayout::eUndefined,
-    //                                vk::ImageLayout::eTransferDstOptimal, 1U, 6U );
-    //     cmd.copyBufferToImage( stagingBuffer.get(), m_skyboxImage->get(), m_skyboxImage->getExtent(), 6U );
-    //     cmd.transitionImageLayout( m_skyboxImage->get(), m_skyboxImage->getFormat(),
-    //                                vk::ImageLayout::eTransferDstOptimal, vk::ImageLayout::eShaderReadOnlyOptimal, 1U,
-    //                                6U );
-    // } );
-
+void Engine::prepareSkyboxSampler() {
     vk::SamplerCreateInfo info{};
     info.magFilter        = vk::Filter::eLinear;
     info.minFilter        = vk::Filter::eLinear;
@@ -620,7 +578,7 @@ void Engine::prepareSkyboxTexture() {
 }
 
 void Engine::createSkybox() {
-    prepareSkyboxTexture();
+    prepareSkyboxSampler();
 
     m_skyboxDescriptorSetLayout.addBinding( 0U, vk::DescriptorType::eCombinedImageSampler,
                                             vk::ShaderStageFlagBits::eFragment );
@@ -653,8 +611,8 @@ void Engine::loadHDRI() {
     int height{};
     int nrComponents{};
     stbi_set_flip_vertically_on_load( true );
-    float *hdrData = stbi_loadf( ( cfg::directory::assets / "hdr/newport_loft.hdr" ).string().c_str(), &width, &height,
-                                 &nrComponents, 0 );
+    float *hdrData =
+        stbi_loadf( ( cfg::directory::assets / "hdr/sky.hdr" ).string().c_str(), &width, &height, &nrComponents, 0 );
 
     if ( hdrData ) {
         static constexpr int fixedComponents = 4;
@@ -844,28 +802,6 @@ void Engine::renderHDRSkybox() {
 }
 
 void Engine::convulteCubemap() {
-    // m_convultionDescriptorSetLayout.addBinding( 0U, vk::DescriptorType::eUniformBuffer,
-    //                                             vk::ShaderStageFlagBits::eVertex );
-    // m_convultionDescriptorSetLayout.addBinding( 1U, vk::DescriptorType::eCombinedImageSampler,
-    //                                             vk::ShaderStageFlagBits::eFragment );
-    // m_convultionDescriptorSetLayout.create();
-
-    // const std::array< vk::DescriptorSetLayout, 1U > layoutsVk{ m_convultionDescriptorSetLayout.get() };
-    // vk::PipelineLayoutCreateInfo convultionLayoutInfo;
-    // convultionLayoutInfo.pSetLayouts            = std::data( layoutsVk );
-    // convultionLayoutInfo.setLayoutCount         = std::size( layoutsVk );
-    // convultionLayoutInfo.pPushConstantRanges    = nullptr;
-    // convultionLayoutInfo.pushConstantRangeCount = 0U;
-    // m_convultionPipelineLayout.emplace( m_logicalDevice, convultionLayoutInfo );
-
-    // m_convultionDescriptorSet = m_globalDescriptorAllocator.allocate( m_convultionDescriptorSetLayout );
-    // m_descriptorWriter.clear();
-    // m_descriptorWriter.writeBuffer( 0U, m_hdrUniformBuf->get(), 7 * sizeof( glm::mat4 ), 0,
-    //                                 vk::DescriptorType::eUniformBuffer );
-    // m_descriptorWriter.writeImage( 1U, m_hdrImage->getImageView(), vk::ImageLayout::eShaderReadOnlyOptimal,
-    //                                m_hdrSampler.value().get(), vk::DescriptorType::eCombinedImageSampler );
-    // m_descriptorWriter.updateSet( m_hdrDescriptorSet );
-
     m_descriptorWriter.clear();
     m_descriptorWriter.writeBuffer( 0U, m_hdrUniformBuf->get(), 7 * sizeof( glm::mat4 ), 0,
                                     vk::DescriptorType::eUniformBuffer );
