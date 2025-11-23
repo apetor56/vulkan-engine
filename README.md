@@ -1,4 +1,8 @@
-# Prerequisites
+# Gachix - simple vulkan renderer
+
+This project is a graphics renderer built with the **Vulkan SDK** as part of a Master's thesis. The main objective was to implement indirect **Physically Based Rendering (PBR)**, while also achieving a solid understanding of core Vulkan mechanisms. This included low-level setup of graphics pipelines, resource management (such as explicit control over memory and buffers), synchronization primitives, offscreen rendering, and postprocessing effects like anti-aliasing.
+
+## Prerequisites
 
 1. [Vulkan SDK](https://vulkan.lunarg.com/#new_tab) added to `PATH` variable.
 2. **Visual Studio 2022** or **clang++** compiler with `c++23` support.
@@ -6,7 +10,7 @@
 
 <br>
 
-# Configuration
+## Configuration
 ```bash
 git clone https://github.com/apetor56/vulkan-engine.git
 cd vulkan-engine
