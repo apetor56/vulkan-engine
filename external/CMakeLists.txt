@@ -24,7 +24,7 @@ FetchContent_Declare(
 FetchContent_Declare(
     fastgltf
     GIT_REPOSITORY https://github.com/spnda/fastgltf.git
-    GIT_TAG        main
+    GIT_TAG        v0.9.0
 )
 FetchContent_Declare(
     GPUOpen
@@ -36,6 +36,10 @@ FetchContent_Declare(
     GIT_REPOSITORY https://github.com/g-truc/glm.git
     GIT_TAG        1.0.1
 )
+
+if(TARGET fastgltf::fastgltf)
+    target_compile_features(fastgltf::fastgltf PUBLIC cxx_std_20)
+endif()
 
 FetchContent_MakeAvailable(glfw)
 FetchContent_MakeAvailable(spdlog)
