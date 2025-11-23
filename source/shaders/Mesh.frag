@@ -34,6 +34,10 @@ vec3 fresnelSchlick( float halfwayViewDot, vec3 baseReflectivity ) {
     return baseReflectivity + ( 1.0 - baseReflectivity ) * pow( 1.0 - halfwayViewDot, 5.0 );
 }
 
+vec3 fresnelSchlickRoughness(float cosTheta, vec3 F0, float roughness) {
+    return F0 + (max(vec3(1.0 - roughness), F0) - F0) * pow(clamp(1.0 - cosTheta, 0.0, 1.0), 5.0);
+} 
+
 vec3 lightPositions[ 4 ] = vec3[]( vec3( -14.756604f, 3.4603605f, -5.237836f ), vec3( -15.001932f, 3.1396596f, 3.4824698f ),
                                    vec3( 11.690615f, 3.6053026f, 3.3117452f ), vec3( 11.677476f, 3.4518013f, -5.332671f ) );
 vec3 lightColors[ 4 ]    = vec3[]( vec3( 5.0f, 3.0f, 7.0f ), vec3( 3.0f, 5.0f, 3.0f ),

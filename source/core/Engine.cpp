@@ -964,6 +964,7 @@ void Engine::convulteCubemap() {
     graphicsQueue.waitIdle();
 
     m_irradianceDescriptorSet = m_globalDescriptorAllocator.allocate( m_irradianceLayout );
+    m_descriptorWriter.clear();
     m_descriptorWriter.writeImage( 0U, m_convultionImage->getImageView(), vk::ImageLayout::eShaderReadOnlyOptimal,
                                    m_hdrSampler->get(), vk::DescriptorType::eCombinedImageSampler );
     m_descriptorWriter.updateSet( m_irradianceDescriptorSet );
