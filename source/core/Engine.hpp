@@ -6,9 +6,6 @@
 #include "LogicalDevice.hpp"
 #include "MemoryAllocator.hpp"
 #include "Swapchain.hpp"
-#include "RenderPass.hpp"
-#include "Framebuffer.hpp"
-#include "ShaderModule.hpp"
 #include "Pipeline.hpp"
 #include "Buffer.hpp"
 #include "Image.hpp"
@@ -18,6 +15,7 @@
 #include "Material.hpp"
 #include "Node.hpp"
 #include "Camera.hpp"
+#include "ShaderModule.hpp"
 
 #include "command/CommandPool.hpp"
 #include "command/GraphicsCommandBuffer.hpp"
@@ -48,8 +46,7 @@ public:
 
 private:
     using FrameResources = std::array< std::optional< ve::FrameData >, g_maxFramesInFlight >;
-    using Framebuffers   = std::vector< std::optional< ve::Framebuffer > >;
-    using Scene          = std::unordered_map< std::string, std::shared_ptr< ve::gltf::Scene > >;
+    using Scene          = std::unordered_map< std::string_view, std::shared_ptr< ve::gltf::Scene > >;
 
     struct SceneData {
         glm::mat4 model{ 1.0F };
@@ -68,15 +65,10 @@ private:
     ve::LogicalDevice m_logicalDevice;
     ve::MemoryAllocator m_memoryAllocator;
     ve::Swapchain m_swapchain;
-    Framebuffers m_framebuffers;
     std::optional< ve::Image > m_colorImage{};
     std::optional< ve::Image > m_depthBuffer{};
-    std::optional< ve::RenderPass > m_renderPass{};
-    ve::ShaderModule m_vertexShader;
-    ve::ShaderModule m_fragmentShader;
     std::optional< ve::PipelineLayout > m_pipelineLayout{};
     ve::PipelineBuilder m_pipelineBuilder;
-    std::optional< ve::Pipeline > m_pipeline{};
     ve::CommandPool< ve::GraphicsCommandBuffer > m_graphicsCommandPool;
     ve::Fence m_immediateSubmitFence;
     ve::GraphicsCommandBuffer m_immediateBuffer;
@@ -102,10 +94,17 @@ private:
     Scene m_scene;
     std::shared_ptr< ve::Camera > m_camera{};
 
+    std::optional< ve::Pipeline > m_skyboxPipeline;
+    std::optional< ve::PipelineLayout > m_skyboxPipelineLayout;
+    ve::DescriptorSetLayout m_skyboxDescriptorSetLayout;
+    vk::DescriptorSet m_skyboxDescriptorSet;
+    ve::ShaderModule m_skyboxVertexShader;
+    ve::ShaderModule m_skyboxFragmentShader;
+    std::optional< ve::Image > m_skyboxImage;
+    std::optional< ve::Sampler > m_skyboxSampler;
+
     void createColorResources();
     void createDepthBuffer();
-    void createRenderPass();
-    void createFramebuffers();
     void preparePipelines();
     void createFrameResoures();
     void updateUniformBuffer();
@@ -116,11 +115,16 @@ private:
     void initDefaultData();
     void generateMipmaps( const ve::Image& image, const int32_t texWidth, const int32_t texHeight,
                           const uint32_t mipLevels );
+    void prepareSkyboxTexture();
+    void createSkybox();
 
     void updateScene( float deltaTime );
     std::optional< uint32_t > acquireNextImage();
     void draw( const uint32_t imageIndex );
     void present( const uint32_t imageIndex );
+
+    void drawScene( const ve::GraphicsCommandBuffer currentCommandBuffer, const vk::DescriptorSet currentGlobalSet );
+    void drawSkybox( const ve::GraphicsCommandBuffer currentCommandBuffer, const vk::DescriptorSet currentGlobalSet );
 
     void handleWindowResising();
     void immediateSubmit( const std::function< void( GraphicsCommandBuffer command ) >& function );

@@ -23,8 +23,6 @@ Engine::Engine()
       m_logicalDevice{ m_physicalDevice },
       m_memoryAllocator{ m_vulkanInstance, m_physicalDevice, m_logicalDevice },
       m_swapchain{ m_logicalDevice, m_window },
-      m_vertexShader{ cfg::directory::shaderBinaries / "Simple.vert.spv", m_logicalDevice },
-      m_fragmentShader{ cfg::directory::shaderBinaries / "Simple.frag.spv", m_logicalDevice },
       m_pipelineBuilder{ m_logicalDevice },
       m_graphicsCommandPool{ m_logicalDevice },
       m_immediateSubmitFence{ m_logicalDevice },
@@ -36,7 +34,10 @@ Engine::Engine()
       m_descriptorWriter{ m_logicalDevice },
       m_metalRough{ m_logicalDevice },
       m_globalDescriptorAllocator{ m_logicalDevice, 10U, g_poolSizes },
-      m_camera{ std::make_shared< ve::Camera >() } {
+      m_camera{ std::make_shared< ve::Camera >() },
+      m_skyboxDescriptorSetLayout{ m_logicalDevice },
+      m_skyboxVertexShader{ cfg::directory::shaderBinaries / "Skybox.vert.spv", m_logicalDevice },
+      m_skyboxFragmentShader{ cfg::directory::shaderBinaries / "Skybox.frag.spv", m_logicalDevice } {
     init();
 }
 
@@ -44,8 +45,6 @@ void Engine::init() {
     m_window.setCamera( m_camera );
     createColorResources();
     createDepthBuffer();
-    createRenderPass();
-    createFramebuffers();
     preparePipelines();
     createFrameResoures();
     prepareDefaultTexture();
@@ -53,6 +52,7 @@ void Engine::init() {
     configureDescriptorSets();
     initDefaultData();
     loadMeshes();
+    createSkybox();
 }
 
 void Engine::run() {
@@ -119,38 +119,23 @@ void Engine::draw( const uint32_t imageIndex ) {
     commandBuffer.reset();
     commandBuffer.begin();
 
-    if ( !m_renderPass.has_value() )
-        throw std::runtime_error( "renderpass not initialized" );
-    if ( !m_pipeline.has_value() )
-        throw std::runtime_error( "pipeline not initialized" );
+    commandBuffer.transitionImageLayout( m_swapchain.getImage( imageIndex ), m_swapchain.getFormat(),
+                                         vk::ImageLayout::eUndefined, vk::ImageLayout::eColorAttachmentOptimal );
 
-    commandBuffer.beginRenderPass( m_renderPass->get(), m_framebuffers.at( imageIndex )->get(),
-                                   m_swapchain.getExtent() );
     commandBuffer.setViewport( m_swapchain.getViewport() );
     commandBuffer.setScissor( m_swapchain.getScissor() );
 
+    commandBuffer.beginRendering( m_swapchain.getExtent(), m_colorImage->getImageView(),
+                                  m_swapchain.getImageView( imageIndex ), m_depthBuffer->getImageView() );
+
     auto currentDescriptorSet{ currentFrame.descriptorSet };
+    drawScene( commandBuffer, currentDescriptorSet );
+    drawSkybox( commandBuffer, currentDescriptorSet );
 
-    auto draw{ [ &commandBuffer, &currentDescriptorSet ]( const auto& renderObject ) {
-        commandBuffer.bindPipeline( renderObject.material.pipeline.get() );
-        commandBuffer.bindDescriptorSet( renderObject.material.pipeline.getLayout(), currentDescriptorSet, 0U );
-        commandBuffer.bindDescriptorSet( renderObject.material.pipeline.getLayout(),
-                                         renderObject.material.descriptorSet, 1U );
-        commandBuffer.bindIndexBuffer( renderObject.indexBuffer );
+    commandBuffer.endRendering();
 
-        const ve::PushConstants pushConstants{ .worldMatrix{ renderObject.transform },
-                                               .vertexBufferAddress{ renderObject.vertexBufferAddress } };
-        commandBuffer.pushConstants( renderObject.material.pipeline.getLayout(), vk::ShaderStageFlagBits::eVertex,
-                                     pushConstants );
-        commandBuffer.drawIndices( renderObject.firstIndex, renderObject.indexCount );
-    } };
-
-    std::ranges::for_each( m_mainRenderContext.opaqueSurfaces,
-                           [ &draw ]( const auto& renderObject ) { draw( renderObject ); } );
-    std::ranges::for_each( m_mainRenderContext.transparentSurfaces,
-                           [ &draw ]( const auto& renderObject ) { draw( renderObject ); } );
-
-    commandBuffer.endRenderPass();
+    commandBuffer.transitionImageLayout( m_swapchain.getImage( imageIndex ), m_swapchain.getFormat(),
+                                         vk::ImageLayout::eColorAttachmentOptimal, vk::ImageLayout::ePresentSrcKHR );
     commandBuffer.end();
 
     static constexpr vk::PipelineStageFlags waitStage{ vk::PipelineStageFlagBits::eColorAttachmentOutput };
@@ -166,6 +151,36 @@ void Engine::draw( const uint32_t imageIndex ) {
 
     const auto graphicsQueue{ m_logicalDevice.getQueue( ve::QueueType::eGraphics ) };
     graphicsQueue.submit( submitInfo, currentFrame.renderFence.get() );
+}
+
+void Engine::drawScene( const ve::GraphicsCommandBuffer currentCommandBuffer,
+                        const vk::DescriptorSet currentGlobalSet ) {
+    auto draw{ [ &currentCommandBuffer, &currentGlobalSet ]( const auto& renderObject ) {
+        currentCommandBuffer.bindPipeline( renderObject.material.pipeline.get() );
+        currentCommandBuffer.bindDescriptorSet( renderObject.material.pipeline.getLayout(), currentGlobalSet, 0U );
+        currentCommandBuffer.bindDescriptorSet( renderObject.material.pipeline.getLayout(),
+                                                renderObject.material.descriptorSet, 1U );
+        currentCommandBuffer.bindIndexBuffer( renderObject.indexBuffer );
+
+        const ve::PushConstants pushConstants{ .worldMatrix{ renderObject.transform },
+                                               .vertexBufferAddress{ renderObject.vertexBufferAddress } };
+        currentCommandBuffer.pushConstants( renderObject.material.pipeline.getLayout(),
+                                            vk::ShaderStageFlagBits::eVertex, pushConstants );
+        currentCommandBuffer.drawIndices( renderObject.firstIndex, renderObject.indexCount );
+    } };
+
+    std::ranges::for_each( m_mainRenderContext.opaqueSurfaces,
+                           [ &draw ]( const auto& renderObject ) { draw( renderObject ); } );
+    std::ranges::for_each( m_mainRenderContext.transparentSurfaces,
+                           [ &draw ]( const auto& renderObject ) { draw( renderObject ); } );
+}
+
+void Engine::drawSkybox( const ve::GraphicsCommandBuffer currentCommandBuffer,
+                         const vk::DescriptorSet currentGlobalSet ) {
+    currentCommandBuffer.bindPipeline( m_skyboxPipeline->get() );
+    currentCommandBuffer.bindDescriptorSet( m_skyboxPipelineLayout->get(), currentGlobalSet, 0U );
+    currentCommandBuffer.bindDescriptorSet( m_skyboxPipelineLayout->get(), m_skyboxDescriptorSet, 1U );
+    currentCommandBuffer.drawVertices( 0U, 36U );
 }
 
 void Engine::present( const uint32_t imageIndex ) {
@@ -207,42 +222,11 @@ void Engine::createDepthBuffer() {
                            depthMipmapLevel, m_physicalDevice.getMaxSamplesCount() );
 }
 
-void Engine::createRenderPass() {
-    m_renderPass.emplace( m_logicalDevice, m_swapchain.getFormat(), m_depthBuffer->getFormat(),
-                          m_physicalDevice.getMaxSamplesCount() );
-}
-
-void Engine::createFramebuffers() {
-    const auto& swapchainImageViews{ m_swapchain.getImageViews() };
-    m_framebuffers.clear();
-    m_framebuffers.reserve( std::size( swapchainImageViews ) );
-    std::ranges::for_each( swapchainImageViews, [ this ]( const auto swapchainImageView ) {
-        const Framebuffer::Attachments attachments{ m_colorImage->getImageView(), m_depthBuffer->getImageView(),
-                                                    swapchainImageView };
-        m_framebuffers.emplace_back( std::in_place, m_renderPass.value(), attachments, m_swapchain.getExtent() );
-    } );
-}
-
 void Engine::preparePipelines() {
     m_descriptorSetLayout.addBinding( 0U, vk::DescriptorType::eUniformBuffer,
                                       vk::ShaderStageFlagBits::eVertex | vk::ShaderStageFlagBits::eFragment );
     m_descriptorSetLayout.create();
-    const auto layoutVk{ m_descriptorSetLayout.get() };
-
-    static constexpr vk::PushConstantRange bufferRange{ ve::PushConstants::defaultRange() };
-    auto pipelineLayoutInfo{ ve::PipelineLayout::defaultInfo() };
-    pipelineLayoutInfo.pPushConstantRanges    = &bufferRange;
-    pipelineLayoutInfo.pushConstantRangeCount = 1U;
-    pipelineLayoutInfo.pSetLayouts            = &layoutVk;
-    pipelineLayoutInfo.setLayoutCount         = 1U;
-
-    m_pipelineLayout.emplace( m_logicalDevice, pipelineLayoutInfo );
-
-    m_pipelineBuilder.setShaders( m_vertexShader, m_fragmentShader );
-    m_pipelineBuilder.setLayout( m_pipelineLayout.value() );
-    m_pipeline.emplace( m_pipelineBuilder, m_renderPass.value() );
-
-    m_metalRough.buildPipelines( m_descriptorSetLayout, m_renderPass.value() );
+    m_metalRough.buildPipelines( m_descriptorSetLayout );
 }
 
 void Engine::createFrameResoures() {
@@ -267,9 +251,6 @@ void Engine::configureDescriptorSets() {
 
         m_descriptorWriter.updateSet( frameData.value().descriptorSet );
     } );
-
-    std::vector< DescriptorAllocator::PoolSizeRatio > sizes = { { vk::DescriptorType::eStorageImage, 1 },
-                                                                { vk::DescriptorType::eUniformBuffer, 1 } };
 }
 
 MeshBuffers Engine::uploadMeshBuffers( std::span< Vertex > vertices, std::span< uint32_t > indices ) const {
@@ -350,7 +331,7 @@ void Engine::prepareDefaultTexture() {
                                  vk::ImageAspectFlagBits::eColor, mipLevels );
 
     immediateSubmit( [ &stagingBuffer, this, mipLevels ]( ve::GraphicsCommandBuffer cmd ) {
-        cmd.transitionImageBuffer( m_defaultWhiteImage->get(), m_defaultWhiteImage->getFormat(),
+        cmd.transitionImageLayout( m_defaultWhiteImage->get(), m_defaultWhiteImage->getFormat(),
                                    vk::ImageLayout::eUndefined, vk::ImageLayout::eTransferDstOptimal, mipLevels );
         cmd.copyBufferToImage( stagingBuffer.get(), m_defaultWhiteImage->get(), m_defaultWhiteImage->getExtent() );
     } );
@@ -363,17 +344,15 @@ void Engine::createDefaultTextureSampler() {
 }
 
 void Engine::loadMeshes() {
-    const auto spheres{ m_loader.load( cfg::directory::assets / "spheres/MetalRoughSpheres.gltf" ) };
-    if ( spheres.has_value() )
-        m_scene.emplace( "spheres", spheres.value() );
+    const auto sponza{ m_loader.load( cfg::directory::assets / "sponza/Sponza.gltf" ) };
+    if ( sponza.has_value() )
+        m_scene.emplace( "sponza", sponza.value() );
 }
 
 void Engine::handleWindowResising() {
     m_swapchain.recreate();
-    createRenderPass();
     createColorResources();
     createDepthBuffer();
-    createFramebuffers();
 }
 
 void Engine::immediateSubmit( const std::function< void( ve::GraphicsCommandBuffer command ) >& function ) {
@@ -411,7 +390,7 @@ void Engine::updateScene( float deltaTime ) {
     constexpr float nearPlane{ 0.1F };
     constexpr float farPlane{ 1000.0F };
 
-    m_sceneData.model = glm::mat4{ 1.0F };
+    m_sceneData.model = glm::mat4{ 1.0F } * glm::scale( glm::mat4{ 1.0F }, glm::vec3{ 3.0F, 3.0F, 3.0F } );
 
     if ( m_camera != nullptr )
         m_sceneData.view = m_camera->getViewMartix();
@@ -463,7 +442,7 @@ ve::Image Engine::createImage( void *data, const vk::Extent2D size, const vk::Fo
                      mipLevels };
 
     immediateSubmit( [ this, &stagingBuffer, &image, mipLevels, size ]( ve::GraphicsCommandBuffer cmd ) {
-        cmd.transitionImageBuffer( image.get(), image.getFormat(), vk::ImageLayout::eUndefined,
+        cmd.transitionImageLayout( image.get(), image.getFormat(), vk::ImageLayout::eUndefined,
                                    vk::ImageLayout::eTransferDstOptimal, mipLevels );
         cmd.copyBufferToImage( stagingBuffer.get(), image.get(), image.getExtent() );
     } );
@@ -554,6 +533,95 @@ void Engine::generateMipmaps( const ve::Image& image, const int32_t texWidth, co
         bufferVk.pipelineBarrier( vk::PipelineStageFlagBits::eTransfer, vk::PipelineStageFlagBits::eFragmentShader,
                                   vk::DependencyFlags{}, nullptr, nullptr, barrier );
     } );
+}
+
+void Engine::prepareSkyboxTexture() {
+    std::array< std::string, 6U > skyboxTexturesNames;
+    std::array< stbi_uc *, 6U > skyboxTextureData;
+
+    skyboxTexturesNames.at( 0 ) = ( cfg::directory::assets / "skybox/right.jpg" ).string();
+    skyboxTexturesNames.at( 1 ) = ( cfg::directory::assets / "skybox/left.jpg" ).string();
+    skyboxTexturesNames.at( 2 ) = ( cfg::directory::assets / "skybox/top.jpg" ).string();
+    skyboxTexturesNames.at( 3 ) = ( cfg::directory::assets / "skybox/bottom.jpg" ).string();
+    skyboxTexturesNames.at( 4 ) = ( cfg::directory::assets / "skybox/front.jpg" ).string();
+    skyboxTexturesNames.at( 5 ) = ( cfg::directory::assets / "skybox/back.jpg" ).string();
+
+    int width{}, height{}, nrChannels{};
+    for ( size_t textureID{ 0U }; textureID < 6U; textureID++ ) {
+        skyboxTextureData.at( textureID ) =
+            stbi_load( skyboxTexturesNames.at( textureID ).data(), &width, &height, &nrChannels, STBI_rgb_alpha );
+    }
+
+    const vk::DeviceSize layerSize{ static_cast< vk::DeviceSize >( width ) * height * 4 };
+    const vk::DeviceSize imageSize{ 6U * layerSize };
+    ve::StagingBuffer stagingBuffer{ m_memoryAllocator, imageSize };
+
+    for ( size_t textureID{ 0U }; textureID < 6U; textureID++ ) {
+        const vk::DeviceSize memoryAddress{ reinterpret_cast< vk::DeviceSize >( stagingBuffer.getMappedMemory() ) +
+                                            layerSize * textureID };
+        memcpy( reinterpret_cast< void * >( memoryAddress ), skyboxTextureData.at( textureID ),
+                static_cast< size_t >( layerSize ) );
+    }
+
+    const vk::Extent2D imageExtent{ static_cast< uint32_t >( width ), static_cast< uint32_t >( height ) };
+    m_skyboxImage.emplace( m_memoryAllocator, m_logicalDevice, imageExtent, vk::Format::eR8G8B8A8Srgb,
+                           vk::ImageUsageFlagBits::eTransferDst | vk::ImageUsageFlagBits::eSampled,
+                           vk::ImageAspectFlagBits::eColor, 1U, vk::SampleCountFlagBits::e1, 6U,
+                           vk::ImageViewType::eCube );
+
+    immediateSubmit( [ this, &stagingBuffer, imageSize ]( ve::GraphicsCommandBuffer cmd ) {
+        cmd.transitionImageLayout( m_skyboxImage->get(), m_skyboxImage->getFormat(), vk::ImageLayout::eUndefined,
+                                   vk::ImageLayout::eTransferDstOptimal, 1U, 6U );
+        cmd.copyBufferToImage( stagingBuffer.get(), m_skyboxImage->get(), m_skyboxImage->getExtent(), 6U );
+        cmd.transitionImageLayout( m_skyboxImage->get(), m_skyboxImage->getFormat(),
+                                   vk::ImageLayout::eTransferDstOptimal, vk::ImageLayout::eShaderReadOnlyOptimal, 1U,
+                                   6U );
+    } );
+
+    vk::SamplerCreateInfo info{};
+    info.magFilter        = vk::Filter::eLinear;
+    info.minFilter        = vk::Filter::eLinear;
+    info.addressModeU     = vk::SamplerAddressMode::eRepeat;
+    info.addressModeV     = vk::SamplerAddressMode::eRepeat;
+    info.addressModeW     = vk::SamplerAddressMode::eRepeat;
+    info.compareOp        = vk::CompareOp::eNever;
+    info.mipLodBias       = 0.0f;
+    info.mipmapMode       = vk::SamplerMipmapMode::eLinear;
+    info.minLod           = 0.0f;
+    info.maxLod           = 1.0f;
+    info.maxAnisotropy    = 4.0f;
+    info.anisotropyEnable = vk::True;
+    info.borderColor      = vk::BorderColor::eFloatOpaqueWhite;
+    m_skyboxSampler.emplace( m_logicalDevice, info );
+}
+
+void Engine::createSkybox() {
+    prepareSkyboxTexture();
+
+    m_skyboxDescriptorSetLayout.addBinding( 0U, vk::DescriptorType::eCombinedImageSampler,
+                                            vk::ShaderStageFlagBits::eFragment );
+    m_skyboxDescriptorSetLayout.create();
+
+    const std::array< vk::DescriptorSetLayout, 2U > layoutsVk{ m_descriptorSetLayout.get(),
+                                                               m_skyboxDescriptorSetLayout.get() };
+    vk::PipelineLayoutCreateInfo skyboxLayoutInfo;
+    skyboxLayoutInfo.pSetLayouts            = std::data( layoutsVk );
+    skyboxLayoutInfo.setLayoutCount         = std::size( layoutsVk );
+    skyboxLayoutInfo.pPushConstantRanges    = nullptr;
+    skyboxLayoutInfo.pushConstantRangeCount = 0U;
+
+    m_skyboxPipelineLayout.emplace( m_logicalDevice, skyboxLayoutInfo );
+
+    m_pipelineBuilder.setLayout( m_skyboxPipelineLayout.value() );
+    m_pipelineBuilder.setShaders( m_skyboxVertexShader, m_skyboxFragmentShader );
+    m_pipelineBuilder.setCullingMode( vk::CullModeFlagBits::eFront );
+    m_skyboxPipeline.emplace( m_pipelineBuilder );
+
+    m_skyboxDescriptorSet = m_globalDescriptorAllocator.allocate( m_skyboxDescriptorSetLayout );
+    m_descriptorWriter.clear();
+    m_descriptorWriter.writeImage( 0U, m_skyboxImage->getImageView(), vk::ImageLayout::eShaderReadOnlyOptimal,
+                                   m_skyboxSampler.value().get(), vk::DescriptorType::eCombinedImageSampler );
+    m_descriptorWriter.updateSet( m_skyboxDescriptorSet );
 }
 
 } // namespace ve

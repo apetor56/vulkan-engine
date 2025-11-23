@@ -1,5 +1,4 @@
 #include "Pipeline.hpp"
-#include "RenderPass.hpp"
 #include "Vertex.hpp"
 #include "Config.hpp"
 #include "descriptor/DescriptorSetLayout.hpp"
@@ -9,8 +8,7 @@
 
 namespace ve {
 
-Pipeline::Pipeline( const PipelineBuilder& builder, const ve::RenderPass& renderPass )
-    : m_logicalDevice{ renderPass.getLogicalDevice() } {
+Pipeline::Pipeline( const PipelineBuilder& builder ) : m_logicalDevice{ builder.getLogicalDevice() } {
     const auto& pipelineLayout{ builder.getLayout() };
     const auto& shaderStages{ builder.getShaderStages() };
 
@@ -19,9 +17,18 @@ Pipeline::Pipeline( const PipelineBuilder& builder, const ve::RenderPass& render
     if ( !pipelineLayout.has_value() )
         throw std::runtime_error( "pipeline builder: pipeline layout is not set" );
 
+    const vk::Format colorFormat{ builder.getColorFormat() };
+
+    vk::PipelineRenderingCreateInfoKHR renderingInfo{};
+    renderingInfo.colorAttachmentCount    = 1U;
+    renderingInfo.pColorAttachmentFormats = &colorFormat;
+    renderingInfo.depthAttachmentFormat   = builder.getDepthFormat();
+    renderingInfo.stencilAttachmentFormat = vk::Format::eUndefined;
+
     m_layout = pipelineLayout.value();
 
     vk::GraphicsPipelineCreateInfo pipelineInfo{};
+    pipelineInfo.pNext               = &renderingInfo;
     pipelineInfo.sType               = vk::StructureType::eGraphicsPipelineCreateInfo;
     pipelineInfo.stageCount          = utils::size( shaderStages );
     pipelineInfo.pStages             = std::data( shaderStages );
@@ -34,8 +41,6 @@ Pipeline::Pipeline( const PipelineBuilder& builder, const ve::RenderPass& render
     pipelineInfo.pColorBlendState    = &builder.getColorBlendState();
     pipelineInfo.pDepthStencilState  = &builder.getDepthStencilState();
     pipelineInfo.layout              = m_layout;
-    pipelineInfo.renderPass          = renderPass.get();
-    pipelineInfo.subpass             = 0U;
 
     auto [ result, pipeline ]{ m_logicalDevice.get().createGraphicsPipeline( nullptr, pipelineInfo ) };
     if ( result != vk::Result::eSuccess )
@@ -82,7 +87,7 @@ PipelineBuilder::PipelineBuilder( const ve::LogicalDevice& logicalDevice )
       m_colorBlendAttachmentState{ defaultColorBlendAttachmentState() },
       m_logicalDevice{ logicalDevice } {
     setSamplesCount( m_logicalDevice.getParentPhysicalDevice().getMaxSamplesCount() );
-    setSampleShading( 1.0F );
+    setSampleShading( 0.2F );
 }
 
 PipelineBuilder::PipelineBuilder( const ve::LogicalDevice& logicalDevice, const ve::ShaderModule& vertexShader,
@@ -116,12 +121,29 @@ void PipelineBuilder::setSamplesCount( const vk::SampleCountFlagBits samplesCoun
 }
 
 void PipelineBuilder::setSampleShading( const float minSampleShading ) {
-    m_multisamplingState.sampleShadingEnable = vk::True;
-    m_multisamplingState.minSampleShading    = minSampleShading;
+    if ( minSampleShading != 0.0F ) {
+        m_multisamplingState.sampleShadingEnable = vk::True;
+        m_multisamplingState.minSampleShading    = minSampleShading;
+    } else {
+        m_multisamplingState.sampleShadingEnable = vk::False;
+        m_multisamplingState.minSampleShading    = 0.0F;
+    }
 }
 
-[[nodiscard]] ve::Pipeline PipelineBuilder::build( const ve::RenderPass& renderPass ) {
-    return ve::Pipeline{ *this, renderPass };
+void PipelineBuilder::setColorFormat( const vk::Format colorFormat ) {
+    m_colorFormat = colorFormat;
+}
+
+void PipelineBuilder::setDepthFormat( const vk::Format depthFormat ) {
+    m_depthFormat = depthFormat;
+}
+
+void PipelineBuilder::setCullingMode( const vk::CullModeFlags cullingMode ) {
+    m_rasterizerState.cullMode = cullingMode;
+}
+
+[[nodiscard]] ve::Pipeline PipelineBuilder::build() {
+    return ve::Pipeline{ *this };
 }
 
 void PipelineBuilder::disableBlending() noexcept {
@@ -250,7 +272,7 @@ vk::PipelineDepthStencilStateCreateInfo PipelineBuilder::defaultDepthStencilInfo
     vk::PipelineDepthStencilStateCreateInfo depthStencil{};
     depthStencil.depthTestEnable       = vk::True;
     depthStencil.depthWriteEnable      = vk::True;
-    depthStencil.depthCompareOp        = vk::CompareOp::eLess;
+    depthStencil.depthCompareOp        = vk::CompareOp::eLessOrEqual;
     depthStencil.depthBoundsTestEnable = vk::False;
     depthStencil.minDepthBounds        = 0.0F;
     depthStencil.maxDepthBounds        = 1.0F;

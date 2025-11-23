@@ -115,7 +115,7 @@ Swapchain::Details Swapchain::getSwapchainDetails( const vk::PhysicalDevice phys
 vk::SurfaceFormatKHR
     Swapchain::chooseSurfaceFormat( const std::vector< vk::SurfaceFormatKHR >& availableFormats ) const noexcept {
     const auto bestFormatIt{ std::ranges::find_if( availableFormats, []( const auto availableFormat ) {
-        return availableFormat.format == vk::Format::eB8G8R8A8Srgb &&
+        return availableFormat.format == vk::Format::eR8G8B8A8Srgb &&
                availableFormat.colorSpace == vk::ColorSpaceKHR::eSrgbNonlinear;
     } ) };
     if ( bestFormatIt != std::end( availableFormats ) )

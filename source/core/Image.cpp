@@ -6,13 +6,14 @@ namespace ve {
 
 Image::Image( const ve::MemoryAllocator& allocator, const ve::LogicalDevice& logicalDevice, const vk::Extent2D extent,
               const vk::Format format, const vk::ImageUsageFlags usage, const vk::ImageAspectFlagBits imageAspect,
-              const uint32_t mipLevels, const vk::SampleCountFlagBits samplesCount, const vk::ImageTiling tiling )
+              const uint32_t mipLevels, const vk::SampleCountFlagBits samplesCount, const uint32_t layersCount,
+              const vk::ImageViewType viewType, const vk::ImageTiling tiling )
     : m_memoryAllocator{ allocator },
       m_logicalDevice{ logicalDevice },
       m_imageExtent{ extent },
       m_imageFormat{ format } {
-    createImage( usage, tiling, mipLevels, samplesCount );
-    createImageView( imageAspect, mipLevels );
+    createImage( usage, tiling, mipLevels, samplesCount, layersCount, viewType );
+    createImageView( imageAspect, mipLevels, layersCount, viewType );
 }
 
 Image::Image( Image&& other ) noexcept
@@ -34,15 +35,18 @@ Image::~Image() {
 }
 
 void Image::createImage( const vk::ImageUsageFlags usage, const vk::ImageTiling tiling, const uint32_t mipLevels,
-                         const vk::SampleCountFlagBits samplesCount ) {
+                         const vk::SampleCountFlagBits samplesCount, const uint32_t layersCount,
+                         const vk::ImageViewType viewType ) {
     vk::ImageCreateInfo imageInfo{};
-    imageInfo.sType         = vk::StructureType::eImageCreateInfo;
-    imageInfo.imageType     = vk::ImageType::e2D;
+    imageInfo.sType     = vk::StructureType::eImageCreateInfo;
+    imageInfo.imageType = vk::ImageType::e2D;
+    imageInfo.flags =
+        viewType == vk::ImageViewType::e2D ? vk::ImageCreateFlagBits{} : vk::ImageCreateFlagBits::eCubeCompatible;
     imageInfo.extent.width  = m_imageExtent.width;
     imageInfo.extent.height = m_imageExtent.height;
     imageInfo.extent.depth  = 1U;
     imageInfo.mipLevels     = mipLevels;
-    imageInfo.arrayLayers   = 1U;
+    imageInfo.arrayLayers   = layersCount;
     imageInfo.format        = m_imageFormat;
     imageInfo.tiling        = tiling;
     imageInfo.initialLayout = vk::ImageLayout::eUndefined;
@@ -58,16 +62,21 @@ void Image::createImage( const vk::ImageUsageFlags usage, const vk::ImageTiling 
                     &allocationCreateInfo, reinterpret_cast< VkImage * >( &m_image ), &m_allocation, nullptr );
 }
 
-void Image::createImageView( const vk::ImageAspectFlagBits imageAspect, const uint32_t mipLevels ) {
+void Image::createImageView( const vk::ImageAspectFlagBits imageAspect, const uint32_t mipLevels,
+                             const uint32_t layersCount, const vk::ImageViewType viewType ) {
     vk::ImageViewCreateInfo viewInfo{};
     viewInfo.image                           = m_image;
-    viewInfo.viewType                        = vk::ImageViewType::e2D;
+    viewInfo.viewType                        = viewType;
+    viewInfo.components                      = viewType == vk::ImageViewType::e2D
+                                                   ? vk::ComponentMapping{}
+                                                   : vk::ComponentMapping{ vk::ComponentSwizzle::eR, vk::ComponentSwizzle::eG,
+                                                      vk::ComponentSwizzle::eB, vk::ComponentSwizzle::eA };
     viewInfo.format                          = m_imageFormat;
     viewInfo.subresourceRange.aspectMask     = imageAspect;
     viewInfo.subresourceRange.baseMipLevel   = 0U;
     viewInfo.subresourceRange.levelCount     = mipLevels;
     viewInfo.subresourceRange.baseArrayLayer = 0U;
-    viewInfo.subresourceRange.layerCount     = 1U;
+    viewInfo.subresourceRange.layerCount     = layersCount;
 
     m_imageView = m_logicalDevice.get().createImageView( viewInfo );
 }

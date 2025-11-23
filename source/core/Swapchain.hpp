@@ -28,6 +28,8 @@ public:
     vk::Extent2D getExtent() const noexcept { return m_swapchainImageExtent; }
     vk::SwapchainKHR get() const noexcept { return m_swapchain; }
     const std::vector< vk::ImageView >& getImageViews() const noexcept { return m_swapchainImageViews; }
+    vk::Image getImage( const uint32_t imageIndex ) const { return m_swapchainImages.at( imageIndex ); }
+    vk::ImageView getImageView( const uint32_t imageIndex ) const { return m_swapchainImageViews.at( imageIndex ); }
     vk::Viewport getViewport() const noexcept { return m_viewport; }
     vk::Rect2D getScissor() const noexcept { return m_scissor; }
     vk::Format getFormat() const noexcept { return m_swapchainImageFormat; }

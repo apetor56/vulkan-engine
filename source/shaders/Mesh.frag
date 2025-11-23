@@ -12,7 +12,7 @@ layout( location = 0 ) out vec4 outFragColor;
 const float PI = 3.14159265359;
 
 float distributionGGX( float normalHalfwayDotMax, float roughness ) {
-    float alphaFactor = pow( roughness, 2.0f );
+    float alphaFactor = pow( roughness, 4.0f );
     float denominator = pow( normalHalfwayDotMax, 2.0f ) * ( alphaFactor - 1.0f ) + 1.0f;
     denominator       = PI * denominator * denominator;
 
@@ -34,17 +34,33 @@ vec3 fresnelSchlick( float halfwayViewDot, vec3 baseReflectivity ) {
     return baseReflectivity + ( 1.0 - baseReflectivity ) * pow( 1.0 - halfwayViewDot, 5.0 );
 }
 
-vec3 lightPositions[ 4 ] = vec3[]( vec3( -10.0f, 10.0f, 10.0f ), vec3( 10.0f, 10.0f, 10.0f ),
-                                   vec3( -10.0f, -10.0f, 10.0f ), vec3( 10.0f, -10.0f, 10.0f ) );
-vec3 lightColors[ 4 ]    = vec3[]( vec3( 500.0f, 300.0f, 700.0f ), vec3( 300.0f, 500.0f, 300.0f ),
-                                vec3( 300.0f, 900.0f, 400.0f ), vec3( 1300.0f, 500.0f, 500.0f ) );
+vec3 lightPositions[ 4 ] = vec3[]( vec3( -14.756604f, 3.4603605f, -5.237836f ), vec3( -15.001932f, 3.1396596f, 3.4824698f ),
+                                   vec3( 11.690615f, 3.6053026f, 3.3117452f ), vec3( 11.677476f, 3.4518013f, -5.332671f ) );
+vec3 lightColors[ 4 ]    = vec3[]( vec3( 5.0f, 3.0f, 7.0f ), vec3( 3.0f, 5.0f, 3.0f ),
+                                vec3( 3.0f, 9.0f, 4.0f ), vec3( 13.0f, 5.0f, 5.0f ) );
+
+vec3 getNormalFromMap() {
+    vec3 tangentNormal = texture( normalMap, inTexCoords ).xyz * 2.0 - 1.0;
+
+    vec3 Q1  = dFdx( inWorldPos );
+    vec3 Q2  = dFdy( inWorldPos );
+    vec2 st1 = dFdx( inTexCoords );
+    vec2 st2 = dFdy( inTexCoords );
+
+    vec3 N   = normalize( inNormal );
+    vec3 T   = normalize( Q1 * st2.t - Q2 * st1.t );
+    vec3 B   = -normalize( cross( N, T ) );
+    mat3 TBN = mat3( T, B, N );
+
+    return normalize( TBN * tangentNormal );
+}
 
 void main() {
     float metallic  = texture( metallicRoughnessMap, inTexCoords ).b * materialData.metallicRoughnessFactors.x;
     float roughness = texture( metallicRoughnessMap, inTexCoords ).g * materialData.metallicRoughnessFactors.y;
     vec3 albedo     = texture( albedoMap, inTexCoords ).rgb;
 
-    vec3 normal        = normalize( inNormal );
+    vec3 normal        = getNormalFromMap();
     vec3 viewDirection = normalize( sceneData.cameraPosition - inWorldPos );
 
     vec3 baseReflectivity = vec3( 0.04 );
@@ -61,9 +77,9 @@ void main() {
         float normalHalfwayDotMax = max( dot( normal, halfway ), 0.0 );
         float halfwayViewDot      = dot( halfway, viewDirection );
 
-        float distance    = length( lightPositions[ i ] - inWorldPos );
-        float attenuation = 1.0 / pow( distance, 2.0f );
-        vec3 radiance     = lightColors[ i ] * attenuation;
+        float dist    = length( lightPositions[ i ] - inWorldPos );
+        float attenuation = 1.0 / pow( dist, 2.0 );
+        vec3 radiance     = lightColors[ i ] * 6.0f * attenuation;
 
         float normalDistribution = distributionGGX( normalHalfwayDotMax, roughness );
         float geometry           = geometrySmith( normalViewDotMax, normalLightDotMax, roughness );

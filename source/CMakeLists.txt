@@ -34,8 +34,6 @@ set(CORE
     core/QueueFamilyIDs.hpp        core/QueueFamilyIDs.cpp
     core/LogicalDevice.hpp         core/LogicalDevice.cpp
     core/Swapchain.hpp             core/Swapchain.cpp
-    core/RenderPass.hpp            core/RenderPass.cpp
-    core/Framebuffer.hpp           core/Framebuffer.cpp
     core/Pipeline.hpp              core/Pipeline.cpp
     core/ShaderModule.hpp          core/ShaderModule.cpp
     core/Vertex.hpp
@@ -77,6 +75,8 @@ set(SHADER_SOURCE
     "${CMAKE_CURRENT_SOURCE_DIR}/shaders/Simple.frag"
     "${CMAKE_CURRENT_SOURCE_DIR}/shaders/Mesh.vert"
     "${CMAKE_CURRENT_SOURCE_DIR}/shaders/Mesh.frag"
+    "${CMAKE_CURRENT_SOURCE_DIR}/shaders/Skybox.vert"
+    "${CMAKE_CURRENT_SOURCE_DIR}/shaders/Skybox.frag"
 )
 
 source_group("Command" FILES ${COMMAND})
